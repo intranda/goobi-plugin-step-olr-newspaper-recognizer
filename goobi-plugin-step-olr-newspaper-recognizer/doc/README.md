@@ -34,10 +34,6 @@ Darin Zeile für Zeile folgenden Code einfügen:
 
 Material auf den Rechner kopieren und anschließend mit dem Python-Script anwenden.
 
-	python2 predict_cnn.py material/thumbnails/
-
-Der neue Aufruf mit Zielpfad lautet dann:
-
 	python2 predict_cnn.py <input_folder> <tmp_dir> <output_file>
 	
 Konkreter Aufruf für das Demomaterial innerhalb dieses Eclipse-Projekts:
