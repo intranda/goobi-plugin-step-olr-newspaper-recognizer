@@ -1,4 +1,14 @@
-<ui:composition xmlns="http://www.w3.org/1999/xhtml" xmlns:ui="http://xmlns.jcp.org/jsf/facelets" xmlns:c="http://java.sun.com/jsp/jstl/core" xmlns:h="http://xmlns.jcp.org/jsf/html" xmlns:f="http://xmlns.jcp.org/jsf/core" xmlns:o="http://omnifaces.org/ui" xmlns:of="http://omnifaces.org/functions" template="/uii/template/template.html" xmlns:x="http://myfaces.apache.org/tomahawk" xmlns:intranda="http://xmlns.jcp.org/jsf/composite/composites">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets" 
+	xmlns:c="http://java.sun.com/jsp/jstl/core" 
+	xmlns:h="http://xmlns.jcp.org/jsf/html" 
+	xmlns:f="http://xmlns.jcp.org/jsf/core" 
+	xmlns:o="http://omnifaces.org/ui" 
+	xmlns:of="http://omnifaces.org/functions" 
+	template="/uii/template/template.html" 
+	xmlns:x="http://myfaces.apache.org/tomahawk" 
+	xmlns:intranda="http://xmlns.jcp.org/jsf/composite/composites"
+	xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
 
     <ui:param name="myPageTitle" value="#{msgs.plugin}: #{msgs[('plugin_').concat(AktuelleSchritteForm.myPlugin.title)]}" />
 
@@ -22,7 +32,13 @@
     </ui:define>
 
     <ui:define name="content">
-
+		<style>
+			.other-images {
+				width: 100%;
+				max-width: 100%;
+				overflow-y: auto;				
+			}
+		</style>
         <h:form id="newspaperform">
             <div class="box box-color lightgrey box-bordered">
                 <div class="box-title">
@@ -38,10 +54,118 @@
                 </div>
 
                 <div class="box-content">
+	                <div class="row">
+	                    <div class="col-sm-12">
+		    				<label>Montag  <h:selectBooleanCheckbox value="#{AktuelleSchritteForm.myPlugin.monday}"></h:selectBooleanCheckbox></label>
+		    				<label>Dienstag  <h:selectBooleanCheckbox value="#{AktuelleSchritteForm.myPlugin.tuesday}"></h:selectBooleanCheckbox></label>
+		    				<label>Mittwoch  <h:selectBooleanCheckbox value="#{AktuelleSchritteForm.myPlugin.wednesday}"></h:selectBooleanCheckbox></label>
+		    				<label>Donnerstag  <h:selectBooleanCheckbox value="#{AktuelleSchritteForm.myPlugin.thursday}"></h:selectBooleanCheckbox></label>
+		    				<label>Freitag  <h:selectBooleanCheckbox value="#{AktuelleSchritteForm.myPlugin.friday}"></h:selectBooleanCheckbox></label>
+		    				<label>Samstag  <h:selectBooleanCheckbox value="#{AktuelleSchritteForm.myPlugin.saturday}"></h:selectBooleanCheckbox></label>
+		    				<label>Sonntag  <h:selectBooleanCheckbox value="#{AktuelleSchritteForm.myPlugin.sunday}"></h:selectBooleanCheckbox></label>
+	    				</div>
+    				</div>
+    				<hr />
+					<h:panelGroup layout="block" styleClass="col-sm-12">
 
+                        <!-- Thumbnail list -->
+                        <div class="row margin-top-most margin-bottom-most">
+
+                            <ui:repeat var="page" value="#{AktuelleSchritteForm.myPlugin.pages}" varStatus="status">
+                            	<ui:fragment rendered="#{page.issue}">
+                            	<div class="row">
+                            		<div class="col-sm-4">
+		                                <div class="goobi-thumbnail font-light">
+		                                    <div class="goobi-thumbnail-image">
+		                                        <div class="thumb">
+	                                                <canvas class="thumb-canvas" data-image_small="#{page.image.thumbnailUrl}" data-image_large="#{page.image.largeThumbnailUrl}" title="#{page.image.tooltip}" id="thumbnail-#{status.index}"></canvas>
+		                                        </div>
+		                                    </div>
+		                                </div>
+<!-- 	                                </div> -->
+<!-- 	                                <div class="col-sm-4"> -->
+		                                <div class="form-inline">
+		                                	<div class="form-group">
+			                                	<h:inputText type="text" value="#{page.dateStr}" pt:placeholder="Datum" styleClass="form-control"/>
+			                                </div>
+			                                <h:commandLink action="#{AktuelleSchritteForm.myPlugin.generateDates(status.index)}" styleClass="btn btn-default fa fa-play" >
+			                                	<f:ajax render="@form" execute="@form"/>
+			                                </h:commandLink>
+		                                </div>
+		                                 <div class="form-inline">
+		                                	<div class="form-group">
+				                                <h:inputText type="text" value="#{page.number}" pt:placeholder="Ausgabe" styleClass="form-control"/>
+			                                </div>
+			                                <h:commandLink action="#{AktuelleSchritteForm.myPlugin.noIssue(status.index)}" styleClass="btn btn-default fa fa-trash">
+			                                	<f:ajax render="@form" />
+			                                </h:commandLink>
+		                                </div>
+		                                <div class="form-inline">
+		                                	<div class="form-group">
+		                                		<h:outputText value="#{page.otherPages.size()} weitere Seiten in dieser Ausgabe" />
+		                               			<h:commandLink styleClass="btn btn-default fa fa-eye" action="#{page.toggleShowOtherImages}"/>
+		                               		</div>
+                               			</div>
+	                                </div>
+	                                <h:panelGroup layout="block" styleClass="col-sm-8" rendered="#{page.showOtherImages}">
+	                                	<div class="other-images">
+		                                	<ui:repeat var="otherPage" value="#{page.otherPages}" varStatus="statusOther">
+		                                		<h:commandLink action="#{AktuelleSchritteForm.myPlugin.isIssue(status.index, statusOther.index)}">
+			                                		<div class="goobi-thumbnail font-light">
+					                                    <div class="goobi-thumbnail-image">
+					                                        <div class="thumb">
+				                                                <canvas class="thumb-canvas" data-image_small="#{otherPage.image.thumbnailUrl}" data-image_large="#{otherPage.image.largeThumbnailUrl}" title="#{otherPage.image.tooltip}" id="thumbnail-#{status.index}"></canvas>
+					                                        </div>
+					                                    </div>
+					                                </div>
+					                                <f:ajax render="@form"/>
+				                                </h:commandLink>
+		                                	</ui:repeat>
+	                                	</div>
+	                                </h:panelGroup>
+                                </div>
+                                </ui:fragment>
+                            </ui:repeat>
+                        </div>
+                        <!-- // Thumbnail list -->
+
+
+                    </h:panelGroup>
                 </div>
            </div>
        </h:form>
+       <script>
+       window.onload = function() {
+           loadImages();
+       }
+       
+      function loadThumbnails() {
+          console.log("loading thumbnails");
+//          var height = parseInt('#{Metadaten.thumbnailSize}');
+           var height = parseInt('#{NavigationForm.workflowPlugin.thumbnailSize}');
+           if (height) {
+//                $('.goobi-thumbnail-image').css('height', (height + 25) + 'px');
+               $('.goobi-thumbnail-image .thumb').css('max-height', height + 'px');
+               $('.goobi-thumbnail-image .thumb canvas').css('max-height', height + 'px');
+               $('.goobi-thumbnail-image').css('max-width', (height) + 'px');
+           }
+       }
+   $( document ).ready(function() {
+        loadThumbnails();
+   });
+
+   jsf.ajax.addOnEvent(function(data) {
+       var ajaxstatus = data.status; // Can be "begin", "complete" and "success"
+         
+         switch (ajaxstatus) {
+             case "success": // This is called when ajax response is successfully processed.
+                 loadImages();
+                 loadThumbnails();
+                 break;
+         }
+       
+   });
+       </script>
     </ui:define>
 
 </ui:composition>

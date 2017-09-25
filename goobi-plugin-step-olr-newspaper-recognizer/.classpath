@@ -8,5 +8,6 @@
 	<classpathentry kind="lib" path="/Goobi/webapp/WEB-INF/lib/lombok.jar"/>
 	<classpathentry kind="lib" path="/Goobi/webapp/WEB-INF/lib/log4j-1.2.16.jar"/>
 	<classpathentry kind="lib" path="/Goobi/webapp/WEB-INF/lib/gson-2.2.4.jar"/>
+	<classpathentry kind="lib" path="/Goobi/webapp/WEB-INF/lib/joda-time-1.6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
