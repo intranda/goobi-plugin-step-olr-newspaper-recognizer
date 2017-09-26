@@ -7,12 +7,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.goobi.beans.Process;
 import org.goobi.beans.Step;
 import org.goobi.production.enums.PluginGuiType;
 import org.goobi.production.plugin.interfaces.AbstractStepPlugin;
 import org.goobi.production.plugin.interfaces.IPlugin;
 import org.goobi.production.plugin.interfaces.IStepPlugin;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -27,6 +30,19 @@ import de.sub.goobi.metadaten.Image;
 import lombok.Data;
 import lombok.extern.log4j.Log4j;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import ugh.dl.DigitalDocument;
+import ugh.dl.DocStruct;
+import ugh.dl.DocStructType;
+import ugh.dl.Fileformat;
+import ugh.dl.Metadata;
+import ugh.dl.MetadataType;
+import ugh.dl.Prefs;
+import ugh.exceptions.MetadataTypeNotAllowedException;
+import ugh.exceptions.PreferencesException;
+import ugh.exceptions.ReadException;
+import ugh.exceptions.TypeNotAllowedAsChildException;
+import ugh.exceptions.TypeNotAllowedForParentException;
+import ugh.exceptions.WriteException;
 
 @PluginImplementation
 @Log4j
@@ -34,6 +50,7 @@ import net.xeoh.plugins.base.annotations.PluginImplementation;
 public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements IStepPlugin, IPlugin {
     private static final String PLUGIN_NAME = "intranda_step_newspaperRecognizer";
     private static final String GUI = "/uii/plugin_newspaperRecognizer.xhtml";
+    private static final DateTimeFormatter w3cdtf = DateTimeFormat.forPattern("yyyy-MM-dd");
 
     private int tocDepth = 0;
 
@@ -152,7 +169,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     private void readExportedFile() throws IOException, InterruptedException, SwapException, DAOException {
-        org.goobi.beans.Process pr = this.myStep.getProzess();
+        Process pr = this.myStep.getProzess();
         String imageDir = pr.getImagesOrigDirectory(false);
         String resultF = pr.getProcessDataDirectory() + "/taskmanager/issues_result.json";
         Type nt = new TypeToken<List<NewspaperPage>>() {
@@ -212,6 +229,179 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             System.out.println(page.getFilenameAsTif() + " - " + page.getResult() + " - " + page.isIssue());
         }
 
+    }
+
+    public String saveMetsFile() {
+        Process process = myStep.getProzess();
+        // read mets file and ruleset
+        DigitalDocument dd = null;
+        Fileformat fileformat = null;
+        try {
+            fileformat = process.readMetadataFile();
+            dd = fileformat.getDigitalDocument();
+        } catch (ReadException | PreferencesException | WriteException | IOException | InterruptedException | SwapException | DAOException e) {
+            log.error(e);
+            return "";
+        }
+        Prefs prefs = process.getRegelsatz().getPreferences();
+
+        DocStructType pageType = prefs.getDocStrctTypeByName("page");
+        DocStructType issueType = prefs.getDocStrctTypeByName("NewspaperIssue");
+        MetadataType partNumberType = prefs.getMetadataTypeByName("PartNumber");
+        MetadataType dateIssuedType = prefs.getMetadataTypeByName("DateIssued");
+        MetadataType numberType = prefs.getMetadataTypeByName("CurrentNo");
+        MetadataType titleType = prefs.getMetadataTypeByName("TitleDocMain");
+
+        MetadataType logPageNoType = prefs.getMetadataTypeByName("logicalPageNumber");
+        MetadataType physPageNoType = prefs.getMetadataTypeByName("physPageNumber");
+
+        DocStruct anchor = dd.getLogicalDocStruct();
+        DocStruct volume = anchor.getAllChildren().get(0);
+        DocStruct boundBook = dd.getPhysicalDocStruct();
+
+        DocStruct currentIssue = null;
+
+        // create entry for each page
+        for (int i = 0; i < pages.size(); i++) {
+            NewspaperPage newspaperPage = pages.get(i);
+            DocStruct page = null;
+            try {
+                page = dd.createDocStruct(pageType);
+                boundBook.addChild(page);
+            } catch (TypeNotAllowedAsChildException | TypeNotAllowedForParentException e) {
+                log.error(e);
+                return "";
+            }
+            page.setImageName(newspaperPage.getFilename());
+            createMetadata(physPageNoType, "" + (i + 1), page);
+            createMetadata(logPageNoType, "uncounted", page);
+            // create new issue if needed
+            if (currentIssue == null || newspaperPage.isIssue()) {
+                try {
+                    currentIssue = dd.createDocStruct(issueType);
+                    volume.addChild(currentIssue);
+                } catch (TypeNotAllowedAsChildException | TypeNotAllowedForParentException e) {
+                    log.error(e);
+                    return "";
+                }
+                createMetadata(partNumberType, newspaperPage.getNumber(), currentIssue);
+
+                createMetadata(numberType, newspaperPage.getNumber(), currentIssue);
+
+                createMetadata(dateIssuedType, w3cdtf.print(newspaperPage.getDate()), currentIssue);
+
+                createMetadata(titleType, getTitleFromDate(newspaperPage.getDate()), currentIssue);
+            }
+            // link pages to issue and volume
+            currentIssue.addReferenceTo(page, "logical_physical");
+            volume.addReferenceTo(page, "logical_physical");
+
+        }
+
+        try {
+            process.writeMetadataFile(fileformat);
+        } catch (WriteException | PreferencesException | IOException | InterruptedException | SwapException | DAOException e) {
+            log.error(e);
+            return "";
+        }
+        return finish();
+
+    }
+
+    private void createMetadata(MetadataType metadataType, String value, DocStruct docstruct) {
+        try {
+            Metadata physPageNo = new Metadata(metadataType);
+            physPageNo.setValue(value);
+            docstruct.addMetadata(physPageNo);
+        } catch (MetadataTypeNotAllowedException e) {
+            log.error(e);
+        }
+    }
+
+    private static String getTitleFromDate(DateTime dateTime) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Ausgabe vom ");
+
+        switch (dateTime.dayOfWeek().get()) {
+            case 1:
+                sb.append("Montag, den ");
+                break;
+            case 2:
+                sb.append("Dienstag, den ");
+                break;
+            case 3:
+                sb.append("Mittwoch, den ");
+                break;
+            case 4:
+                sb.append("Donnerstag, den ");
+                break;
+            case 5:
+                sb.append("Freitag, den ");
+                break;
+            case 6:
+                sb.append("Samstag, den ");
+                break;
+            default:
+                sb.append("Sonntag, den ");
+                break;
+        }
+        switch (dateTime.dayOfMonth().get()) {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 9:
+                sb.append("0" + dateTime.dayOfMonth().get() + ". ");
+                break;
+            default:
+                sb.append(dateTime.dayOfMonth().get() + ". ");
+                break;
+        }
+
+        switch (dateTime.monthOfYear().get()) {
+            case 1:
+                sb.append("Januar ");
+                break;
+            case 2:
+                sb.append("Februar ");
+                break;
+            case 3:
+                sb.append("März ");
+                break;
+            case 4:
+                sb.append("April ");
+                break;
+            case 5:
+                sb.append("Mai ");
+                break;
+            case 6:
+                sb.append("Juni ");
+                break;
+            case 7:
+                sb.append("Juli ");
+                break;
+            case 8:
+                sb.append("August ");
+                break;
+            case 9:
+                sb.append("September ");
+                break;
+            case 10:
+                sb.append("Oktober ");
+                break;
+            case 11:
+                sb.append("November ");
+                break;
+            default:
+                sb.append("Dezember ");
+                break;
+        }
+        sb.append(dateTime.getYear());
+        return sb.toString();
     }
 
 }
