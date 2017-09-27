@@ -88,13 +88,13 @@
 	                	<h:form>
 		                    <div class="col-sm-12">
 		                    	<!-- Wochentage als Checkboxen -->
-			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.monday}"/>Montag</label>
-			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.tuesday}"/>Dienstag</label>
-			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.wednesday}"/>Mittwoch</label>
-			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.thursday}"/>Donnerstag</label>
-			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.friday}"/>Freitag</label>
-			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.saturday}"/>Samstag</label>
-			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.sunday}"/>Sonntag</label>
+			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.monday}" ><f:ajax execute="@this"/></h:selectBooleanCheckbox>Montag</label>
+			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.tuesday}" ><f:ajax execute="@this"/></h:selectBooleanCheckbox>Dienstag</label>
+			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.wednesday}" ><f:ajax execute="@this"/></h:selectBooleanCheckbox>Mittwoch</label>
+			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.thursday}"><f:ajax execute="@this"/></h:selectBooleanCheckbox>Donnerstag</label>
+			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.friday}"><f:ajax execute="@this"/></h:selectBooleanCheckbox>Freitag</label>
+			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.saturday}"><f:ajax execute="@this"/></h:selectBooleanCheckbox>Samstag</label>
+			    				<label class="check-week"><h:selectBooleanCheckbox class="checkbox-week" value="#{AktuelleSchritteForm.myPlugin.sunday}"><f:ajax execute="@this"/></h:selectBooleanCheckbox>Sonntag</label>
 		                    	<!-- // Wochentage als Checkboxen -->
 			    				
 			    				<!-- Speicher-Button -->
@@ -112,97 +112,99 @@
                         <div class="row margin-top-most margin-bottom-most">
 							
 							<!-- Auflistung aller Ausgaben -->
-                            <ui:repeat var="page" value="#{AktuelleSchritteForm.myPlugin.pages}" varStatus="status">
-                            	<ui:fragment rendered="#{page.issue}">
-	                            	<h:form>
-		                            	<div class="row thumbnail-row">
-												<div class="col-sm-4">
-													
-													<div class="col-xs-6 thumbnail-image">
-
-														<!-- Bild der Ausgabe -->
-														<div class="goobi-thumbnail font-light">
-															<div class="goobi-thumbnail-image">
-																<div class="thumb">
-																	<canvas class="thumb-canvas" data-image_small="#{page.image.thumbnailUrl}" 
-																		id="thumbnail-#{status.index}" data-image_large="#{page.image.largeThumbnailUrl}" 
-																		title="#{page.image.tooltip}">
-																	</canvas>
+                           	<h:form id="imagesForm">
+	                            <ui:repeat var="page" value="#{AktuelleSchritteForm.myPlugin.pages}" varStatus="status" id="repeat">
+	                            	<ui:fragment rendered="#{page.issue}">
+			                            	<div class="row thumbnail-row">
+													<div class="col-sm-4">
+														
+														<div class="col-xs-6 thumbnail-image">
+	
+															<!-- Bild der Ausgabe -->
+															<div class="goobi-thumbnail font-light">
+																<div class="goobi-thumbnail-image">
+																	<div class="thumb">
+																		<canvas class="thumb-canvas" data-image_small="#{page.image.thumbnailUrl}" 
+																			id="thumbnail-#{status.index}" data-image_large="#{page.image.largeThumbnailUrl}" 
+																			title="#{page.image.tooltip}">
+																		</canvas>
+																	</div>
 																</div>
 															</div>
+															<!-- // Bild der Ausgabe -->
+	
+															<!-- Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
+															<div class="col-xs-12 text-right">
+																<h:commandLink
+																	action="#{AktuelleSchritteForm.myPlugin.noIssue(status.index)}"
+																	styleClass="btn btn-default fa fa-trash"
+																	style="margin-right: 10px; margin-bottom: 5px;">
+																	
+																</h:commandLink>
+															</div>
+															<!-- // Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
+															
 														</div>
-														<!-- // Bild der Ausgabe -->
-
-														<!-- Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
-														<div class="col-xs-12 text-right">
-															<h:commandLink
-																action="#{AktuelleSchritteForm.myPlugin.noIssue(status.index)}"
-																styleClass="btn btn-default fa fa-trash"
-																style="margin-right: 10px; margin-bottom: 5px;">
-																
+			
+														<!-- Datum der Ausgabe -->
+														<div class="col-xs-4">
+															<h:inputText type="text" value="#{page.dateStr}" pt:placeholder="Datum" styleClass="form-control" />
+														</div>
+	
+														<!-- Button für Datumsgenerierung -->
+														<div class="col-xs-2">
+															<h:commandLink action="#{AktuelleSchritteForm.myPlugin.generateDates(status.index)}" 
+																styleClass="btn btn-default fa fa-play">
+																<f:ajax render="@form" execute="@form" />
 															</h:commandLink>
 														</div>
-														<!-- // Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
+														
+														<!-- Nummer der Ausgabe -->
+														<div class="col-xs-4">
+															<h:inputText type="text" value="#{page.number}" pt:placeholder="Ausgabe" styleClass="form-control" />
+														</div>
+														<!-- Button zum Anzeigen oder Ausblenden der zugehörigen Seiten -->
+														<div class="col-xs-2">
+															<h:commandLink styleClass="btn btn-default fa fa-eye" action="#{page.toggleShowOtherImages}">
+																<f:ajax render=":imagesForm:repeat:#{status.index}:otherPages" />
+															</h:commandLink>
+														</div>
+														
+														<!-- Details über zugehörige Seiten -->
+														<div class="col-xs-4">
+															<h:outputText value="Zugehörige Seiten: #{page.otherPages.size()}" />
+														</div>
+														<div class="col-xs-2"></div>
+														
 														
 													</div>
-		
-													<!-- Datum der Ausgabe -->
-													<div class="col-xs-4">
-														<h:inputText type="text" value="#{page.dateStr}" pt:placeholder="Datum" styleClass="form-control" />
-													</div>
-
-													<!-- Button für Datumsgenerierung -->
-													<div class="col-xs-2">
-														<h:commandLink action="#{AktuelleSchritteForm.myPlugin.generateDates(status.index)}" 
-															styleClass="btn btn-default fa fa-play">
-															<f:ajax render="@form" execute="@form" />
-														</h:commandLink>
-													</div>
 													
-													<!-- Nummer der Ausgabe -->
-													<div class="col-xs-4">
-														<h:inputText type="text" value="#{page.number}" pt:placeholder="Ausgabe" styleClass="form-control" />
-													</div>
-													<!-- Button zum Anzeigen oder Ausblenden der zugehörigen Seiten -->
-													<div class="col-xs-2">
-														<h:commandLink styleClass="btn btn-default fa fa-eye" action="#{page.toggleShowOtherImages}">
-															<f:ajax render="@form" />
-														</h:commandLink>
-													</div>
-													
-													<!-- Details über zugehörige Seiten -->
-													<div class="col-xs-4">
-														<h:outputText value="Zugehörige Seiten: #{page.otherPages.size()}" />
-													</div>
-													<div class="col-xs-2"></div>
-													
-													
-												</div>
-												
-												<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
-												<h:panelGroup layout="block" styleClass="col-sm-8" rendered="#{page.showOtherImages}">
-				                                	<div class="other-images">
-					                                	<ui:repeat var="otherPage" value="#{page.otherPages}" varStatus="statusOther">
-					                                		<h:commandLink action="#{AktuelleSchritteForm.myPlugin.isIssue(status.index, statusOther.index)}">
-						                                		<div class="goobi-thumbnail font-light">
-								                                    <div class="goobi-thumbnail-image">
-								                                        <div class="thumb">
-							                                                <canvas class="thumb-canvas" data-image_small="#{otherPage.image.thumbnailUrl}" data-image_large="#{otherPage.image.largeThumbnailUrl}" title="#{otherPage.image.tooltip}" id="thumbnail-#{status.index}"></canvas>
-								                                        </div>
-								                                    </div>
-								                                </div>
-								                                <f:ajax render="@form"/>
-							                                </h:commandLink>
-					                                	</ui:repeat>
-				                                	</div>
-			                                	</h:panelGroup>
-			                                	<!-- // Auflistung aller zugehörigen Seiten der Ausgabe -->
-			                                	
-		                                </div>
-		                                <hr />
-		                            </h:form>
-                                </ui:fragment>
-                            </ui:repeat>
+													<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
+													<h:panelGroup id="otherPages">
+														<h:panelGroup layout="block" styleClass="col-sm-8" rendered="#{page.showOtherImages}">
+						                                	<div class="other-images">
+							                                	<ui:repeat var="otherPage" value="#{page.otherPages}" varStatus="statusOther">
+							                                		<h:commandLink action="#{AktuelleSchritteForm.myPlugin.isIssue(status.index, statusOther.index)}">
+								                                		<div class="goobi-thumbnail font-light">
+										                                    <div class="goobi-thumbnail-image">
+										                                        <div class="thumb">
+									                                                <canvas class="thumb-canvas" data-image_small="#{otherPage.image.thumbnailUrl}" data-image_large="#{otherPage.image.largeThumbnailUrl}" title="#{otherPage.image.tooltip}" id="thumbnail-#{status.index}"></canvas>
+										                                        </div>
+										                                    </div>
+										                                </div>
+										                                <f:ajax render="@form"/>
+									                                </h:commandLink>
+							                                	</ui:repeat>
+						                                	</div>
+					                                	</h:panelGroup>
+				                                	</h:panelGroup>
+				                                	<!-- // Auflistung aller zugehörigen Seiten der Ausgabe -->
+				                                	
+			                                </div>
+			                                <hr />
+	                                </ui:fragment>
+	                            </ui:repeat>
+                            </h:form>
                             <!-- // Auflistung aller Ausgaben -->
                             
                         </div>

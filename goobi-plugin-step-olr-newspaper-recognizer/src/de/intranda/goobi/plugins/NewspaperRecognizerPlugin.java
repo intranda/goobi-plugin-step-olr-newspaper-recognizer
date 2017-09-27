@@ -126,10 +126,60 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             NewspaperPage page = this.pages.get(i);
             if (page.isIssue()) {
                 startNumber++;
-                startDate = startDate.plusDays(1);
+                startDate = getNextDate(startDate);
                 page.setNumber("" + startNumber);
                 page.setDate(startDate);
             }
+        }
+    }
+
+    public DateTime getNextDate(DateTime currentDate) {
+        log.info("current: " + currentDate.getDayOfWeek());
+        DateTime newDate = currentDate.plusDays(1);
+        while (true) {
+            int dayOfWeek = newDate.getDayOfWeek();
+            log.info(dayOfWeek);
+            switch (dayOfWeek) {
+                case 1:
+                    if (this.monday) {
+                        return newDate;
+                    }
+                    break;
+                case 2:
+                    if (this.tuesday) {
+                        return newDate;
+                    }
+                    break;
+                case 3:
+                    if (this.wednesday) {
+                        return newDate;
+                    }
+                    break;
+                case 4:
+                    if (this.thursday) {
+                        return newDate;
+                    }
+                    break;
+                case 5:
+                    if (this.friday) {
+                        return newDate;
+                    }
+                    break;
+                case 6:
+                    if (this.saturday) {
+                        return newDate;
+                    }
+                    break;
+                case 7:
+                    if (this.sunday) {
+                        return newDate;
+                    }
+                    break;
+                default:
+                    break;
+
+            }
+            newDate = newDate.plusDays(1);
         }
     }
 
