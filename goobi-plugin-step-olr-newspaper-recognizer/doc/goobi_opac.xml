@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opacCatalogues>
+    <doctypes>
+        <type isContainedWork="false" isMultiVolume="false" isPeriodical="false" rulesetType="Monograph" tifHeaderType="Monographie" title="monograph">
+            <label language="de">Monographie</label>
+            <label language="en">Monograph</label>
+            <mapping>Aa</mapping>
+            <mapping>Oa</mapping>
+            <mapping>Monograph</mapping>
+        </type>
+        <type isContainedWork="false" isMultiVolume="false" isPeriodical="true" rulesetType="Periodical" tifHeaderType="Band_Zeitschrift" title="periodical" rulesetChildType="PeriodicalVolume">
+            <label language="de">Zeitschrift</label>
+            <label language="en">Periodical</label>
+            <mapping>Ab</mapping>
+            <mapping>Ob</mapping>
+            <mapping>Periodical</mapping>
+        </type>
+        <type isContainedWork="false" isMultiVolume="true" isPeriodical="false" rulesetType="MultivolumeWork" tifHeaderType="Band_MultivolumeWork" title="multivolume" rulesetChildType="Volume">
+            <label language="de">Mehrbändiges Werk</label>
+            <label language="en">Multivolume work</label>
+            <mapping>Of</mapping>
+            <mapping>Af</mapping>
+            <mapping>OF</mapping>
+            <mapping>AF</mapping>
+            <mapping>MultiVolumeWork</mapping>
+        </type>
+
+        <type isContainedWork="false" isMultiVolume="true" isPeriodical="false" rulesetType="Newspaper" tifHeaderType="Newspaper" title="newspaper" rulesetChildType="NewspaperVolume">
+            <label language="de">Zeitung</label>
+            <label language="en">Newspaper</label>
+            <mapping>Of</mapping>
+            <mapping>Af</mapping>
+            <mapping>OF</mapping>
+            <mapping>AF</mapping>
+            <mapping>Newspaper</mapping>
+        </type>
+    </doctypes>
+    <catalogue title="GBV">
+        <config address="gso.gbv.de" database="2.1" description="Gemeinsamer Bibliotheksverbund" iktlist="IKTLIST-GBV.xml" port="80" ucnf="UCNF=NFC&amp;XPNOFF=1" />
+    </catalogue>
+    <catalogue title="LOC-Marc21">
+		<config address="opac.intranda.com" database="1"
+			description="Library of Congress Marc21 Z39.50"
+			iktlist="IKTLIST.xml" port="80" />
+	</catalogue>
+    <catalogue title="SWB">
+        <config address="swb2.bsz-bw.de" database="2.1" description="Südwestdeutscher Bibliotheksverbund Baden-Württemberg, Saarland, Sachsen (SWB)" iktlist="IKTLIST-SWB.xml" port="80" ucnf="XPNOFF=1" />
+    </catalogue>
+    <catalogue title="HEBIS">
+        <config address="cbsopac.rz.uni-frankfurt.de" database="2.1" description="HeBIS-Verbundkatalog" iktlist="IKTLIST-HEBIS.xml" port="80" ucnf="XPNOFF=1" />
+    </catalogue>
+    <catalogue title="DNB">
+        <config address="dispatch.opac.d-nb.de" database="4.1" description="Deutsche Nationalbibliothek" iktlist="IKTLIST-DNB.xml" port="80" ucnf="XPNOFF=1" />
+    </catalogue>
+    <catalogue title="ZDB">
+        <config address="dispatch.opac.d-nb.de" database="1.1" description="Zeitschriftendatenbank (ZDB)" iktlist="IKTLIST-ZDB.xml" port="80" ucnf="XPNOFF=1" />
+    </catalogue>
+</opacCatalogues>
