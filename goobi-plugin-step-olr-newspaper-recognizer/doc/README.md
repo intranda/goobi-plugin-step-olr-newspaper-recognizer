@@ -40,6 +40,14 @@ Konkreter Aufruf für das Demomaterial innerhalb dieses Eclipse-Projekts:
 
 	python2 predict_cnn.py material/demmta_1911 tmp_demmta_1911 demmta_1911.json
 	
+# Installation auf Goobi 01
+
+Die mxnet-Installation musste auf goobi01 angepasst werden, da das Script andernfalls nicht lief. Folgende Kommandos wurden daher verwendet:
+
+	apt install python-pip
+	pip2 install --upgrade setuptools
+	pip2 install mxnet==1.0.0.post4
+	
 # Installation innerhalb eines Goobi Workflows
 
 ## Kopieren der richtigen Dateien:
