@@ -3,6 +3,8 @@ package de.intranda.goobi.plugins;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -220,7 +222,10 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     private void readExportedFile() throws IOException, InterruptedException, SwapException, DAOException {
         Process pr = this.myStep.getProzess();
-        String imageDir = pr.getImagesOrigDirectory(false);
+        String imageDir = pr.getImagesTifDirectory(false);
+        if (!Files.exists(Paths.get(imageDir))) {
+            imageDir = pr.getImagesOrigDirectory(false);
+        }
         String resultF = pr.getProcessDataDirectory() + "/taskmanager/issues_result.json";
         Type nt = new TypeToken<List<NewspaperPage>>() {
         }.getType();
