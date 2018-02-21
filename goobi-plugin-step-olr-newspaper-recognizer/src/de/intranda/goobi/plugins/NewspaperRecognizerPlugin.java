@@ -59,6 +59,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private String returnPath;
 
     private Gson gson = new Gson();
+    Type listType = new TypeToken<ArrayList<NewspaperPage>>() {
+    }.getType();
     private List<NewspaperPage> pages;
 
     private boolean monday = true;
@@ -118,6 +120,14 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     @Override
     public String finish() {
         return "/uii/" + returnPath;
+    }
+
+    public String getJsonData() {
+        return gson.toJson(this.pages);
+    }
+
+    public void setJsonData(String json) {
+        this.pages = gson.fromJson(json, listType);
     }
 
     public void generateDates(int startIndex) {

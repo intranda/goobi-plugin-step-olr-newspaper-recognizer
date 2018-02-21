@@ -40,7 +40,10 @@ public class NewspaperPage {
     }
 
     public DateTime getDate() {
-        return formatter.parseDateTime(dateStr);
+        if (dateStr != null && !dateStr.isEmpty()) {
+            return formatter.parseDateTime(dateStr);
+        }
+        return new DateTime();
     }
 
     public void setDate(DateTime date) {
