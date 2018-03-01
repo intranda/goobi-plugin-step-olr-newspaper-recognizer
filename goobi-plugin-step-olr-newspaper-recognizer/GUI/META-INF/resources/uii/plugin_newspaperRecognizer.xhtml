@@ -83,7 +83,8 @@
            var opts = {
            		data_el: document.getElementById('newspaper_form:my_plugin_data'),
            		saveButton: document.getElementById('newspaper_form:send_data_button'),
-           		thumbHeight: parseInt('#{NavigationForm.workflowPlugin.thumbnailSize}')
+           		lang: '#{SpracheForm.locale.language}',
+           		thumbHeight: 400
            };
            riot.mount("newspaper_correction", opts);
        }

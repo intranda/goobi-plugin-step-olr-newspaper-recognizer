@@ -5,6 +5,8 @@
 	this.on("mount", () => {
 	    this.image_small_url = opts.image_small;
 	    this.image_large_url = opts.image_large;
+	    this.height = opts.height;
+	    this.width = opts.width;
 	    this.canvas = this.refs.canvas;
 	    this.drawOnCanvas();
 	})
@@ -18,10 +20,13 @@
         
         var img = new Image();
         img.onload = () => {
-            var scale = ( this.canvas.width * 2 ) / this.width;
-            this.canvas.width = img.width;
-            this.canvas.height = img.height;
-            ctx.drawImage( img, 0, 0, img.width, img.height );
+            var scale = this.width / img.width;
+            if(scale*img.height > this.height) {
+                scale = this.height / img.height;
+            }
+            this.canvas.width = img.width*scale;
+            this.canvas.height = img.height*scale;
+            ctx.drawImage( img, 0, 0, img.width*scale, img.height*scale );
 	        this.small_image = img;
         };
         // console.log(image);
@@ -35,8 +40,8 @@
 	getMousePos( canvas, event ) {
 	    var rect = canvas.getBoundingClientRect();
 	    return {
-	        x: event.clientX - rect.left - 5,
-	        y: event.clientY - rect.top - 5
+	        x: event.clientX - rect.left,
+	        y: event.clientY - rect.top
 	    };
 	}
 
@@ -44,8 +49,26 @@
 	    var canvas = event.currentTarget;
 	    img = new Image();
 	    img.onload = () => {
-	        this.scaleX = ( img.width - this.small_image.width ) / this.small_image.width;
-	        this.scaleY = ( img.height - this.small_image.height ) / this.small_image.height;
+	        var absPos = this.getMousePos( canvas, event );
+	        var relPos = {x:absPos.x/canvas.width, y:absPos.y/canvas.height};
+	        var sourceWidth = this.small_image.naturalWidth;
+	        var sourceHeight = this.small_image.naturalHeight;
+	        var sourceX = img.naturalWidth*relPos.x - sourceWidth/2;
+	        var sourceY = img.naturalHeight*relPos.y - sourceHeight/2;
+            if(sourceWidth > img.naturalWidth || sourceX < 0) {
+                sourceX = 0;
+            } else if(sourceX+sourceWidth > img.naturalWidth) {
+                sourceX = img.naturalWidth-sourceWidth;
+            }
+            if(sourceHeight > img.naturalHeight || sourceY < 0) {
+                sourceY = 0;
+            } else if(sourceY+sourceHeight > img.naturalHeight) {
+                sourceY = img.naturalHeight-sourceHeight;
+            }
+            var ctx = canvas.getContext( '2d' );
+            ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+	        /*this.scaleX = ( img.width ) / this.width;
+	        this.scaleY = ( img.height ) / this.height;
 	        var pos = this.getMousePos( canvas, event );
 	        // TODO: check if mouse is still hovering over canvas
 	        var ctx = canvas.getContext( '2d' );
@@ -65,7 +88,7 @@
 	        if ( img.height - posY < canvas.height ) {
 	            posY = img.height - canvas.height;
 	        }
-	        ctx.drawImage( img, -posX, -posY );
+	        ctx.drawImage( img, -posX, -posY );*/
 	    }
         img.src = this.image_large_url;
 	}

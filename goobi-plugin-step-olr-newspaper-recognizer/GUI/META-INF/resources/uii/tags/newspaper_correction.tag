@@ -50,7 +50,7 @@
 								<div class="goobi-thumbnail font-light">
 									<div class="goobi-thumbnail-image">
 										<div class="thumb">
-											<thumbcanvas image_small={page.image.thumbnailUrl} 
+											<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl} 
 												image_large={page.image.largeThumbnailUrl} 
 												title={page.image.tooltip}>
 											</thumbcanvas>
@@ -95,7 +95,7 @@
 							
 							<!-- Details über zugehörige Seiten -->
 							<div class="col-xs-4">
-								Zugehoerige Seiten: {page.otherPages.length}
+								{msg('otherPages')}: {page.otherPages.length}
 							</div>
 							<div class="col-xs-2"></div>
 							
@@ -110,7 +110,7 @@
                                 		<div class="goobi-thumbnail font-light">
 		                                    <div class="goobi-thumbnail-image">
 		                                        <div class="thumb">
-	                                                <thumbcanvas image_small={otherPage.image.thumbnailUrl} image_large={otherPage.image.largeThumbnailUrl} title={otherPage.image.tooltip} ></thumbcanvas>
+	                                                <thumbcanvas width={thumb_height/2} height={thumb_height/2} image_small={otherPage.image.thumbnailUrl} image_large={otherPage.image.largeThumbnailUrl} title={otherPage.image.tooltip} ></thumbcanvas>
 		                                        </div>
 		                                    </div>
 		                                </div>
@@ -132,9 +132,43 @@
     </div>
 	<script>
 		console.log(opts)
+		this.lang = opts.lang;
+		this.msgs = {};
+		this.sent = {};
+		this.msg_queue = [];
+		this.ws_ready = false;
+		this.msg_ws = new WebSocket("ws://" + location.host + "/" + location.pathname.split("/")[1] + "/messagesws");
+		this.msg_ws.onopen = (evt) => {
+		    console.log("onopen", this.msg_queue)
+		    for(var i=0;i<this.msg_queue.length;i++) {
+		        this.msg_ws.send(JSON.stringify({key: this.msg_queue[i], lang: this.lang}));
+		    }
+		}
+		this.msg_ws.onmessage = (msg) => {
+		    var message = JSON.parse(msg.data);
+		    console.log(message)
+		    this.msgs[message.key] = message.value;
+		    this.update();
+		}
+		msg(str) {
+		    if(this.msgs[str]) {
+		        return this.msgs[str]
+		    } else {
+		        if(!this.sent[str]) {
+		        	this.sent[str] = true;
+		            if(this.ws_ready) {
+			            this.msg_ws.send(JSON.stringify({key: str, lang: this.lang}));
+		            } else {
+		                this.msg_queue.push(str);
+		            }
+		        }
+		    }
+		    return str;
+		}
 		this.data_el = opts.data_el;
 		this.save_button = opts.saveButton;
 		this.thumb_height = opts.thumbHeight;
+		console.log(opts, this.thumb_height)
 		this.data = JSON.parse(this.data_el.innerHTML);
 		for(var i=0;i < this.data.length; i++) {
 		    var page = this.data[i];
@@ -155,10 +189,15 @@
 		this.saturday = true;
 		this.sunday = true;
 		
+		this.on("unmount", function() {
+		    this.msg_ws.close();
+		})
+		
 		this.on("mount", function() {
-		    $('.goobi-thumbnail-image .thumb').css('max-height', this.thumb_height + 'px');
-            $('.goobi-thumbnail-image .thumb canvas').css('max-height', this.thumb_height + 'px');
-            $('.goobi-thumbnail-image').css('max-width', (this.thumb_height) + 'px');
+		    console.log("mount", this.thumb_height)
+// 		    $('.goobi-thumbnail-image .thumb').css('max-height', this.thumb_height + 'px');
+//             $('.goobi-thumbnail-image .thumb canvas').css('max-height', this.thumb_height + 'px');
+//             $('.goobi-thumbnail-image').css('max-width', (this.thumb_height) + 'px');
 		})
 		
 		save() {
