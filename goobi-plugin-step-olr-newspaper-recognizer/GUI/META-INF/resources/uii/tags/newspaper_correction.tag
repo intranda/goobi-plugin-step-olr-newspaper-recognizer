@@ -106,8 +106,8 @@
 						<div id="otherPages">
 							<div class="col-sm-8" if={page.showOtherImages}>
                                	<div class="other-images">
-                               		<a each={otherPage, idx in page.otherPages} onclick={isIssue}>
-                                		<div class="goobi-thumbnail font-light">
+                               		<a each={otherPage, idx in page.otherPages} onclick={otherOnclick}>
+                                		<div class="goobi-thumbnail font-light {otherPage.supplement ? 'supplement-page' : 'normal-page'} {otherPage.supplementTitle ? 'supplementtitle-page' : ''}">
 		                                    <div class="goobi-thumbnail-image">
 		                                        <div class="thumb">
 	                                                <thumbcanvas width={thumb_height/2} height={thumb_height/2} image_small={otherPage.image.thumbnailUrl} image_large={otherPage.image.largeThumbnailUrl} title={otherPage.image.tooltip} ></thumbcanvas>
@@ -169,7 +169,7 @@
 		this.save_button = opts.saveButton;
 		this.thumb_height = opts.thumbHeight;
 		console.log(opts, this.thumb_height)
-		this.data = JSON.parse(this.data_el.innerHTML);
+		this.data = JSON.parse(this.data_el.value);
 		for(var i=0;i < this.data.length; i++) {
 		    var page = this.data[i];
 		    page.pos = i;
@@ -201,7 +201,13 @@
 		})
 		
 		save() {
-		    this.data_el.innerHTML = JSON.stringify(this.data);
+		    for(var page of this.data) {
+		        if(page.supplementTitle) {
+		            console.log("SUPPLEMENT-TITLE!!!")
+		        }
+		    }
+		    
+		    this.data_el.value = JSON.stringify(this.data);
 		    this.save_button.click();
 		}
 		
@@ -237,26 +243,59 @@
 		    currPage.issue = false;
 		}
 		
-		isIssue(e) {
-		    console.log(e)
-		    //TODO: cut all pages from parent...
+		otherOnclick(e) {
 		    var idx = e.item.idx;
 		    var page = e.item.otherPage;
 		    var origPage = this.data[page.pos];
-		    origPage.issue = true;
-		    console.log(page.parent)
 		    var oldArr = this.data[page.parent].otherPages;
-		    page.issue = true;
-		    console.log(idx);
-		    var newIssuePages = oldArr.splice(idx, oldArr.length-idx);
-		    console.log(newIssuePages)
-		    for(var i=1;i<newIssuePages.length;i++) {
-		        newIssuePages[i].parent = origPage.pos;
-		        newIssuePages[i].pos = origPage.pos+i;
-		    	origPage.otherPages.push(newIssuePages[i]);
+		    if(e.ctrlKey) {
+			    page.supplementTitle = true;
+			    origPage.supplementTitle = true;
+		        //check if this page already is in another supplement
+		        if(origPage.supplement) {
+		            //find parent by looking backwards
+		            var i = 1;
+		            while(idx-i>=0) {
+	                    var otherPage = oldArr[idx-i]
+		                if(otherPage.supplementTitle) {
+		                    var supplementPages = otherPage.supplementPages;
+		                    //cut the pages from the old supplement and add them to the new one 
+		                    var newSupplementPages = supplementPages.splice(supplementPages.length-i, i);
+		                    page.supplementPages = newSupplementPages.splice(1);
+		                    break;
+		                }
+		                i++;
+		            }
+		        } else {
+				    origPage.supplement = true;
+				    page.supplement = true;
+				    page.supplementPages = [];
+				    for(var i=idx+1;i<oldArr.length;i++) {
+				        if(oldArr[i].supplement) {
+				            break;
+				        }
+				        oldArr[i].supplement = true;
+				        this.data[oldArr[i].pos].supplement = true;
+				        page.supplementPages.push(oldArr[i]);
+				    }
+		        }
+		    } else {
+			    origPage.issue = true;
+			    page.issue = true;
+			    page.supplement = false;
+			    page.supplementTitle = false;
+			    page.supplementPages = [];
+			    var newIssuePages = oldArr.splice(idx, oldArr.length-idx);
+			    console.log(newIssuePages)
+			    for(var i=1;i<newIssuePages.length;i++) {
+			        newIssuePages[i].parent = origPage.pos;
+			        newIssuePages[i].pos = origPage.pos+i;
+			        newIssuePages[i].supplement = false;
+			        newIssuePages[i].supplementTitle = false;
+			        newIssuePages[i].supplementPages = [];
+			    	origPage.otherPages.push(newIssuePages[i]);
+			    }
 		    }
-	        console.log("new issue page in data", origPage)
-	        console.log("parent", page.parent);
 		}
 		
 		changeDate(e) {

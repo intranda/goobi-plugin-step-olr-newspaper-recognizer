@@ -20,11 +20,14 @@ public class NewspaperPage {
 
     //from this application
     private boolean issue;
+    private boolean supplement;
+    private boolean supplementTitle;
     private String dateStr;
     private String number;
     private Image image;
-    private boolean showOtherImages;
+    private boolean showOtherImages = true;
     private List<NewspaperPage> otherPages = new ArrayList<>();
+    private List<NewspaperPage> supplementPages = new ArrayList<>();
 
     public String getFilenameAsTif() {
         return filename.replace(".jpg", ".tif");

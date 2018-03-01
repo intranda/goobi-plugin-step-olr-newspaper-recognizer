@@ -63,14 +63,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }.getType();
     private List<NewspaperPage> pages;
 
-    private boolean monday = true;
-    private boolean tuesday = true;
-    private boolean wednesday = true;
-    private boolean thursday = true;
-    private boolean friday = true;
-    private boolean saturday = true;
-    private boolean sunday = true;
-
     /**
      * initialise, read config etc.
      */
@@ -128,106 +120,11 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     public void setJsonData(String json) {
         this.pages = gson.fromJson(json, listType);
-    }
-
-    public void generateDates(int startIndex) {
-        NewspaperPage startPage = this.pages.get(startIndex);
-        int startNumber = Integer.parseInt(startPage.getNumber());
-        DateTime startDate = startPage.getDate();
-        for (int i = startIndex + 1; i < pages.size(); i++) {
-            NewspaperPage page = this.pages.get(i);
-            if (page.isIssue()) {
-                startNumber++;
-                startDate = getNextDate(startDate);
-                page.setNumber("" + startNumber);
-                page.setDate(startDate);
+        for (NewspaperPage page : this.pages) {
+            if (page.isSupplementTitle()) {
+                log.info("SUPPLEMENT");
             }
         }
-    }
-
-    public DateTime getNextDate(DateTime currentDate) {
-        log.info("current: " + currentDate.getDayOfWeek());
-        DateTime newDate = currentDate.plusDays(1);
-        while (true) {
-            int dayOfWeek = newDate.getDayOfWeek();
-            log.info(dayOfWeek);
-            switch (dayOfWeek) {
-                case 1:
-                    if (this.monday) {
-                        return newDate;
-                    }
-                    break;
-                case 2:
-                    if (this.tuesday) {
-                        return newDate;
-                    }
-                    break;
-                case 3:
-                    if (this.wednesday) {
-                        return newDate;
-                    }
-                    break;
-                case 4:
-                    if (this.thursday) {
-                        return newDate;
-                    }
-                    break;
-                case 5:
-                    if (this.friday) {
-                        return newDate;
-                    }
-                    break;
-                case 6:
-                    if (this.saturday) {
-                        return newDate;
-                    }
-                    break;
-                case 7:
-                    if (this.sunday) {
-                        return newDate;
-                    }
-                    break;
-                default:
-                    break;
-
-            }
-            newDate = newDate.plusDays(1);
-        }
-    }
-
-    public void noIssue(int idx) {
-        NewspaperPage removePage = this.pages.get(idx);
-        removePage.setIssue(false);
-        NewspaperPage prevIssue = findPrevIssue(idx);
-        prevIssue.addPage(removePage);
-        prevIssue.addAllPages(removePage.getOtherPages());
-        removePage.setOtherPages(new ArrayList<NewspaperPage>());
-    }
-
-    public void isIssue(int pageIdx, int otherPageIdx) {
-        NewspaperPage issue = this.pages.get(pageIdx);
-        NewspaperPage newIssue = issue.getOtherPages().get(otherPageIdx);
-        newIssue.setIssue(true);
-        List<NewspaperPage> reversedToAdd = new ArrayList<>();
-        for (int i = issue.getOtherPages().size() - 1; i >= otherPageIdx; i--) {
-            NewspaperPage removed = issue.getOtherPages().remove(i);
-            if (i != otherPageIdx) {
-                reversedToAdd.add(removed);
-            }
-        }
-        for (int i = reversedToAdd.size() - 1; i >= 0; i--) {
-            newIssue.addPage(reversedToAdd.get(i));
-        }
-    }
-
-    private NewspaperPage findPrevIssue(int idx) {
-        for (int i = idx; i >= 0; i--) {
-            NewspaperPage page = this.pages.get(i);
-            if (page.isIssue()) {
-                return page;
-            }
-        }
-        return null;
     }
 
     private void readExportedFile() throws IOException, InterruptedException, SwapException, DAOException {
@@ -312,6 +209,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
         DocStructType pageType = prefs.getDocStrctTypeByName("page");
         DocStructType issueType = prefs.getDocStrctTypeByName("NewspaperIssue");
+        DocStructType supplementType = prefs.getDocStrctTypeByName("NewspaperSupplement");
         MetadataType partNumberType = prefs.getMetadataTypeByName("PartNumber");
         MetadataType dateIssuedType = prefs.getMetadataTypeByName("DateIssued");
         MetadataType numberType = prefs.getMetadataTypeByName("CurrentNo");
@@ -325,6 +223,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         DocStruct boundBook = dd.getPhysicalDocStruct();
 
         DocStruct currentIssue = null;
+        DocStruct currentSupplement = null;
 
         // create entry for each page
         for (int i = 0; i < pages.size(); i++) {
@@ -340,10 +239,14 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             page.setImageName(newspaperPage.getFilename());
             createMetadata(physPageNoType, "" + (i + 1), page);
             createMetadata(logPageNoType, "uncounted", page);
+            if (newspaperPage.isIssue()) {
+                currentSupplement = null;
+            }
             // create new issue if needed
             if (currentIssue == null || newspaperPage.isIssue()) {
                 try {
                     currentIssue = dd.createDocStruct(issueType);
+
                     volume.addChild(currentIssue);
                 } catch (TypeNotAllowedAsChildException | TypeNotAllowedForParentException e) {
                     log.error(e);
@@ -356,6 +259,18 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 createMetadata(dateIssuedType, w3cdtf.print(newspaperPage.getDate()), currentIssue);
 
                 createMetadata(titleType, getTitleFromDate(newspaperPage.getDate()), currentIssue);
+            }
+            if (newspaperPage.isSupplementTitle()) {
+                try {
+                    currentSupplement = dd.createDocStruct(supplementType);
+                    currentIssue.addChild(currentSupplement);
+                } catch (TypeNotAllowedAsChildException | TypeNotAllowedForParentException e) {
+                    log.error(e);
+                    return "";
+                }
+            }
+            if (currentSupplement != null) {
+                currentSupplement.addReferenceTo(page, "logical_physical");
             }
             // link pages to issue and volume
             currentIssue.addReferenceTo(page, "logical_physical");
