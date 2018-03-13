@@ -12,7 +12,7 @@
              </div>
          </div>
 
-         <div class="box-content">
+         <div class="box-content" style="background-color:#eee">
          
          	<!-- Formular für Wochentage -->
        <div class="row">
@@ -41,7 +41,8 @@
         <div class="row margin-top-most margin-bottom-most">
 		
 		<!-- Auflistung aller Ausgaben -->
-                  	<div each={page in data} if={page.issue} class="row thumbnail-row">
+				<my_row each={page in data} if={page.issue}>
+                  	<div  class="row thumbnail-row">
 						<div class="col-sm-4">
 							
 							<div class="col-xs-6 thumbnail-image">
@@ -52,7 +53,8 @@
 										<div class="thumb">
 											<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl} 
 												image_large={page.image.largeThumbnailUrl} 
-												title={page.image.tooltip}>
+												title={page.image.tooltip}
+												page_id={page.pos}>
 											</thumbcanvas>
 										</div>
 									</div>
@@ -73,31 +75,35 @@
 							</div>
 
 							<!-- Datum der Ausgabe -->
-							<div class="col-xs-4">
+							<div class="col-xs-5">
 								<input type="text" value={page.dateStr} onkeyup={changeDate} placeholder="Datum" class="form-control"></input>
 							</div>
 
 							<!-- Button für Datumsgenerierung -->
-							<div class="col-xs-2">
+							<div class="col-xs-1">
 								<a onclick={generateDates} 
 									class="btn btn-default fa fa-play">
 								</a>
 							</div>
 							
 							<!-- Nummer der Ausgabe -->
-							<div class="col-xs-4">
-								<input type="text" value={page.number} onkeyup={changeNumber} placeholder="Ausgabe" class="form-control"></input>
+							<div class="col-xs-5 form-inline">
+								<div class="input-group">
+									<input type="text" value={page.prefix} onkeyup={changePrefix} placeholder="{msg('prefix')}" class="form-control" style="width:33%"></input>
+									<input type="text" value={page.number} onkeyup={changeNumber} placeholder="Nr." class="form-control" style="width:34%"></input>
+									<input type="text" value={page.suffix} onkeyup={changeSuffix} placeholder="{msg('suffix')}" class="form-control" style="width:33%"></input>
+								</div>
 							</div>
-							<!-- Button zum Anzeigen oder Ausblenden der zugehörigen Seiten -->
-							<div class="col-xs-2">
+							<div class="col-xs-1">
 								<a class="btn btn-default fa fa-eye" onclick={toggleShowOtherImages}></a>
 							</div>
+							<!-- Button zum Anzeigen oder Ausblenden der zugehörigen Seiten -->
 							
 							<!-- Details über zugehörige Seiten -->
-							<div class="col-xs-4">
+							<div class="col-xs-6">
 								{msg('otherPages')}: {page.otherPages.length}
 							</div>
-							<div class="col-xs-2"></div>
+<!-- 							<div class="col-xs-2"></div> -->
 							
 							
 						</div>
@@ -107,23 +113,31 @@
 							<div class="col-sm-8" if={page.showOtherImages}>
                                	<div class="other-images">
                                		<a each={otherPage, idx in page.otherPages} onclick={otherOnclick}>
-                                		<div class="goobi-thumbnail font-light {otherPage.supplement ? 'supplement-page' : 'normal-page'} {otherPage.supplementTitle ? 'supplementtitle-page' : ''}">
+                                		<div class="goobi-thumbnail font-light">
 		                                    <div class="goobi-thumbnail-image">
 		                                        <div class="thumb">
-	                                                <thumbcanvas width={thumb_height/2} height={thumb_height/2} image_small={otherPage.image.thumbnailUrl} image_large={otherPage.image.largeThumbnailUrl} title={otherPage.image.tooltip} ></thumbcanvas>
+	                                                <thumbcanvas width={thumb_height/2} height={thumb_height/2}
+	                                                	render_text={otherPage.supplement ? otherPage.supplementNo : null}
+	                                                	render_size="24"
+	                                                	render_bg_color={otherPage.supplement ? suppl_colors[(otherPage.supplementNo-1)%5] : null}
+	                                                	image_small={otherPage.image.thumbnailUrl} 
+	                                                	image_large={otherPage.image.largeThumbnailUrl} 
+	                                                	title={otherPage.image.tooltip} 
+	                                                	page_id={otherPage.pos}>
+                                                	</thumbcanvas>
 		                                        </div>
 		                                    </div>
 		                                </div>
 	                                </a>
                                	</div>
-                              	</div>
-                             	</div>
+                            </div>
+                       </div>
                              	<!-- // Auflistung aller zugehörigen Seiten der Ausgabe -->
                              	
-                            <hr />
                         </div>
+                        <hr style="border-top:1px #bbb solid">
+                     </my_row>
                      <!-- // Auflistung aller Ausgaben -->
-                     
                  </div>
              </div>
              <!-- // Bereich für Ausgaben -->
@@ -131,6 +145,7 @@
          </div>
     </div>
 	<script>
+		this.suppl_colors = ["#146abf", "#e00404", "#6300b5", "#ba5d06", "#467021"];
 		console.log(opts)
 		this.lang = opts.lang;
 		this.msgs = {};
@@ -174,9 +189,16 @@
 		    var page = this.data[i];
 		    page.pos = i;
 		    if(page.issue) {
+		        var supplCount = 0;
 		        for(var k=0;k<page.otherPages.length;k++) {
 		            page.otherPages[k].parent = page.pos;
 		            page.otherPages[k].pos = i+k+1;
+		            if(page.otherPages[k].supplementTitle) {
+		                supplCount++;
+		            }
+		            if(supplCount > 0) {
+		                page.otherPages[k].supplementNo = supplCount;
+		            }
 		        }
 		    }
 		}
@@ -249,35 +271,68 @@
 		    var origPage = this.data[page.pos];
 		    var oldArr = this.data[page.parent].otherPages;
 		    if(e.ctrlKey) {
-			    page.supplementTitle = true;
-			    origPage.supplementTitle = true;
-		        //check if this page already is in another supplement
-		        if(origPage.supplement) {
-		            //find parent by looking backwards
-		            var i = 1;
-		            while(idx-i>=0) {
-	                    var otherPage = oldArr[idx-i]
-		                if(otherPage.supplementTitle) {
-		                    var supplementPages = otherPage.supplementPages;
-		                    //cut the pages from the old supplement and add them to the new one 
-		                    var newSupplementPages = supplementPages.splice(supplementPages.length-i, i);
-		                    page.supplementPages = newSupplementPages.splice(1);
-		                    break;
-		                }
-		                i++;
+		    	if(!page.supplementTitle) {
+		    		//page is not the beginning of a supplement => create new supplement
+				    page.supplementTitle = true;
+				    origPage.supplementTitle = true;
+			        //check if this page already is in another supplement
+			        if(origPage.supplement) {
+			            //find parent by looking backwards
+			            var i = 1;
+			            while(idx-i>=0) {
+		                    var otherPage = oldArr[idx-i]
+			                if(otherPage.supplementTitle) {
+			                    var supplementPages = otherPage.supplementPages;
+			                    //cut the pages from the old supplement and add them to the new one 
+			                    var newSupplementPages = supplementPages.splice(supplementPages.length-i, i);
+			                    page.supplementPages = newSupplementPages.splice(1);
+			                    break;
+			                }
+			                i++;
+			            }
+			        } else {
+					    origPage.supplement = true;
+					    page.supplement = true;
+					    page.supplementPages = [];
+					    for(var i=idx+1;i<oldArr.length;i++) {
+					        if(oldArr[i].supplement) {
+					            break;
+					        }
+					        oldArr[i].supplement = true;
+					        this.data[oldArr[i].pos].supplement = true;
+					        page.supplementPages.push(oldArr[i]);
+					    }
+			        }
+		    	} else {
+		    		//start page of a supplement has been clicked, remove the supplement
+		        	page.supplementTitle = false;
+		        	origPage.supplementTitle = false;
+		        	page.supplement = false;
+		        	origPage.supplement = false;
+		        	if(oldArr[idx-1].supplement || oldArr[idx-1].supplementTitle) {
+		        		// if there is another supplement preceding this page, it simply becomes part of it.
+		        		page.supplement = true
+		        		origPage.supplement = true;
+		        	} else {
+		        		//this is the first or the only supplement in this issue. Remove the supplement status from all children
+		        		for(var i=idx+1;i<oldArr.length;i++) {
+					        if(oldArr[i].supplementTitle) {
+					            break;
+					        }
+					        oldArr[i].supplement = false;
+					        this.data[oldArr[i].pos].supplement = false;
+					    }
+		        	}
+		        }
+		    	//re-count all supplement-numbers
+		    	var supplCount = 0;
+		        for(var i=0;i<oldArr.length;i++) {
+		            if(oldArr[i].supplementTitle) {
+		                supplCount++;
 		            }
-		        } else {
-				    origPage.supplement = true;
-				    page.supplement = true;
-				    page.supplementPages = [];
-				    for(var i=idx+1;i<oldArr.length;i++) {
-				        if(oldArr[i].supplement) {
-				            break;
-				        }
-				        oldArr[i].supplement = true;
-				        this.data[oldArr[i].pos].supplement = true;
-				        page.supplementPages.push(oldArr[i]);
-				    }
+		            if(supplCount > 0) {
+		            	oldArr[i].supplementNo = supplCount;
+		            }
 		        }
 		    } else {
 			    origPage.issue = true;
@@ -306,9 +361,19 @@
 		    e.item.page.number = e.target.value;
 		}
 		
+		changePrefix(e) {
+		    e.item.page.prefix = e.target.value;
+		}
+		
+		changeSuffix(e) {
+		    e.item.page.suffix = e.target.value;
+		}
+		
 		generateDates(e) {
 		    var startIdx = e.item.page.pos;
 	        var startPage = this.data[startIdx];
+		    var prefix = startPage.prefix;
+		    var suffix = startPage.suffix;
 	        var startNumber = parseInt(startPage.number);
 	        var dateArr = startPage.dateStr.split(".");
 	        var startDate = new XDate(parseInt(dateArr[2]), parseInt(dateArr[1]-1), parseInt(dateArr[0]));
@@ -317,6 +382,8 @@
 	            if (page.issue) {
 	                startNumber++;
 	                startDate = this.getNextDate(startDate);
+	                page.prefix = prefix;
+	                page.suffix = suffix;
 	                page.number = "" + startNumber;
 	                page.dateStr = startDate.toString("dd.MM.yyyy");
 	            }

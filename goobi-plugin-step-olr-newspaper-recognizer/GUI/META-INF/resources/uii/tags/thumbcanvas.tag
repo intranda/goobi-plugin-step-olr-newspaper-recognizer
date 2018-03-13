@@ -3,23 +3,28 @@
 	<script>
 	
 	this.on("mount", () => {
+	    this.mouseover = false;
 	    this.image_small_url = opts.image_small;
 	    this.image_large_url = opts.image_large;
 	    this.height = opts.height;
 	    this.width = opts.width;
+	    this.render_text = opts.render_text;
+	    this.render_pos = opts.render_pos;
+	    this.render_size = parseInt(opts.render_size);
+	    this.render_bg_color = opts.render_bg_color;
+	    this.page_id = opts.page_id;
 	    this.canvas = this.refs.canvas;
 	    this.drawOnCanvas();
 	})
 	
 	drawOnCanvas() {
-	        
         if ( this.canvas == null ) {
             return;
         }
         var ctx = this.canvas.getContext( '2d' );
-        
         var img = new Image();
         img.onload = () => {
+	        this.small_image = img;
             var scale = this.width / img.width;
             if(scale*img.height > this.height) {
                 scale = this.height / img.height;
@@ -27,13 +32,37 @@
             this.canvas.width = img.width*scale;
             this.canvas.height = img.height*scale;
             ctx.drawImage( img, 0, 0, img.width*scale, img.height*scale );
-	        this.small_image = img;
+            if(this.render_text) {
+                var centerX = this.canvas.width - (this.render_size/1.5)-2;
+                var centerY = this.canvas.height - ((this.render_size)/1.5)-2
+                var radius = this.render_size /2 + 4;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, 2*Math.PI, false);
+                ctx.fillStyle= this.render_bg_color;
+                ctx.fill();
+                ctx.fillStyle= 'white';
+                var x = this.canvas.width - (this.render_size);
+                var y = this.canvas.height - (this.render_size-13);
+                ctx.font = "bold " + this.render_size + "px arial";
+                ctx.fillText(this.render_text, x, y, this.render_size/2);
+            }
         };
         // console.log(image);
         img.src = this.image_small_url;
 	}
+	
+	this.on("update", () => {
+	    if(this.render_text != this.opts.render_text) {
+		    this.render_text = this.opts.render_text;
+		    this.render_pos = this.opts.render_pos;
+		    this.render_size = parseInt(this.opts.render_size);
+		    this.render_bg_color = this.opts.render_bg_color;
+		    this.drawOnCanvas();
+	    }
+	})
 
 	mouseout( event ) {
+	    this.mouseover = false;
 	    this.drawOnCanvas( event.currentTarget );
 	}
 
@@ -46,6 +75,14 @@
 	}
 
 	mousemove( event ) {
+	    if(!event.shiftKey && !event.getModifierState('CapsLock')) {
+	        if(this.mouseover) {
+	        	this.mouseover = false;
+	        	this.drawOnCanvas()
+	        }
+	        return;
+	    }
+	    this.mouseover = true;
 	    var canvas = event.currentTarget;
 	    img = new Image();
 	    img.onload = () => {
@@ -65,30 +102,11 @@
             } else if(sourceY+sourceHeight > img.naturalHeight) {
                 sourceY = img.naturalHeight-sourceHeight;
             }
+            if(!this.mouseover) {
+                return;
+            }
             var ctx = canvas.getContext( '2d' );
             ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
-	        /*this.scaleX = ( img.width ) / this.width;
-	        this.scaleY = ( img.height ) / this.height;
-	        var pos = this.getMousePos( canvas, event );
-	        // TODO: check if mouse is still hovering over canvas
-	        var ctx = canvas.getContext( '2d' );
-	        ctx.fillStyle = 'white';
-	        ctx.fillRect( 0, 0, canvas.width, canvas.height );
-	        var posX = pos.x * this.scaleX;
-	        var posY = pos.y * this.scaleY;
-	        if ( posX < 0 ) {
-	            posX = 0;
-	        }
-	        if ( posY < 0 ) {
-	            posY = 0;
-	        }
-	        if ( img.width - posX < canvas.width ) {
-	            posX = img.width - canvas.width;
-	        }
-	        if ( img.height - posY < canvas.height ) {
-	            posY = img.height - canvas.height;
-	        }
-	        ctx.drawImage( img, -posX, -posY );*/
 	    }
         img.src = this.image_large_url;
 	}

@@ -23,7 +23,9 @@ public class NewspaperPage {
     private boolean supplement;
     private boolean supplementTitle;
     private String dateStr;
+    private String prefix;
     private String number;
+    private String suffix;
     private Image image;
     private boolean showOtherImages = true;
     private List<NewspaperPage> otherPages = new ArrayList<>();
@@ -65,5 +67,19 @@ public class NewspaperPage {
 
     public void toggleShowOtherImages() {
         this.showOtherImages = !this.showOtherImages;
+    }
+
+    public String generateTitle() {
+        StringBuilder b = new StringBuilder();
+        if (prefix != null) {
+            b.append(prefix);
+        }
+        if (number != null) {
+            b.append(number);
+        }
+        if (suffix != null) {
+            b.append(suffix);
+        }
+        return b.toString();
     }
 }

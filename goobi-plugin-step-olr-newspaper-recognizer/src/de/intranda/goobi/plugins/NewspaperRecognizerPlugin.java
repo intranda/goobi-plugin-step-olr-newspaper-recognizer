@@ -1,9 +1,12 @@
 package de.intranda.goobi.plugins;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,9 +35,11 @@ import de.sub.goobi.metadaten.Image;
 import lombok.Data;
 import lombok.extern.log4j.Log4j;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import ugh.dl.ContentFile;
 import ugh.dl.DigitalDocument;
 import ugh.dl.DocStruct;
 import ugh.dl.DocStructType;
+import ugh.dl.FileSet;
 import ugh.dl.Fileformat;
 import ugh.dl.Metadata;
 import ugh.dl.MetadataType;
@@ -120,10 +125,15 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     public void setJsonData(String json) {
         this.pages = gson.fromJson(json, listType);
-        for (NewspaperPage page : this.pages) {
-            if (page.isSupplementTitle()) {
-                log.info("SUPPLEMENT");
+        Process pr = this.myStep.getProzess();
+        try {
+            String manualF = pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json";
+            try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(manualF))) {
+                bw.write(json);
             }
+        } catch (IOException | InterruptedException | SwapException | DAOException e) {
+            // TODO Auto-generated catch block
+            log.error(e);
         }
     }
 
@@ -133,36 +143,44 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         if (!Files.exists(Paths.get(imageDir))) {
             imageDir = pr.getImagesOrigDirectory(false);
         }
-        String resultF = pr.getProcessDataDirectory() + "/taskmanager/issues_result.json";
-        Type nt = new TypeToken<List<NewspaperPage>>() {
-        }.getType();
-        try (FileReader fr = new FileReader(resultF)) {
-            this.pages = gson.fromJson(new JsonReader(fr), nt);
-        }
-        log.info(pages.size());
-        int order = 0;
-        int count = 0;
-        String contextPath = getContextPath();
-        NewspaperPage currentIssue = null;
-        for (NewspaperPage page : pages) {
-            page.guessIssue();
-            log.info(page.getResult());
-            if (page.isIssue()) {
-                currentIssue = page;
-                count++;
-            } else {
-                if (currentIssue != null) {
-                    currentIssue.addPage(page);
-                }
+        Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
+        if (Files.exists(manualF)) {
+            try (BufferedReader br = Files.newBufferedReader(manualF)) {
+                this.pages = gson.fromJson(br, listType);
             }
-            Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
-            String thumbUrl = createImageUrl(image, 400, "image/jpeg", contextPath);
-            image.setThumbnailUrl(thumbUrl);
-            String largeThumbUrl = createImageUrl(image, 1600, "image/jpeg", contextPath);
-            image.setLargeThumbnailUrl(largeThumbUrl);
-            page.setImage(image);
+        } else {
+            String resultF = pr.getProcessDataDirectory() + "/taskmanager/issues_result.json";
+            try (FileReader fr = new FileReader(resultF)) {
+                this.pages = gson.fromJson(new JsonReader(fr), listType);
+            }
+            log.info(pages.size());
+            int order = 0;
+            int count = 0;
+            String contextPath = getContextPath();
+            NewspaperPage currentIssue = null;
+            for (NewspaperPage page : pages) {
+                page.guessIssue();
+                if (count == 0) {
+                    page.setIssue(true);
+                }
+                log.info(page.getResult());
+                if (page.isIssue()) {
+                    currentIssue = page;
+                    count++;
+                } else {
+                    if (currentIssue != null) {
+                        currentIssue.addPage(page);
+                    }
+                }
+                Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
+                String thumbUrl = createImageUrl(image, 400, "image/jpeg", contextPath);
+                image.setThumbnailUrl(thumbUrl);
+                String largeThumbUrl = createImageUrl(image, 1600, "image/jpeg", contextPath);
+                image.setLargeThumbnailUrl(largeThumbUrl);
+                page.setImage(image);
+            }
+            log.info(String.format("Counted %d issues", count));
         }
-        log.info(String.format("Counted %d issues", count));
     }
 
     private String getContextPath() {
@@ -220,7 +238,22 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
         DocStruct anchor = dd.getLogicalDocStruct();
         DocStruct volume = anchor.getAllChildren().get(0);
+        List<DocStruct> children = new ArrayList<>(volume.getAllChildren());
+        for (DocStruct child : children) {
+            volume.removeChild(child);
+            volume.removeReferenceTo(child);
+        }
+        FileSet fs = dd.getFileSet();
+        List<ContentFile> files = new ArrayList<>(fs.getAllFiles());
+        for (ContentFile inImage : files) {
+            fs.removeFile(inImage);
+        }
         DocStruct boundBook = dd.getPhysicalDocStruct();
+        List<DocStruct> bbChildren = new ArrayList<>(boundBook.getAllChildren());
+        for (DocStruct child : bbChildren) {
+            boundBook.removeChild(child);
+            volume.removeReferenceTo(child);
+        }
 
         DocStruct currentIssue = null;
         DocStruct currentSupplement = null;
@@ -252,7 +285,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                     log.error(e);
                     return "";
                 }
-                createMetadata(partNumberType, newspaperPage.getNumber(), currentIssue);
+                createMetadata(partNumberType, newspaperPage.generateTitle(), currentIssue);
 
                 createMetadata(numberType, newspaperPage.getNumber(), currentIssue);
 
@@ -284,7 +317,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             log.error(e);
             return "";
         }
-        return finish();
+        return "";
 
     }
 
