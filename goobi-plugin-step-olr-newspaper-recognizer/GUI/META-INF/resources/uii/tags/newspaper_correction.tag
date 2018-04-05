@@ -270,7 +270,7 @@
 		    var page = e.item.otherPage;
 		    var origPage = this.data[page.pos];
 		    var oldArr = this.data[page.parent].otherPages;
-		    if(e.ctrlKey) {
+		    if(e.altKey) {
 		    	if(!page.supplementTitle) {
 		    		//page is not the beginning of a supplement => create new supplement
 				    page.supplementTitle = true;
