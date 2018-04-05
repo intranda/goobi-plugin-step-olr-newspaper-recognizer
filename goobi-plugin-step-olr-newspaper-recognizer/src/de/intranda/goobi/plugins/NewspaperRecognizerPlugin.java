@@ -238,21 +238,27 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
         DocStruct anchor = dd.getLogicalDocStruct();
         DocStruct volume = anchor.getAllChildren().get(0);
-        List<DocStruct> children = new ArrayList<>(volume.getAllChildren());
-        for (DocStruct child : children) {
-            volume.removeChild(child);
-            volume.removeReferenceTo(child);
+        if (volume.getAllChildren() != null) {
+            List<DocStruct> children = new ArrayList<>(volume.getAllChildren());
+            for (DocStruct child : children) {
+                volume.removeChild(child);
+                volume.removeReferenceTo(child);
+            }
         }
         FileSet fs = dd.getFileSet();
-        List<ContentFile> files = new ArrayList<>(fs.getAllFiles());
-        for (ContentFile inImage : files) {
-            fs.removeFile(inImage);
+        if (fs.getAllFiles() != null) {
+            List<ContentFile> files = new ArrayList<>(fs.getAllFiles());
+            for (ContentFile inImage : files) {
+                fs.removeFile(inImage);
+            }
         }
         DocStruct boundBook = dd.getPhysicalDocStruct();
-        List<DocStruct> bbChildren = new ArrayList<>(boundBook.getAllChildren());
-        for (DocStruct child : bbChildren) {
-            boundBook.removeChild(child);
-            volume.removeReferenceTo(child);
+        if (boundBook.getAllChildren() != null) {
+            List<DocStruct> bbChildren = new ArrayList<>(boundBook.getAllChildren());
+            for (DocStruct child : bbChildren) {
+                boundBook.removeChild(child);
+                volume.removeReferenceTo(child);
+            }
         }
 
         DocStruct currentIssue = null;
