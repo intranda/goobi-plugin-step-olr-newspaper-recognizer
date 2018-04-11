@@ -192,6 +192,7 @@
 		this.save_opts_button = opts.saveOptsButton;
 		this.thumb_height = opts.thumbHeight;
 		console.log(opts, this.thumb_height)
+		console.log(this.data_el.value);
 		this.data = JSON.parse(this.data_el.value);
 		for(var i=0;i < this.data.length; i++) {
 		    var page = this.data[i];
@@ -234,7 +235,7 @@
 		})
 		
 		save() {
-		    this.data_el.value = JSON.stringify(this.data);
+		    this.data_el.value = this.createSaveData();
 		    this.save_button.click();
 		    this.dataDirty = false;
 		}
@@ -242,7 +243,8 @@
 		save_no_mets() {
 		    var saved = false;
 		    if(this.dataDirty) {
-			    this.data_el.value = JSON.stringify(this.data);
+		        var saveData = this.createSaveData();
+			    this.data_el.value = saveData;
 			    this.save_no_mets_button.click();
 			    console.log("save no mets")
 			    this.dataDirty = false;
@@ -257,6 +259,24 @@
 		    if(saved) {
 		        this.update();
 		    }
+		}
+		
+		createSaveData() {
+			var saveData = [];
+	        for(var i=0;i<this.data.length;i++) {
+	            var page = this.data[i];
+	            saveData.push({
+	                issue: page.issue,
+	                supplementTitle: page.supplementTitle,
+	                supplement: page.supplement,
+	                dateStr: page.dateStr,
+	                prefix: page.prefix,
+	                number: page.number,
+	                suffix: page.suffix,
+	                filename: page.filename
+	            });
+	        }
+	        return JSON.stringify(saveData);
 		}
 		
 		toggleDay(day) {

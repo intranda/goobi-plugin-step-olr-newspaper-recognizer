@@ -155,33 +155,36 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 this.pages = gson.fromJson(new JsonReader(fr), listType);
             }
             log.info(pages.size());
-            int order = 0;
-            int count = 0;
-            String contextPath = getContextPath();
-            NewspaperPage currentIssue = null;
+
             for (NewspaperPage page : pages) {
                 page.guessIssue();
-                if (count == 0) {
-                    page.setIssue(true);
-                }
-                log.info(page.getResult());
-                if (page.isIssue()) {
-                    currentIssue = page;
-                    count++;
-                } else {
-                    if (currentIssue != null) {
-                        currentIssue.addPage(page);
-                    }
-                }
-                Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
-                String thumbUrl = createImageUrl(image, 400, "image/jpeg", contextPath);
-                image.setThumbnailUrl(thumbUrl);
-                String largeThumbUrl = createImageUrl(image, 1600, "image/jpeg", contextPath);
-                image.setLargeThumbnailUrl(largeThumbUrl);
-                page.setImage(image);
             }
-            log.info(String.format("Counted %d issues", count));
         }
+        int order = 0;
+        int count = 0;
+        String contextPath = getContextPath();
+        NewspaperPage currentIssue = null;
+        for (NewspaperPage page : pages) {
+            if (count == 0) {
+                page.setIssue(true);
+            }
+            log.info(page.getResult());
+            if (page.isIssue()) {
+                currentIssue = page;
+                count++;
+            } else {
+                if (currentIssue != null) {
+                    currentIssue.addPage(page);
+                }
+            }
+            Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
+            String thumbUrl = createImageUrl(image, 400, "image/jpeg", contextPath);
+            image.setThumbnailUrl(thumbUrl);
+            String largeThumbUrl = createImageUrl(image, 1600, "image/jpeg", contextPath);
+            image.setLargeThumbnailUrl(largeThumbUrl);
+            page.setImage(image);
+        }
+        log.info(String.format("Counted %d issues", count));
     }
 
     private String getContextPath() {
