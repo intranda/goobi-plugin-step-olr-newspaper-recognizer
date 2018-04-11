@@ -120,6 +120,44 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     public String getJsonData() {
+        if (this.pages.get(0).getImage() == null) {
+            Process pr = this.myStep.getProzess();
+            String imageDir = null;
+            try {
+                imageDir = pr.getImagesTifDirectory(false);
+                if (!Files.exists(Paths.get(imageDir))) {
+                    imageDir = pr.getImagesOrigDirectory(false);
+                }
+            } catch (IOException | InterruptedException | SwapException | DAOException e) {
+                // TODO Auto-generated catch block
+                log.error(e);
+            }
+            int order = 0;
+            int count = 0;
+            String contextPath = getContextPath();
+            NewspaperPage currentIssue = null;
+            for (NewspaperPage page : pages) {
+                if (count == 0) {
+                    page.setIssue(true);
+                }
+                log.info(page.getResult());
+                if (page.isIssue()) {
+                    currentIssue = page;
+                    count++;
+                } else {
+                    if (currentIssue != null) {
+                        currentIssue.addPage(page);
+                    }
+                }
+                Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
+                String thumbUrl = createImageUrl(image, 400, "image/jpeg", contextPath);
+                image.setThumbnailUrl(thumbUrl);
+                String largeThumbUrl = createImageUrl(image, 1600, "image/jpeg", contextPath);
+                image.setLargeThumbnailUrl(largeThumbUrl);
+                page.setImage(image);
+            }
+            log.info(String.format("Counted %d issues", count));
+        }
         return gson.toJson(this.pages);
     }
 
@@ -140,10 +178,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     private void readExportedFile() throws IOException, InterruptedException, SwapException, DAOException {
         Process pr = this.myStep.getProzess();
-        String imageDir = pr.getImagesTifDirectory(false);
-        if (!Files.exists(Paths.get(imageDir))) {
-            imageDir = pr.getImagesOrigDirectory(false);
-        }
         Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
         if (Files.exists(manualF)) {
             try (BufferedReader br = Files.newBufferedReader(manualF)) {
@@ -160,31 +194,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 page.guessIssue();
             }
         }
-        int order = 0;
-        int count = 0;
-        String contextPath = getContextPath();
-        NewspaperPage currentIssue = null;
-        for (NewspaperPage page : pages) {
-            if (count == 0) {
-                page.setIssue(true);
-            }
-            log.info(page.getResult());
-            if (page.isIssue()) {
-                currentIssue = page;
-                count++;
-            } else {
-                if (currentIssue != null) {
-                    currentIssue.addPage(page);
-                }
-            }
-            Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
-            String thumbUrl = createImageUrl(image, 400, "image/jpeg", contextPath);
-            image.setThumbnailUrl(thumbUrl);
-            String largeThumbUrl = createImageUrl(image, 1600, "image/jpeg", contextPath);
-            image.setLargeThumbnailUrl(largeThumbUrl);
-            page.setImage(image);
-        }
-        log.info(String.format("Counted %d issues", count));
     }
 
     private String getContextPath() {

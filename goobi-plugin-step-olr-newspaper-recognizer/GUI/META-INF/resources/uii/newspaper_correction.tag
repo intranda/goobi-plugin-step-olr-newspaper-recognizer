@@ -399,18 +399,21 @@
 		    } else {
 			    origPage.issue = true;
 			    page.issue = true;
-			    page.supplement = false;
-			    page.supplementTitle = false;
 			    page.supplementPages = [];
 			    var newIssuePages = oldArr.splice(idx, oldArr.length-idx);
 			    console.log(newIssuePages)
+			    var supplCount = 0;
 			    for(var i=1;i<newIssuePages.length;i++) {
 			        newIssuePages[i].parent = origPage.pos;
 			        newIssuePages[i].pos = origPage.pos+i;
-			        newIssuePages[i].supplement = false;
-			        newIssuePages[i].supplementTitle = false;
 			        newIssuePages[i].supplementPages = [];
 			    	origPage.otherPages.push(newIssuePages[i]);
+			    	if(newIssuePages[i].supplementTitle) {
+			    	    supplCount++;
+			    	} 
+			    	if(supplCount > 0) {
+			    	    newIssuePages[i].supplementNo = supplCount;
+			    	}
 			    }
 		    }
 		}
