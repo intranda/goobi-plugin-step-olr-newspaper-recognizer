@@ -257,8 +257,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             }
         }
         DocStruct boundBook = dd.getPhysicalDocStruct();
+        List<DocStruct> bbChildren = null;
         if (boundBook.getAllChildren() != null) {
-            List<DocStruct> bbChildren = new ArrayList<>(boundBook.getAllChildren());
+            bbChildren = new ArrayList<>(boundBook.getAllChildren());
             for (DocStruct child : bbChildren) {
                 boundBook.removeChild(child);
                 volume.removeReferenceTo(child);
@@ -280,8 +281,25 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 return "";
             }
             page.setImageName(newspaperPage.getFilename());
-            createMetadata(physPageNoType, "" + (i + 1), page);
-            createMetadata(logPageNoType, "uncounted", page);
+            if (bbChildren != null) {
+                DocStruct oldPage = bbChildren.get(i);
+                List<Metadata> oldPhysPage = (List<Metadata>) oldPage.getAllMetadataByType(physPageNoType);
+                if (oldPhysPage.size() > 0) {
+                    createMetadata(physPageNoType, oldPhysPage.get(0).getValue(), page);
+                } else {
+                    createMetadata(physPageNoType, "" + (i + 1), page);
+                }
+
+                List<Metadata> oldLogPage = (List<Metadata>) oldPage.getAllMetadataByType(logPageNoType);
+                if (oldLogPage.size() > 0) {
+                    createMetadata(physPageNoType, oldLogPage.get(0).getValue(), page);
+                } else {
+                    createMetadata(logPageNoType, "uncounted", page);
+                }
+            } else {
+                createMetadata(physPageNoType, "" + (i + 1), page);
+                createMetadata(logPageNoType, "uncounted", page);
+            }
             if (newspaperPage.isIssue()) {
                 currentSupplement = null;
             }
