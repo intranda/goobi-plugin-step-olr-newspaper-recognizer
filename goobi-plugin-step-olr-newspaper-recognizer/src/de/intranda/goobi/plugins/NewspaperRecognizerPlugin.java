@@ -124,6 +124,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     public void setJsonData(String json) {
+        log.info("saving json data");
         this.pages = gson.fromJson(json, listType);
         Process pr = this.myStep.getProzess();
         try {

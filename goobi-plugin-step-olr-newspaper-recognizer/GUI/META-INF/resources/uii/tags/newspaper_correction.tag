@@ -26,10 +26,15 @@
 				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>Samstag</label>
 				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>Sonntag</label>
                	<!-- // Wochentage als Checkboxen -->
+               	
+               	<a class="btn btn-primary " onclick={delete_all_issues}>Alle Ausgaben entfernen</a>
 				
-				<!-- Speicher-Button -->
-				<a class="btn btn-primary pull-right" onclick={save}>Speichern</a>
-				<!-- // Speicher-Button -->
+				<div class="pull-right">
+					<!-- Speicher-Button -->
+					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>Speichern</a>
+					<!-- // Speicher-Button -->
+					<a class="btn btn-primary " onclick={save}>METS schreiben</a>
+				</div>
 			</div>
 	</div>
 	<hr />
@@ -146,7 +151,8 @@
     </div>
 	<script>
 		this.suppl_colors = ["#146abf", "#e00404", "#6300b5", "#ba5d06", "#467021"];
-		console.log(opts)
+		this.dataDirty = false;
+		this.optsDirty = false;
 		this.lang = opts.lang;
 		this.msgs = {};
 		this.sent = {};
@@ -182,6 +188,8 @@
 		}
 		this.data_el = opts.data_el;
 		this.save_button = opts.saveButton;
+		this.save_no_mets_button = opts.saveDataButton;
+		this.save_opts_button = opts.saveOptsButton;
 		this.thumb_height = opts.thumbHeight;
 		console.log(opts, this.thumb_height)
 		this.data = JSON.parse(this.data_el.value);
@@ -216,24 +224,43 @@
 		})
 		
 		this.on("mount", function() {
-		    console.log("mount", this.thumb_height)
+		    console.log("mount bla", this.thumb_height)
 // 		    $('.goobi-thumbnail-image .thumb').css('max-height', this.thumb_height + 'px');
 //             $('.goobi-thumbnail-image .thumb canvas').css('max-height', this.thumb_height + 'px');
 //             $('.goobi-thumbnail-image').css('max-width', (this.thumb_height) + 'px');
+		    setInterval(() => {
+		        this.save_no_mets();
+		    }, 15000);
 		})
 		
 		save() {
-		    for(var page of this.data) {
-		        if(page.supplementTitle) {
-		            console.log("SUPPLEMENT-TITLE!!!")
-		        }
-		    }
-		    
 		    this.data_el.value = JSON.stringify(this.data);
 		    this.save_button.click();
+		    this.dataDirty = false;
+		}
+		
+		save_no_mets() {
+		    var saved = false;
+		    if(this.dataDirty) {
+			    this.data_el.value = JSON.stringify(this.data);
+			    this.save_no_mets_button.click();
+			    console.log("save no mets")
+			    this.dataDirty = false;
+			    saved = true;
+			}
+		    if(this.optsDirty) {
+		        //TODO:
+// 		        this.save_opts_button.click();
+		        this.optsDirty = false;
+		        saved = true;
+		    }
+		    if(saved) {
+		        this.update();
+		    }
 		}
 		
 		toggleDay(day) {
+		    this.optsDirty = true;
 		    console.log(day);
 		    this[day] = !this[day];
 		}
@@ -242,10 +269,24 @@
 		    e.item.page.showOtherImages = !e.item.page.showOtherImages;
 		}
 		
+		delete_all_issues(e) {
+		    this.dataDirty = true;
+		    this.data[0].issue = true;
+		    this.data[0].otherPages = [];
+		    for(var i=1;i<this.data.length;i++) {
+		        this.data[i].issue=false;
+		        this.data[0].otherPages.push(this.data[i]);
+		        this.data[i].parent=0;
+		        this.data[i].supplementTitle = false;
+		        this.data[i].otherPages = [];
+		    }
+		}
+		
 		noIssue(e) {
+		    this.dataDirty = true;
 		    console.log(e.item.page.pos)
 		    var currPage = e.item.page;
-		    //TODO: find previous and add this and it's other images to it
+		    // find previous and add this and it's other images to it
 		    for(var i=currPage.pos-1; i>=0; i--) {
 		        if(this.data[i].issue) {
 		            this.data[i].otherPages.push(currPage);
@@ -266,11 +307,12 @@
 		}
 		
 		otherOnclick(e) {
+		    this.dataDirty = true;
 		    var idx = e.item.idx;
 		    var page = e.item.otherPage;
 		    var origPage = this.data[page.pos];
 		    var oldArr = this.data[page.parent].otherPages;
-		    if(e.altKey) {
+		    if(e.altKey || e.ctrlKey) {
 		    	if(!page.supplementTitle) {
 		    		//page is not the beginning of a supplement => create new supplement
 				    page.supplementTitle = true;
@@ -370,6 +412,7 @@
 		}
 		
 		generateDates(e) {
+		    this.dataDirty = true;
 		    var startIdx = e.item.page.pos;
 	        var startPage = this.data[startIdx];
 		    var prefix = startPage.prefix;
