@@ -150,9 +150,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                     }
                 }
                 Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
-                String thumbUrl = createImageUrl(image, 400, "image/jpeg", contextPath);
+                String thumbUrl = createImageUrl(image, 400, "jpeg", contextPath);
                 image.setThumbnailUrl(thumbUrl);
-                String largeThumbUrl = createImageUrl(image, 1600, "image/jpeg", contextPath);
+                String largeThumbUrl = createImageUrl(image, 1600, "jpeg", contextPath);
                 image.setLargeThumbnailUrl(largeThumbUrl);
                 page.setImage(image);
             }
@@ -301,7 +301,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
                 List<Metadata> oldLogPage = (List<Metadata>) oldPage.getAllMetadataByType(logPageNoType);
                 if (oldLogPage.size() > 0) {
-                    createMetadata(physPageNoType, oldLogPage.get(0).getValue(), page);
+                    createMetadata(logPageNoType, oldLogPage.get(0).getValue(), page);
                 } else {
                     createMetadata(logPageNoType, "uncounted", page);
                 }
