@@ -158,7 +158,11 @@
 		this.sent = {};
 		this.msg_queue = [];
 		this.ws_ready = false;
-		this.msg_ws = new WebSocket("ws://" + location.host + "/" + location.pathname.split("/")[1] + "/messagesws");
+		if(window.locatin.protocol == "http:") {
+			this.msg_ws = new WebSocket("ws://" + location.host + "/" + location.pathname.split("/")[1] + "/messagesws");
+		} else {
+		    this.msg_ws = new WebSocket("wss://" + location.host + "/" + location.pathname.split("/")[1] + "/messagesws");
+		}
 		this.msg_ws.onopen = (evt) => {
 		    console.log("onopen", this.msg_queue)
 		    for(var i=0;i<this.msg_queue.length;i++) {
