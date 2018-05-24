@@ -158,7 +158,7 @@
 		this.sent = {};
 		this.msg_queue = [];
 		this.ws_ready = false;
-		if(window.locatin.protocol == "http:") {
+		if(window.location.protocol == "http:") {
 			this.msg_ws = new WebSocket("ws://" + location.host + "/" + location.pathname.split("/")[1] + "/messagesws");
 		} else {
 		    this.msg_ws = new WebSocket("wss://" + location.host + "/" + location.pathname.split("/")[1] + "/messagesws");
