@@ -6,6 +6,8 @@
 	    this.mouseover = false;
 	    this.image_small_url = opts.image_small;
 	    this.image_large_url = opts.image_large;
+	    this.image_small = null;
+	    this.image_large = null;
 	    this.height = opts.height;
 	    this.width = opts.width;
 	    this.render_text = opts.render_text;
@@ -15,6 +17,13 @@
 	    this.page_id = opts.page_id;
 	    this.canvas = this.refs.canvas;
 	    this.drawOnCanvas();
+	    if(opts.preload_large) {
+	        var img = new Image();
+	        img.onload = function() {
+	            this.image_large = img;
+	        }.bind(this);
+	        img.src = this.image_large_url;
+	    }
 	})
 	
 	drawOnCanvas() {
@@ -57,6 +66,13 @@
 		    this.render_pos = this.opts.render_pos;
 		    this.render_size = parseInt(this.opts.render_size);
 		    this.render_bg_color = this.opts.render_bg_color;
+		    if(this.opts.preload_large) {
+		        var img = new Image();
+		        img.onload = function() {
+		            this.image_large = img;
+		        }.bind(this);
+		        img.src = this.image_large_url;
+		    }
 		    this.drawOnCanvas();
 	    }
 	})
@@ -76,39 +92,52 @@
 
 	mousemove( event ) {
 	    if(!event.shiftKey && !event.getModifierState('CapsLock')) {
+	        console.log("no shift");
 	        if(this.mouseover) {
 	        	this.mouseover = false;
 	        	this.drawOnCanvas()
 	        }
 	        return;
+	    } else {
+	        console.log("shift");
 	    }
 	    this.mouseover = true;
-	    var canvas = event.currentTarget;
-	    img = new Image();
-	    img.onload = () => {
-	        var absPos = this.getMousePos( canvas, event );
-	        var relPos = {x:absPos.x/canvas.width, y:absPos.y/canvas.height};
-	        var sourceWidth = this.small_image.naturalWidth;
-	        var sourceHeight = this.small_image.naturalHeight;
-	        var sourceX = img.naturalWidth*relPos.x - sourceWidth/2;
-	        var sourceY = img.naturalHeight*relPos.y - sourceHeight/2;
-            if(sourceWidth > img.naturalWidth || sourceX < 0) {
-                sourceX = 0;
-            } else if(sourceX+sourceWidth > img.naturalWidth) {
-                sourceX = img.naturalWidth-sourceWidth;
-            }
-            if(sourceHeight > img.naturalHeight || sourceY < 0) {
-                sourceY = 0;
-            } else if(sourceY+sourceHeight > img.naturalHeight) {
-                sourceY = img.naturalHeight-sourceHeight;
-            }
-            if(!this.mouseover) {
-                return;
-            }
-            var ctx = canvas.getContext( '2d' );
-            ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+	    if(this.image_large != null) {
+	        this.drawLarge(event);
+	    } else {
+		    img = new Image();
+		    img.onload = () => {
+		        this.image_large = img;
+		        this.drawLarge(event);
+		    }
+	        img.src = this.image_large_url;
 	    }
-        img.src = this.image_large_url;
+	}
+	
+	drawLarge(event) {
+	   	var img = this.image_large;
+	    var canvas = event.currentTarget;
+	    var absPos = this.getMousePos( canvas, event );
+        var relPos = {x:absPos.x/canvas.width, y:absPos.y/canvas.height};
+        var sourceWidth = this.small_image.naturalWidth;
+        var sourceHeight = this.small_image.naturalHeight;
+        var sourceX = img.naturalWidth*relPos.x - sourceWidth/2;
+        var sourceY = img.naturalHeight*relPos.y - sourceHeight/2;
+        if(sourceWidth > img.naturalWidth || sourceX < 0) {
+            sourceX = 0;
+        } else if(sourceX+sourceWidth > img.naturalWidth) {
+            sourceX = img.naturalWidth-sourceWidth;
+        }
+        if(sourceHeight > img.naturalHeight || sourceY < 0) {
+            sourceY = 0;
+        } else if(sourceY+sourceHeight > img.naturalHeight) {
+            sourceY = img.naturalHeight-sourceHeight;
+        }
+        if(!this.mouseover) {
+            return;
+        }
+        var ctx = canvas.getContext( '2d' );
+        ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
 	}
 	</script>
 </thumbcanvas>

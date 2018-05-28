@@ -59,7 +59,8 @@
 											<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl} 
 												image_large={page.image.largeThumbnailUrl} 
 												title={page.image.tooltip}
-												page_id={page.pos}>
+												page_id={page.pos}
+												preload_large={true}>
 											</thumbcanvas>
 										</div>
 									</div>
@@ -128,7 +129,8 @@
 	                                                	image_small={otherPage.image.thumbnailUrl} 
 	                                                	image_large={otherPage.image.largeThumbnailUrl} 
 	                                                	title={otherPage.image.tooltip} 
-	                                                	page_id={otherPage.pos}>
+	                                                	page_id={otherPage.pos}
+	                                                	preload_large={false}>
                                                 	</thumbcanvas>
 		                                        </div>
 		                                    </div>
