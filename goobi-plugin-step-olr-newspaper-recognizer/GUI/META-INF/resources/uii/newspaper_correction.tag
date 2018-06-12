@@ -34,6 +34,8 @@
 					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>Speichern</a>
 					<!-- // Speicher-Button -->
 					<a class="btn btn-primary " onclick={save}>METS schreiben</a>
+					<!-- // verlassen-Button -->
+					<a class="btn btn-primary" onclick={exit}>Plugin verlassen</a>
 				</div>
 			</div>
 	</div>
@@ -150,6 +152,22 @@
              <!-- // Bereich für Ausgaben -->
              
          </div>
+         
+         <hr />
+         
+         <div class="row">
+              <div class="col-sm-12">
+               	
+				<div class="pull-right">
+					<!-- Speicher-Button -->
+					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>Speichern</a>
+					<!-- // Speicher-Button -->
+					<a class="btn btn-primary " onclick={save}>METS schreiben</a>
+					<!-- // verlassen-Button -->
+					<a class="btn btn-primary" onclick={exit}>Plugin verlassen</a>
+				</div>
+			</div>
+		</div>
     </div>
 	<script>
 		this.suppl_colors = ["#146abf", "#e00404", "#6300b5", "#ba5d06", "#467021"];
@@ -196,6 +214,7 @@
 		this.save_button = opts.saveButton;
 		this.save_no_mets_button = opts.saveDataButton;
 		this.save_opts_button = opts.saveOptsButton;
+		this.finish_button = opts.finishButton;
 		this.thumb_height = opts.thumbHeight;
 		console.log(opts, this.thumb_height)
 		console.log(this.data_el.value);
@@ -239,6 +258,10 @@
 		        this.save_no_mets();
 		    }, 15000);
 		})
+		
+		exit() {
+		    this.finish_button.click();
+		}
 		
 		save() {
 		    this.data_el.value = this.createSaveData();

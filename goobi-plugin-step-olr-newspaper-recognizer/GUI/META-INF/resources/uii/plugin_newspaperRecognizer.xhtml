@@ -89,6 +89,7 @@
 			<h:commandLink id="save_data_button">
 				<f:ajax execute="@form" />
 			</h:commandLink>
+			<h:commandLink id="finish_button" action="#{AktuelleSchritteForm.myPlugin.finish}"></h:commandLink>
 		</h:form>
         <newspaper_correction></newspaper_correction>
       
@@ -103,6 +104,7 @@
            		data_el: document.getElementById('newspaper_form:my_plugin_data'),
            		saveButton: document.getElementById('newspaper_form:save_mets_button'),
            		saveDataButton: document.getElementById('newspaper_form:save_data_button'),
+           		finishButton: document.getElementById('newspaper_form:finish_button'),
            		lang: '#{SpracheForm.locale.language}',
            		thumbHeight: 400
            };
