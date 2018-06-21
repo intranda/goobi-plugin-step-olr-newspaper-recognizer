@@ -448,18 +448,22 @@
 		}
 		
 		changeDate(e) {
+		    this.dataDirty = true;
 		    e.item.page.dateStr = e.target.value;
 		}
 		
 		changeNumber(e) {
+		    this.dataDirty = true;
 		    e.item.page.number = e.target.value;
 		}
 		
 		changePrefix(e) {
+		    this.dataDirty = true;
 		    e.item.page.prefix = e.target.value;
 		}
 		
 		changeSuffix(e) {
+		    this.dataDirty = true;
 		    e.item.page.suffix = e.target.value;
 		}
 		
