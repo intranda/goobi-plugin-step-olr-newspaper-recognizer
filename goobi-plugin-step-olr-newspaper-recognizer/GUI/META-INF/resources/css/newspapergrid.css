@@ -1,0 +1,59 @@
+.other-images {
+	width: 100%;
+	max-width: 100%;
+	overflow-y: auto;
+}
+
+.thumbnail-row .form-control {
+	margin-bottom: 5px;
+}
+
+.thumbnail-image {
+	position: relative;
+	padding: 0;
+}
+
+.thumbnail-image .goobi-thumbnail {
+	margin: 0;
+}
+
+.thumbnail-image .col-xs-12.text-right {
+	position: absolute;
+	bottom: 4px;
+	left: 0;
+	width: 108%;
+}
+
+.check-week {
+	margin-right: 20px;
+}
+
+.checkbox-week {
+	margin-right: 5px !important;
+}
+
+.normal-page {
+	padding: 1px;
+	border: 1px solid grey;
+	margin: 2px;
+}
+
+.newspaper-thumbnails {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.newspaper-thumbnail {
+	max-width: 200px;
+	max-height: 200px;
+	margin-right: 10px;
+	margin-bottom: 10px;
+}
+
+.newspaper-thumbnail__image {
+	overflow: hidden;
+}
+
+.newspaper-thumbnail__image a {
+	
+}

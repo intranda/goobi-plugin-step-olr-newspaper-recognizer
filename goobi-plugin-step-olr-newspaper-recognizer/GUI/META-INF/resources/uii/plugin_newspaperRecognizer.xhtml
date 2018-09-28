@@ -32,55 +32,7 @@
     </ui:define>
 
     <ui:define name="content">
-		<style>
-			.other-images {
-				width: 100%;
-				max-width: 100%;
-				overflow-y: auto;				
-			}
-			
-			.thumbnail-row .form-control {
-				margin-bottom: 5px;
-			}
-			.thumbnail-image {
-				position: relative;
-				padding: 0;
-			}
-			.thumbnail-image .goobi-thumbnail  {
-				margin: 0;
-			}
-			.thumbnail-image .col-xs-12.text-right {
-				position: absolute;
-				bottom: 4px;
-				left: 0;
-				width: 108%;
-			}
-			.other-images canvas {
-				max-width: 175px !important;
-			}
-			.check-week {
-				margin-right: 20px;
-			}
-			.checkbox-week {
-				margin-right: 5px !important;
-			}
-			.normal-page {
-				padding: 1px;
-				border: 1px solid grey;
-				margin: 2px;
-			}
-/* 			.supplement-page { */
-/* 				padding: 1px; */
-/* 				border: 2px solid #368ee0; */
-/* 				margin: 1px; */
-/* 			} */
-/* 			.supplementtitle-page { */
-/* 				padding: 1px; */
-/* 				border: 2px solid orange; */
-/* 				margin: 1px; */
-/* 			} */
-		</style>
-        
+        <h:outputStylesheet library="css" name="newspapergrid.css" />
         <h:form id="newspaper_form">
 			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
 			<h:commandLink id="save_mets_button" action="#{AktuelleSchritteForm.myPlugin.saveMetsFile}">
@@ -95,7 +47,7 @@
       
       <script src="template/js/riot+compiler.min.js" type="text/javascript"></script>
       <script src="template/js/xdate.js" type="text/javascript"></script>
-      <script src="newspaper_correction.tag" type="riot/tag"></script>
+      <script src="newspaper_correction.tag?v=1.0" type="riot/tag"></script>
       <script src="thumbcanvas.tag" type="riot/tag"></script>
        <script>
        window.onload = function() {

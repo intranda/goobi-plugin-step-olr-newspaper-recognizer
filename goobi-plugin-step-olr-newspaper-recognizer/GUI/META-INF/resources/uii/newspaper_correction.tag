@@ -117,40 +117,36 @@
 						</div>
 						
 						<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
-						<div id="otherPages">
+						<div class="other-pages">
 							<div class="col-sm-8" if={page.showOtherImages}>
-                               	<div class="other-images">
-                               		<a each={otherPage, idx in page.otherPages} onclick={otherOnclick}>
-                                		<div class="goobi-thumbnail font-light">
-		                                    <div class="goobi-thumbnail-image">
-		                                        <div class="thumb">
-	                                                <thumbcanvas width={thumb_height/2} height={thumb_height/2}
-	                                                	render_text={otherPage.supplement ? otherPage.supplementNo : null}
-	                                                	render_size="24"
-	                                                	render_bg_color={otherPage.supplement ? suppl_colors[(otherPage.supplementNo-1)%5] : null}
-	                                                	image_small={otherPage.image.thumbnailUrl} 
-	                                                	image_large={otherPage.image.largeThumbnailUrl} 
-	                                                	title={otherPage.image.tooltip} 
-	                                                	page_id={otherPage.pos}
-	                                                	preload_large={false}>
-                                                	</thumbcanvas>
-		                                        </div>
-		                                    </div>
-		                                </div>
-	                                </a>
-                               	</div>
+								<div class="newspaper-thumbnails">
+									<!-- THUMBNAIL -->
+									<div each={otherPage, idx in page.otherPages} class="newspaper-thumbnail">
+										<div class="newspaper-thumbnail__image">
+											<a onclick={otherOnclick}>
+												<thumbcanvas
+													width={thumb_height/2} 
+													height={thumb_height/2}
+													render_text={otherPage.supplement ? otherPage.supplementNo : null}
+													render_size="24"
+													render_bg_color={otherPage.supplement ? suppl_colors[(otherPage.supplementNo-1)%5] : null}
+													image_small={otherPage.image.thumbnailUrl}
+													image_large={otherPage.image.largeThumbnailUrl}
+													title={otherPage.image.tooltip} page_id={otherPage.pos}
+													preload_large={false}>
+												</thumbcanvas>
+											</a>
+										</div>
+									</div>
+								</div>
                             </div>
                        </div>
-                             	<!-- // Auflistung aller zugehörigen Seiten der Ausgabe -->
                              	
                         </div>
                         <hr style="border-top:1px #bbb solid">
                      </my_row>
-                     <!-- // Auflistung aller Ausgaben -->
                  </div>
-             </div>
-             <!-- // Bereich für Ausgaben -->
-             
+             </div>             
          </div>
          
          <hr />
