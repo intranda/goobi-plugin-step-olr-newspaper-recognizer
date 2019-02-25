@@ -89,7 +89,7 @@
 
 							<!-- Button für Datumsgenerierung -->
 							<div class="col-xs-1">
-								<a onclick={generateDates} 
+								<a onclick={generateDates}
 									class="btn btn-default fa fa-play">
 								</a>
 							</div>
@@ -464,9 +464,12 @@
 		}
 		
 		generateDates(e) {
-		    this.dataDirty = true;
 		    var startIdx = e.item.page.pos;
 	        var startPage = this.data[startIdx];
+			if(!startPage.dateStr) {
+				return;
+			}
+		    this.dataDirty = true;
 		    var prefix = startPage.prefix;
 		    var suffix = startPage.suffix;
 	        var startNumber = parseInt(startPage.number);
