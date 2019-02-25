@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.intranda.goobi.plugins.step</groupId>
 	<artifactId>olr-newspaper-recognizer-main</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<properties>
 		<jar.name>plugin_intranda_step_olr-newspaper-recognizer</jar.name>
 		<dest.folder>/opt/digiverso/goobi/plugins/step/</dest.folder>
@@ -12,7 +12,7 @@
 	<parent>
 		<groupId>de.intranda.goobi.plugins.step</groupId>
 		<artifactId>olr-newspaper-recognizer</artifactId>
-		<version>1.0.0</version>
+		<version>1.0.1</version>
 	</parent>
 	<repositories>
 		<repository>
