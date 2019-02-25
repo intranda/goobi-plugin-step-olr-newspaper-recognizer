@@ -468,7 +468,7 @@
 		    var startIdx = e.item.page.pos;
 	        var startPage = this.data[startIdx];
 			if(!startPage.dateStr || !startPage.dateStr.match(dateRegex)) {
-				alert("Valid date format is: dd.mm.yyy");
+				alert("Valid date format is: dd.mm.yyyy");
 				return;
 			}
 		    this.dataDirty = true;
