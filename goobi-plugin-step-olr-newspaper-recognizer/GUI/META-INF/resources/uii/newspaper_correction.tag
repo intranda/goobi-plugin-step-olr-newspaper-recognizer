@@ -464,9 +464,11 @@
 		}
 		
 		generateDates(e) {
+			var dateRegex = /\d{2}\.\d{2}\.\d{4}/
 		    var startIdx = e.item.page.pos;
 	        var startPage = this.data[startIdx];
-			if(!startPage.dateStr) {
+			if(!startPage.dateStr || !startPage.dateStr.match) {
+				alert("Valid date format is: dd.mm.yyy");
 				return;
 			}
 		    this.dataDirty = true;
