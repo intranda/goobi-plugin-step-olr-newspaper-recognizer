@@ -25,7 +25,7 @@
             <mapping>MultiVolumeWork</mapping>
         </type>
 
-        <type isContainedWork="false" isMultiVolume="true" isPeriodical="false" rulesetType="Newspaper" tifHeaderType="Newspaper" title="newspaper" rulesetChildType="NewspaperVolume">
+        <type isContainedWork="false" isMultiVolume="false" isPeriodical="true" rulesetType="Newspaper" tifHeaderType="Newspaper" title="newspaper" rulesetChildType="NewspaperVolume">
             <label language="de">Zeitung</label>
             <label language="en">Newspaper</label>
             <mapping>Of</mapping>
