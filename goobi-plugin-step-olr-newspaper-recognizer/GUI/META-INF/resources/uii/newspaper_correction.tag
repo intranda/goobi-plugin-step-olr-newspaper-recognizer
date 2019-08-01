@@ -14,7 +14,7 @@
 
          <div class="box-content" style="background-color:#eee">
          
-         	<!-- Formular für Wochentage -->
+         	<!-- Formular fï¿½r Wochentage -->
        <div class="row">
                <div class="col-sm-12">
                	<!-- Wochentage als Checkboxen -->
@@ -40,10 +40,10 @@
 			</div>
 	</div>
 	<hr />
-	<!-- // Formular für Wochentage -->
+	<!-- // Formular fï¿½r Wochentage -->
 	
 	
-	<!-- Bereich für Ausgaben -->
+	<!-- Bereich fï¿½r Ausgaben -->
 	<div layout="block" class="col-sm-12">
         <div class="row margin-top-most margin-bottom-most">
 		
@@ -87,7 +87,7 @@
 								<input type="text" value={page.dateStr} onkeyup={changeDate} placeholder="Datum" class="form-control"></input>
 							</div>
 
-							<!-- Button für Datumsgenerierung -->
+							<!-- Button fï¿½r Datumsgenerierung -->
 							<div class="col-xs-1">
 								<a onclick={generateDates}
 									class="btn btn-default fa fa-play">
@@ -105,9 +105,9 @@
 							<div class="col-xs-1">
 								<a class="btn btn-default fa fa-eye" onclick={toggleShowOtherImages}></a>
 							</div>
-							<!-- Button zum Anzeigen oder Ausblenden der zugehörigen Seiten -->
+							<!-- Button zum Anzeigen oder Ausblenden der zugehï¿½rigen Seiten -->
 							
-							<!-- Details über zugehörige Seiten -->
+							<!-- Details ï¿½ber zugehï¿½rige Seiten -->
 							<div class="col-xs-6">
 								{msg('otherPages')}: {page.otherPages.length}
 							</div>
@@ -116,7 +116,7 @@
 							
 						</div>
 						
-						<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
+						<!-- Auflistung aller zugehï¿½rigen Seiten der Ausgabe -->
 						<div class="other-pages">
 							<div class="col-sm-8" if={page.showOtherImages}>
 								<div class="newspaper-thumbnails">
@@ -536,6 +536,64 @@
 
 	            }
 	            newDate.addDays(1);
+	        }
+	    }
+	    
+	    validateDate(date) {
+	        // check for month format, e.g.: 01.1870
+	        if(/^\d{2}\.\d{4}$/.test(date)) {
+	            // check for sanity of month
+	            var month = parseInt(date.split(".")[0]);
+	        	if(month > 0 && month < 13) {
+	        	    return true;
+	        	}
+	        }
+	        // check for issue for two days, e.g.: 14.06.2011/15.06.2011
+	        if(/^\d{2}\.\d{2}\.\d{4}\/\d{2}\.\d{2}\.\d{4}$/.test(date)) {
+	            // check for sanity of day/month
+	            var dates = date.split("/");
+	            //check first date
+	            var dateArr = dates[0].split(".");
+	            if( !checkDate(dateArr[0], dateArr[1], dateArr[2]){
+	                return false;
+	            }
+	            dateArr = dates[1].split(".");
+	            if( !checkDate(dateArr[0], dateArr[1], dateArr[2]){
+	                return false;
+	            }
+	            return true;
+	        }
+	        // check for multi-month issues, e.g.: 01.1870/03.1870
+	        if(/^\d{2}\.\d{4}\/\d{2}\.\d{4}$/.test(date))) {
+	        	// check for sanity of months
+                var dates = date.split("/");
+	        	var month0 = dates[0].split(".")[0];
+	        	var month1 = dates[1].split(".")[0];
+	        	if(month0>0 && month0<13 && month1>0 && month1<13) {
+	        	    return true;
+	        	}
+	        }
+	        // check for two-year issues, e.g.: 1915/1916
+	        if(/^\d{4}\/\d{4}$/) {
+	            return true;
+	        }
+	        return false;
+	    }
+	    
+	    checkDate(day, month, year) {
+	        if(day < 1 || month < 1 || month > 12) {
+	            return false;
+	        }
+	        var dayList = [31,28,31,30,31,30,31,31,30,31,30,31];
+	        if(month === 2) {
+	            var leapyear = year % 400 == 0 || (year % 100 != 0 && year % 4 == 0);
+	            if(leapYear) {
+	                return day <= 29;
+	            } else {
+	                return day <= 28;
+	            }
+	        } else {
+	            return dayList[month-1] >= day;
 	        }
 	    }
 		
