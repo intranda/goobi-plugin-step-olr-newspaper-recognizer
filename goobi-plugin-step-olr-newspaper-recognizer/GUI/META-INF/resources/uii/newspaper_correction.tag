@@ -14,9 +14,9 @@
 
          <div class="box-content" style="background-color:#eee">
          
-         	<!-- Formular f�r Wochentage -->
+         	<!-- Formular für Wochentage -->
        <div class="row">
-               <div class="col-sm-12">
+           <div class="col-sm-12">
                	<!-- Wochentage als Checkboxen -->
 				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={monday} onclick={() => this.toggleDay('monday')}></input>Montag</label>
 				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>Dienstag</label>
@@ -38,12 +38,18 @@
 					<a class="btn btn-primary" onclick={exit}>Plugin verlassen</a>
 				</div>
 			</div>
-	</div>
+		</div>
+		<div class="row">
+           <div class="col-sm-12">
+           		<label class="check-week"><input type="checkbox" class="checkbox-week" checked={biWeekly} onclick={toggleBiWeekly}></input>Zweiwöchentlich</label>
+           		<!-- <label class="check-week"><input type="checkbox" class="checkbox-week" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
+           </div>
+       </div>
 	<hr />
-	<!-- // Formular f�r Wochentage -->
+	<!-- // Formular für Wochentage -->
 	
 	
-	<!-- Bereich f�r Ausgaben -->
+	<!-- Bereich für Ausgaben -->
 	<div layout="block" class="col-sm-12">
         <div class="row margin-top-most margin-bottom-most">
 		
@@ -52,7 +58,7 @@
                   	<div  class="row thumbnail-row">
 						<div class="col-sm-4">
 							
-							<div class="col-xs-6 thumbnail-image">
+							<div class="col-xs-6 thumbnail-image" style="position: relative;">
 
 								<!-- Bild der Ausgabe -->
 								<div class="goobi-thumbnail font-light">
@@ -70,24 +76,25 @@
 								<!-- // Bild der Ausgabe -->
 
 								<!-- Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
-								<div class="col-xs-12 text-right">
-									<a
-										onclick="{noIssue}"
-										class="btn btn-default fa fa-trash"
-										style="margin-right: 10px; margin-bottom: 5px;">
-										
-									</a>
-								</div>
+								<a
+									onclick="{noIssue}"
+									class="btn btn-default fa fa-trash"
+									style="position: absolute; right: 10px; bottom: 5px;">
+									
+								</a>
 								<!-- // Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
 								
 							</div>
 
 							<!-- Datum der Ausgabe -->
 							<div class="col-xs-5">
-								<input type="text" value={page.dateStr} onkeyup={changeDate} placeholder="Datum" class="form-control"></input>
+								<div class="form-group {page.dateValid ? '' : 'has-error'}">
+									<input type="text" value={page.dateStr} onkeyup={changeDate} placeholder="Datum" class="form-control"></input>
+									<span if={!page.dateValid} class="help-block">Wrong date format</span>
+								</div>
 							</div>
 
-							<!-- Button f�r Datumsgenerierung -->
+							<!-- Button für Datumsgenerierung -->
 							<div class="col-xs-1">
 								<a onclick={generateDates}
 									class="btn btn-default fa fa-play">
@@ -95,19 +102,30 @@
 							</div>
 							
 							<!-- Nummer der Ausgabe -->
-							<div class="col-xs-5 form-inline">
+							<div class="col-xs-5 ">
+								<div class="form-group">
 								<div class="input-group">
 									<input type="text" value={page.prefix} onkeyup={changePrefix} placeholder="{msg('prefix')}" class="form-control" style="width:33%"></input>
 									<input type="text" value={page.number} onkeyup={changeNumber} placeholder="Nr." class="form-control" style="width:34%"></input>
 									<input type="text" value={page.suffix} onkeyup={changeSuffix} placeholder="{msg('suffix')}" class="form-control" style="width:33%"></input>
 								</div>
+								</div>
 							</div>
 							<div class="col-xs-1">
 								<a class="btn btn-default fa fa-eye" onclick={toggleShowOtherImages}></a>
 							</div>
-							<!-- Button zum Anzeigen oder Ausblenden der zugeh�rigen Seiten -->
 							
-							<!-- Details �ber zugeh�rige Seiten -->
+							<!-- "Typ" der Ausgabe -->
+							<div class="col-xs-5">
+								<div class="form-group">
+									<select class="form-control" onchange={changeIssueType}>
+										<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}">{type}</option>
+									</select>
+								</div>
+							</div>
+							<!-- Button zum Anzeigen oder Ausblenden der zugehörigen Seiten -->
+							
+							<!-- Details über zugehörige Seiten -->
 							<div class="col-xs-6">
 								{msg('otherPages')}: {page.otherPages.length}
 							</div>
@@ -116,7 +134,7 @@
 							
 						</div>
 						
-						<!-- Auflistung aller zugeh�rigen Seiten der Ausgabe -->
+						<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
 						<div class="other-pages">
 							<div class="col-sm-8" if={page.showOtherImages}>
 								<div class="newspaper-thumbnails">
@@ -167,8 +185,11 @@
     </div>
 	<script>
 		this.suppl_colors = ["#146abf", "#e00404", "#6300b5", "#ba5d06", "#467021"];
+		this.biWeekly = false;
+		this.monthly = false;
 		this.dataDirty = false;
 		this.optsDirty = false;
+		this.issueTypes = ["Ausgabe", "Beilage", "Inhaltsverzeichnis", "Leading page"]
 		this.lang = opts.lang;
 		this.msgs = {};
 		this.sent = {};
@@ -217,8 +238,17 @@
 		this.data = JSON.parse(this.data_el.value);
 		for(var i=0;i < this.data.length; i++) {
 		    var page = this.data[i];
+		    if(page.dateValid === undefined) {
+			    page.dateValid = true;
+		    }
 		    page.pos = i;
 		    if(page.issue) {
+		        if(!page.issueType) {
+		            console.log("issueType not set")
+		            page.issueType = "Ausgabe";
+		        } else {
+		            console.log("issueType:", page.issueType)
+		        }
 		        var supplCount = 0;
 		        for(var k=0;k<page.otherPages.length;k++) {
 		            page.otherPages[k].parent = page.pos;
@@ -298,10 +328,17 @@
 	                prefix: page.prefix,
 	                number: page.number,
 	                suffix: page.suffix,
-	                filename: page.filename
+	                filename: page.filename,
+	                dateValid: page.dateValid,
+	                issueType: page.issueType
 	            });
 	        }
 	        return JSON.stringify(saveData);
+		}
+		
+		toggleBiWeekly() {
+		    this.biWeekly = !this.biWeekly;
+		    console.log(this.biWeekly);
 		}
 		
 		toggleDay(day) {
@@ -446,6 +483,12 @@
 		changeDate(e) {
 		    this.dataDirty = true;
 		    e.item.page.dateStr = e.target.value;
+		    e.item.page.dateValid = this.validateDate(e.target.value);
+		}
+		
+		changeIssueType(e) {
+		    this.dataDirty = true;
+		    e.item.page.issueType = e.target.selectedOptions[0].text;
 		}
 		
 		changeNumber(e) {
@@ -491,7 +534,14 @@
 	    }
 
 	    getNextDate(currentDate) {
-	        var newDate = new XDate(currentDate).addDays(1);
+	        var newDate = null;
+	        console.log(this.biWeekly);
+	        console.log(currentDate.getDay())
+	        if(this.biWeekly) {
+	            newDate = new XDate(currentDate).addDays(8);
+	        } else {
+	        	newDate = new XDate(currentDate).addDays(1);
+	        }
 	        while (true) {
 	            var dayOfWeek = newDate.getDay();
 	            console.log(dayOfWeek);
@@ -540,7 +590,18 @@
 	    }
 	    
 	    validateDate(date) {
-	        // check for month format, e.g.: 01.1870
+			if(date.length == 0) {
+			    return true;
+			}
+	        // check for standard format
+	        if(/^\d{2}\.\d{2}\.\d{4}$/.test(date)) {
+	            var dateArr = date.split(".");
+	            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
+	                return false;
+	            }
+	            return true;
+	        }
+	     	// check for month format, e.g.: 01.1870
 	        if(/^\d{2}\.\d{4}$/.test(date)) {
 	            // check for sanity of month
 	            var month = parseInt(date.split(".")[0]);
@@ -554,17 +615,17 @@
 	            var dates = date.split("/");
 	            //check first date
 	            var dateArr = dates[0].split(".");
-	            if( !checkDate(dateArr[0], dateArr[1], dateArr[2]){
+	            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
 	                return false;
 	            }
 	            dateArr = dates[1].split(".");
-	            if( !checkDate(dateArr[0], dateArr[1], dateArr[2]){
+	            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
 	                return false;
 	            }
 	            return true;
 	        }
-	        // check for multi-month issues, e.g.: 01.1870/03.1870
-	        if(/^\d{2}\.\d{4}\/\d{2}\.\d{4}$/.test(date))) {
+	     // check for multi-month issues, e.g.: 01.1870/03.1870
+	        if(/^\d{2}\.\d{4}\/\d{2}\.\d{4}$/.test(date)) {
 	        	// check for sanity of months
                 var dates = date.split("/");
 	        	var month0 = dates[0].split(".")[0];
@@ -574,7 +635,7 @@
 	        	}
 	        }
 	        // check for two-year issues, e.g.: 1915/1916
-	        if(/^\d{4}\/\d{4}$/) {
+	        if(/^\d{4}\/\d{4}$/.test(date)) {
 	            return true;
 	        }
 	        return false;

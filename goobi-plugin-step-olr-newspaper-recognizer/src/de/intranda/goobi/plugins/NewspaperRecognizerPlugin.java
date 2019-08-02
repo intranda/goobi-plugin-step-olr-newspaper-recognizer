@@ -140,7 +140,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 if (count == 0) {
                     page.setIssue(true);
                 }
-                log.info(page.getResult());
                 if (page.isIssue()) {
                     currentIssue = page;
                     count++;
@@ -188,7 +187,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             try (FileReader fr = new FileReader(resultF)) {
                 this.pages = gson.fromJson(new JsonReader(fr), listType);
             }
-            log.info(pages.size());
 
             for (NewspaperPage page : pages) {
                 page.guessIssue();

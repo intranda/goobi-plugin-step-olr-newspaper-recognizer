@@ -30,6 +30,8 @@ public class NewspaperPage {
     private boolean showOtherImages = true;
     private List<NewspaperPage> otherPages = new ArrayList<>();
     private List<NewspaperPage> supplementPages = new ArrayList<>();
+    private boolean dateValid;
+    private String issueType;
 
     public String getFilenameAsTif() {
         return filename.replace(".jpg", ".tif");
