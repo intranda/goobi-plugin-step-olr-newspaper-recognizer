@@ -189,7 +189,7 @@
 		this.monthly = false;
 		this.dataDirty = false;
 		this.optsDirty = false;
-		this.issueTypes = ["Ausgabe", "Beilage", "Inhaltsverzeichnis", "Leading page"]
+		this.issueTypes = ["Ausgabe", "Beilage", "Inhaltsverzeichnis", "Leading page", "Einband und Profil"]
 		this.lang = opts.lang;
 		this.msgs = {};
 		this.sent = {};
@@ -522,13 +522,14 @@
 	        var startDate = new XDate(parseInt(dateArr[2]), parseInt(dateArr[1]-1), parseInt(dateArr[0]));
 	        for (var i = startIdx + 1; i < this.data.length; i++) {
 	            var page = this.data[i];
-	            if (page.issue) {
+	            if (page.issue && page.issueType === "Ausgabe") {
 	                startNumber++;
 	                startDate = this.getNextDate(startDate);
 	                page.prefix = prefix;
 	                page.suffix = suffix;
 	                page.number = "" + startNumber;
 	                page.dateStr = startDate.toString("dd.MM.yyyy");
+	                page.dateValid = true;
 	            }
 	        }
 	    }
