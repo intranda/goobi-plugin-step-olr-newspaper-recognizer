@@ -92,14 +92,14 @@
 
 	mousemove( event ) {
 	    if(!event.shiftKey && !event.getModifierState('CapsLock')) {
-	        console.log("no shift");
+	        //console.log("no shift");
 	        if(this.mouseover) {
 	        	this.mouseover = false;
 	        	this.drawOnCanvas()
 	        }
 	        return;
 	    } else {
-	        console.log("shift");
+	        //console.log("shift");
 	    }
 	    this.mouseover = true;
 	    if(this.image_large != null) {
@@ -118,7 +118,7 @@
 	   	var img = this.image_large;
 	    var canvas = event.currentTarget;
 	    var absPos = this.getMousePos( canvas, event );
-        var relPos = {x:absPos.x/canvas.width, y:absPos.y/canvas.height};
+        var relPos = {x:absPos.x/canvas.offsetWidth, y:absPos.y/canvas.offsetHeight};
         var sourceWidth = this.small_image.naturalWidth;
         var sourceHeight = this.small_image.naturalHeight;
         var sourceX = img.naturalWidth*relPos.x - sourceWidth/2;
