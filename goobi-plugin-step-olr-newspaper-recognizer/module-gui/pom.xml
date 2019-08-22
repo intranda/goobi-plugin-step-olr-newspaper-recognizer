@@ -22,7 +22,7 @@
 		<finalName>${jar.name}</finalName>
 		<resources>
 			<resource>
-				<directory>../GUI</directory>
+				<directory>${project.basedir}/../GUI</directory>
 				<excludes>
 					<exclude>**/*.java</exclude>
 				</excludes>
