@@ -1,5 +1,7 @@
 <thumbcanvas>
-	<canvas class="thumb-canvas" ref="canvas" onmousemove={mousemove} onmouseout={mouseout}></canvas>
+	<div ref="observable">
+		<canvas class="thumb-canvas" ref="canvas" onmousemove={mousemove} onmouseout={mouseout}></canvas>
+	</div>
 	<script>
 	
 	this.on("mount", () => {
@@ -16,7 +18,9 @@
 	    this.render_bg_color = opts.render_bg_color;
 	    this.page_id = opts.page_id;
 	    this.canvas = this.refs.canvas;
-	    this.drawOnCanvas();
+	    this.update();
+	    
+	    this.createObserver()
 	    if(opts.preload_large) {
 	        var img = new Image();
 	        img.onload = function() {
@@ -25,6 +29,28 @@
 	        img.src = this.image_large_url;
 	    }
 	})
+	
+	createObserver() {
+   		var observer;
+   		var options = {
+   		    rootMargin: "100px 0px 1000px 0px",
+   		 	threshold: 0.9,
+   		    threshold: 1
+   		};
+   		
+   		observer = new IntersectionObserver(this.drawFirst, options);
+   		observer.observe(this.refs.observable);
+   	}
+	
+	drawFirst(entries, observer) {
+	    entries.forEach(entry => {
+		    if(entry.isIntersecting && !this.intersected) {
+			    console.log("draw on canvas intersect: " + this.image_small_url)
+		    	this.intersected = true;
+			    this.drawOnCanvas();
+		    }
+	    })
+	}
 	
 	drawOnCanvas() {
         if ( this.canvas == null ) {
@@ -73,7 +99,10 @@
 		        }.bind(this);
 		        img.src = this.image_large_url;
 		    }
-		    this.drawOnCanvas();
+		    if(this.intersected) {
+		        console.log("onUpdate: drawOnCanvas")
+		    	this.drawOnCanvas();
+		    }
 	    }
 	})
 

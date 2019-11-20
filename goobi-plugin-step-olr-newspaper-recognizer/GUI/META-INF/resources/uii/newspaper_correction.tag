@@ -63,7 +63,7 @@
 								<!-- Bild der Ausgabe -->
 								<div class="goobi-thumbnail font-light">
 									<div class="goobi-thumbnail-image">
-										<div class="thumb">
+										<div class="thumb" style="min-height: {thumb_height}px;">
 											<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl} 
 												image_large={page.image.largeThumbnailUrl} 
 												title={page.image.tooltip}
@@ -140,7 +140,7 @@
 								<div class="newspaper-thumbnails">
 									<!-- THUMBNAIL -->
 									<div each={otherPage, idx in page.otherPages} class="newspaper-thumbnail">
-										<div class="newspaper-thumbnail__image">
+										<div class="newspaper-thumbnail__image" style="min-height: {thumb_height/2}px;">
 											<a onclick={otherOnclick}>
 												<thumbcanvas
 													width={thumb_height/2} 

@@ -132,6 +132,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 // TODO Auto-generated catch block
                 log.error(e);
             }
+            String imageDirName = Paths.get(imageDir).toFile().getName();
             int order = 0;
             int count = 0;
             String contextPath = getContextPath();
@@ -149,9 +150,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                     }
                 }
                 Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
-                String thumbUrl = createImageUrl(image, 400, "jpeg", contextPath);
+                String thumbUrl = createImageUrl(image, 400, "jpeg", contextPath, getStep().getProcessId(), imageDirName);
                 image.setThumbnailUrl(thumbUrl);
-                String largeThumbUrl = createImageUrl(image, 1600, "jpeg", contextPath);
+                String largeThumbUrl = createImageUrl(image, 1600, "jpeg", contextPath, getStep().getProcessId(), imageDirName);
                 image.setLargeThumbnailUrl(largeThumbUrl);
                 page.setImage(image);
             }
@@ -199,11 +200,11 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         return hf.getServletPathWithHostAsUrl();
     }
 
-    private String createImageUrl(Image currentImage, Integer size, String format, String baseUrl) {
-        StringBuilder url = new StringBuilder(baseUrl);
-        url.append("/cs").append("?action=").append("image").append("&format=").append(format).append("&sourcepath=").append("file://" + currentImage
-                .getImageName()).append("&width=").append(size).append("&height=").append(size);
-        return url.toString();
+    private String createImageUrl(Image currentImage, Integer size, String format, String baseUrl, int processId, String imageDirName) {
+        System.out.println(currentImage.getTooltip());
+        String url = String.format("%s/api/image/%d/%s/%s/full/!%d,%d/0/default.jpg", baseUrl, processId, imageDirName, currentImage.getTooltip(),
+                size, size);
+        return url;
     }
 
     public static void main(String[] args) throws Exception {
