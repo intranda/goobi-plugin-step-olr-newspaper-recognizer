@@ -18,7 +18,7 @@ import org.goobi.production.enums.PluginGuiType;
 import org.goobi.production.plugin.interfaces.AbstractStepPlugin;
 import org.goobi.production.plugin.interfaces.IPlugin;
 import org.goobi.production.plugin.interfaces.IStepPlugin;
-import org.joda.time.DateTime;
+import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -367,7 +367,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
     }
 
-    private static String getTitleFromDate(DateTime dateTime) {
+    private static String getTitleFromDate(LocalDateTime dateTime) {
         StringBuilder sb = new StringBuilder();
         sb.append("Ausgabe vom ");
 

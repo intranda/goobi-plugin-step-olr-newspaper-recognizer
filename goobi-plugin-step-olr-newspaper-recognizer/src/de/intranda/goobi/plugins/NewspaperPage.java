@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.joda.time.DateTime;
+import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -46,11 +47,11 @@ public class NewspaperPage {
         return result < level;
     }
 
-    public DateTime getDate() {
+    public LocalDateTime getDate() {
         if (dateStr != null && !dateStr.isEmpty()) {
-            return formatter.parseDateTime(dateStr);
+            return formatter.parseLocalDateTime(dateStr);
         }
-        return new DateTime();
+        return new LocalDateTime();
     }
 
     public void setDate(DateTime date) {
