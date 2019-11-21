@@ -21,13 +21,6 @@
 	    this.update();
 	    
 	    this.createObserver()
-	    if(opts.preload_large) {
-	        var img = new Image();
-	        img.onload = function() {
-	            this.image_large = img;
-	        }.bind(this);
-	        img.src = this.image_large_url;
-	    }
 	})
 	
 	createObserver() {
@@ -48,6 +41,13 @@
 			    console.log("draw on canvas intersect: " + this.image_small_url)
 		    	this.intersected = true;
 			    this.drawOnCanvas();
+			    if(this.opts.preload_large) {
+			        var img = new Image();
+			        img.onload = function() {
+			            this.image_large = img;
+			        }.bind(this);
+			        img.src = this.image_large_url;
+			    }
 		    }
 	    })
 	}
