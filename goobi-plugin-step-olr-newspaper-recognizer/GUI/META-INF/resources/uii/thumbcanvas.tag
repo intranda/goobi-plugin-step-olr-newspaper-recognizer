@@ -20,7 +20,8 @@
 	    this.canvas = this.refs.canvas;
 	    this.update();
 	    
-	    this.createObserver()
+	    //this.createObserver()
+	    this.drawOnCanvas();
 	})
 	
 	createObserver() {
