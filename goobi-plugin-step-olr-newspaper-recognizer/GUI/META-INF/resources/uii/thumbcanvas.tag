@@ -135,7 +135,7 @@
 	    if(this.image_large != null) {
 	        this.drawLarge(event);
 	    } else {
-		    img = new Image();
+		    var img = new Image();
 		    img.onload = () => {
 		        this.image_large = img;
 		        this.drawLarge(event);
