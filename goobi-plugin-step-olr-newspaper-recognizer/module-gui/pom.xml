@@ -23,6 +23,7 @@
 		<resources>
 			<resource>
 				<directory>${project.basedir}/../GUI</directory>
+				<filtering>true</filtering>
 				<excludes>
 					<exclude>**/*.java</exclude>
 				</excludes>

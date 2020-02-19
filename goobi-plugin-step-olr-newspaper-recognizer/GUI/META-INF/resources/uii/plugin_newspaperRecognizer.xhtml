@@ -32,7 +32,7 @@
     </ui:define>
 
     <ui:define name="content">
-        <h:outputStylesheet library="css" name="newspapergrid.css" />
+        <h:outputStylesheet library="css" name="newspapergrid.css?v=${buildNumber}" />
         <h:form id="newspaper_form">
 			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
 			<h:commandLink id="save_mets_button" action="#{AktuelleSchritteForm.myPlugin.saveMetsFile}">
@@ -47,8 +47,8 @@
       
       <script src="template/js/riot+compiler.min.js" type="text/javascript"></script>
       <script src="template/js/xdate.js" type="text/javascript"></script>
-      <script src="newspaper_correction.tag" type="riot/tag"></script>
-      <script src="thumbcanvas_fixed.tag" type="riot/tag"></script>
+      <script src="newspaper_correction.tag?v=${buildNumber}" type="riot/tag"></script>
+      <script src="thumbcanvas_fixed.tag?v=${buildNumber}" type="riot/tag"></script>
        <script>
        window.onload = function() {
            window.noLoadImages = true;
