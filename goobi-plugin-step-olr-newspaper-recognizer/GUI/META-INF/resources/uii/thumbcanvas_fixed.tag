@@ -20,8 +20,14 @@
 	    this.canvas = this.refs.canvas;
 	    this.update();
 	    
-	    this.createObserver()
-	    //this.drawOnCanvas();
+	    console.log(opts.loadallimages)
+	    if(typeof opts.loadallimages != 'undefined') {
+		    if(opts.loadallimages) {
+		    	this.drawOnCanvas();
+		    } else {
+		    	this.createObserver()
+		    }
+	    }
 	})
 	
 	createObserver() {

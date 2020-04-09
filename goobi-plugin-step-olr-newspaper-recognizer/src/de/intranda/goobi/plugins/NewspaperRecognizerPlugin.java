@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.goobi.beans.Process;
 import org.goobi.beans.Step;
 import org.goobi.production.enums.PluginGuiType;
@@ -62,6 +63,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private int tocDepth = 0;
 
     private String returnPath;
+    private boolean loadAllImages;
 
     private Gson gson = new Gson();
     Type listType = new TypeToken<ArrayList<NewspaperPage>>() {
@@ -75,7 +77,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     public void initialize(Step step, String returnPath) {
         this.returnPath = returnPath;
         this.myStep = step;
-        tocDepth = ConfigPlugins.getPluginConfig(this).getInt("defaultDepth", 1);
+        HierarchicalConfiguration config = ConfigPlugins.getPluginConfig(PLUGIN_NAME);
+        tocDepth = config.getInt("defaultDepth", 1);
+        loadAllImages = config.getBoolean("loadAllImages", false);
         try {
             readExportedFile();
         } catch (IOException | InterruptedException | SwapException | DAOException e) {
@@ -201,7 +205,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     private String createImageUrl(Image currentImage, Integer size, String format, String baseUrl, int processId, String imageDirName) {
-        System.out.println(currentImage.getTooltip());
         String url = String.format("%s/api/image/%d/%s/%s/full/!%d,%d/0/default.jpg", baseUrl, processId, imageDirName, currentImage.getTooltip(),
                 size, size);
         return url;
@@ -218,7 +221,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
         for (NewspaperPage page : pages) {
             page.setIssue(page.guessIssue());
-            System.out.println(page.getFilenameAsTif() + " - " + page.getResult() + " - " + page.isIssue());
         }
 
     }

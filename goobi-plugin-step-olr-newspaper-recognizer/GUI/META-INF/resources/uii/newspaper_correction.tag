@@ -68,6 +68,7 @@
 												image_large={page.image.largeThumbnailUrl} 
 												title={page.image.tooltip}
 												page_id={page.pos}
+												loadallimages={loadallimages}
 												preload_large={true}>
 											</thumbcanvas>
 										</div>
@@ -151,6 +152,7 @@
 													image_small={otherPage.image.thumbnailUrl}
 													image_large={otherPage.image.largeThumbnailUrl}
 													title={otherPage.image.tooltip} page_id={otherPage.pos}
+													loadallimages={loadallimages}
 													preload_large={false}>
 												</thumbcanvas>
 											</a>
@@ -233,6 +235,7 @@
 		this.save_opts_button = opts.saveOptsButton;
 		this.finish_button = opts.finishButton;
 		this.thumb_height = opts.thumbHeight;
+		this.loadallimages = opts.loadallimages;
 		console.log(opts, this.thumb_height)
 		console.log(this.data_el.value);
 		this.data = JSON.parse(this.data_el.value);

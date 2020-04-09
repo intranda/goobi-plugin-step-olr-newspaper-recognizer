@@ -58,8 +58,10 @@
            		saveDataButton: document.getElementById('newspaper_form:save_data_button'),
            		finishButton: document.getElementById('newspaper_form:finish_button'),
            		lang: '#{SpracheForm.locale.language}',
-           		thumbHeight: 400
+           		thumbHeight: 400,
+           		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages}
            };
+           console.log(opts);
            riot.mount("newspaper_correction", opts);
        }
        
