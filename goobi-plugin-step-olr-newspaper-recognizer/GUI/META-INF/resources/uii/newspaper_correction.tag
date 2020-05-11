@@ -389,6 +389,9 @@
 		    console.log("done")
 		    currPage.otherPages = [];
 		    currPage.issue = false;
+		    delete currPage.dateStr;
+		    delete currPage.prefix;
+		    delete currPage.number;
 		}
 		
 		otherOnclick(e) {
