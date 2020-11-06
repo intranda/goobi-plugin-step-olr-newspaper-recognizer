@@ -10,7 +10,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.goobi.beans.Process;
@@ -30,9 +32,12 @@ import com.google.gson.stream.JsonReader;
 import de.sub.goobi.config.ConfigPlugins;
 import de.sub.goobi.forms.HelperForm;
 import de.sub.goobi.helper.Helper;
+import de.sub.goobi.helper.HelperSchritte;
+import de.sub.goobi.helper.enums.StepStatus;
 import de.sub.goobi.helper.exceptions.DAOException;
 import de.sub.goobi.helper.exceptions.SwapException;
 import de.sub.goobi.metadaten.Image;
+import de.sub.goobi.persistence.managers.StepManager;
 import lombok.Data;
 import lombok.extern.log4j.Log4j;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
@@ -121,6 +126,35 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     @Override
     public String finish() {
         return "/uii/" + returnPath;
+    }
+
+    public String deleteManualDataAndStartAutoAnalysis() throws IOException, InterruptedException, SwapException, DAOException {
+        Process pr = this.myStep.getProzess();
+        Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
+        Files.deleteIfExists(manualF);
+        this.myStep.setBearbeitungsstatusEnum(StepStatus.LOCKED);
+        StepManager.saveStep(myStep);
+        Optional<Step> maybePreviousStep = this.myStep.getProzess()
+                .getSchritte()
+                .stream()
+                .filter(step -> step.getReihenfolge() < this.myStep.getReihenfolge())
+                .max(Comparator.comparing(Step::getReihenfolge));
+        if (maybePreviousStep.isPresent()) {
+            final Step previousStep = maybePreviousStep.get();
+            Optional<Step> maybePreviousPreviousStep = previousStep.getProzess()
+                    .getSchritte()
+                    .stream()
+                    .filter(step -> step.getReihenfolge() < previousStep.getReihenfolge())
+                    .max(Comparator.comparing(Step::getReihenfolge));
+            if (maybePreviousPreviousStep.isPresent()) {
+                previousStep.setBearbeitungsstatusEnum(StepStatus.LOCKED);
+                StepManager.saveStep(previousStep);
+                Step previousPreviousStep = maybePreviousPreviousStep.get();
+                HelperSchritte hs = new HelperSchritte();
+                hs.CloseStepObjectAutomatic(previousPreviousStep);
+            }
+        }
+        return finish();
     }
 
     public String getJsonData() {
@@ -329,7 +363,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
                 createMetadata(dateIssuedType, w3cdtf.print(newspaperPage.getDate()), currentIssue);
 
-                createMetadata(titleType, getTitleFromDate(newspaperPage.getDate()), currentIssue);
+                createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);
             }
             if (newspaperPage.isSupplementTitle()) {
                 try {
@@ -369,9 +403,11 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
     }
 
-    private static String getTitleFromDate(LocalDateTime dateTime) {
+    private static String getTitleFromPage(NewspaperPage page) {
+        LocalDateTime dateTime = page.getDate();
         StringBuilder sb = new StringBuilder();
-        sb.append("Ausgabe vom ");
+        sb.append(page.getIssueType());
+        sb.append(" vom ");
 
         switch (dateTime.dayOfWeek().get()) {
             case 1:

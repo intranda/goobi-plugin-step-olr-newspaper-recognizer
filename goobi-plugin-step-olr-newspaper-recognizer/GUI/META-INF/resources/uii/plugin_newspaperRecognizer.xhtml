@@ -35,6 +35,8 @@
         <h:outputStylesheet library="css" name="newspapergrid.css?v=${buildNumber}" />
         <h:form id="newspaper_form">
 			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
+            <h:commandLink id="delete_and_start_over_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualDataAndStartAutoAnalysis}">
+            </h:commandLink>
 			<h:commandLink id="save_mets_button" action="#{AktuelleSchritteForm.myPlugin.saveMetsFile}">
 				<f:ajax execute="@form" />
 			</h:commandLink>
@@ -57,6 +59,7 @@
            		saveButton: document.getElementById('newspaper_form:save_mets_button'),
            		saveDataButton: document.getElementById('newspaper_form:save_data_button'),
            		finishButton: document.getElementById('newspaper_form:finish_button'),
+           		restartAnalysisButton: document.getElementById('newspaper_form:delete_and_start_over_button'),
            		lang: '#{SpracheForm.locale.language}',
            		thumbHeight: 400,
            		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages}

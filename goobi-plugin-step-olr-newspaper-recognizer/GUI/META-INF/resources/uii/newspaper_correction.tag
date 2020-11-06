@@ -28,6 +28,7 @@
                	<!-- // Wochentage als Checkboxen -->
                	
                	<a class="btn btn-primary " onclick={delete_all_issues}>Alle Ausgaben entfernen</a>
+                <a class="btn btn-danger " onclick={restartAnalysis}>Neu berechnen</a>
 				
 				<div class="pull-right">
 					<!-- Speicher-Button -->
@@ -96,9 +97,9 @@
 							</div>
 
 							<!-- Button für Datumsgenerierung -->
-							<div class="col-xs-1">
-								<a onclick={generateDates}
-									class="btn btn-default fa fa-play">
+							<div class="col-xs-1" style="padding: 0px">
+								<a onclick={generateDates(1)} class="btn btn-default">
+									1<i class="btn-icon-right fa fa-play"></i>
 								</a>
 							</div>
 							
@@ -112,8 +113,10 @@
 								</div>
 								</div>
 							</div>
-							<div class="col-xs-1">
-								<a class="btn btn-default fa fa-eye" onclick={toggleShowOtherImages}></a>
+							<div class="col-xs-1" style="padding: 0px;">
+								 <a onclick={generateDates(2)} class="btn btn-default ">
+                                    2<i class="btn-icon-right fa fa-play"></i>
+                                </a>
 							</div>
 							
 							<!-- "Typ" der Ausgabe -->
@@ -124,7 +127,11 @@
 									</select>
 								</div>
 							</div>
-							<!-- Button zum Anzeigen oder Ausblenden der zugehörigen Seiten -->
+                            <div class="col-xs-1" style="padding: 0px;">
+                                 <a onclick={generateDates(3)} class="btn btn-default">
+                                    3<i class="btn-icon-right fa fa-play"></i>
+                                </a>
+                            </div>
 							
 							<!-- Details über zugehörige Seiten -->
 							<div class="col-xs-6">
@@ -191,7 +198,7 @@
 		this.monthly = false;
 		this.dataDirty = false;
 		this.optsDirty = false;
-		this.issueTypes = ["Ausgabe", "Beilage", "Inhaltsverzeichnis", "Leading page", "Einband und Profil"]
+		this.issueTypes = ["Ausgabe", "Morgenausgabe", "Abendausgabe", "Beilage", "Inhaltsverzeichnis", "Leading page", "Einband und Profil"]
 		this.lang = opts.lang;
 		this.msgs = {};
 		this.sent = {};
@@ -230,6 +237,7 @@
 		    return str;
 		}
 		this.data_el = opts.data_el;
+		this.restartAnalysisButton = opts.restartAnalysisButton;
 		this.save_button = opts.saveButton;
 		this.save_no_mets_button = opts.saveDataButton;
 		this.save_opts_button = opts.saveOptsButton;
@@ -296,6 +304,11 @@
 		    this.data_el.value = this.createSaveData();
 		    this.save_button.click();
 		    this.dataDirty = false;
+		}
+		
+		restartAnalysis() {
+			var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse und startet eine neue automatische Analyse. Wirklich fortfahren?")
+			this.restartAnalysisButton.click();
 		}
 		
 		save_no_mets() {
@@ -512,7 +525,12 @@
 		    e.item.page.suffix = e.target.value;
 		}
 		
-		generateDates(e) {
+		generateDates(skip) {
+			return (e) => this.doGenerateDates(e, skip);
+		},
+		
+		doGenerateDates(e, skip) {
+			console.log("skip:", skip)
 			var dateRegex = /^\d{2}\.\d{2}\.\d{4}$/
 		    var startIdx = e.item.page.pos;
 	        var startPage = this.data[startIdx];
@@ -521,21 +539,27 @@
 				return;
 			}
 		    this.dataDirty = true;
+		    var issueType = startPage.issueType;
 		    var prefix = startPage.prefix;
 		    var suffix = startPage.suffix;
 	        var startNumber = parseInt(startPage.number);
 	        var dateArr = startPage.dateStr.split(".");
 	        var startDate = new XDate(parseInt(dateArr[2]), parseInt(dateArr[1]-1), parseInt(dateArr[0]));
+	        var issueCounter = 0;
 	        for (var i = startIdx + 1; i < this.data.length; i++) {
 	            var page = this.data[i];
-	            if (page.issue && page.issueType === "Ausgabe") {
+	            if (page.issue && page.issueType.toLowerCase().indexOf("ausgabe") >= 0) {
+	            	issueCounter++
 	                startNumber++;
-	                startDate = this.getNextDate(startDate);
-	                page.prefix = prefix;
-	                page.suffix = suffix;
-	                page.number = "" + startNumber;
-	                page.dateStr = startDate.toString("dd.MM.yyyy");
-	                page.dateValid = true;
+	            	if(issueCounter % skip == 0) {
+    	                startDate = this.getNextDate(startDate);
+    	                page.issueType = issueType;
+    	                page.prefix = prefix;
+    	                page.suffix = suffix;
+    	                page.number = "" + startNumber;
+    	                page.dateStr = startDate.toString("dd.MM.yyyy");
+    	                page.dateValid = true;
+	            	}
 	            }
 	        }
 	    }
