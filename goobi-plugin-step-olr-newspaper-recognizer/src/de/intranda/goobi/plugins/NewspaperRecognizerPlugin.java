@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.goobi.beans.Process;
 import org.goobi.beans.Step;
+import org.goobi.managedbeans.StepBean;
 import org.goobi.production.enums.PluginGuiType;
 import org.goobi.production.plugin.interfaces.AbstractStepPlugin;
 import org.goobi.production.plugin.interfaces.IPlugin;
@@ -129,6 +130,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     public String deleteManualDataAndStartAutoAnalysis() throws IOException, InterruptedException, SwapException, DAOException {
+        StepBean stepBean = (StepBean) Helper.getManagedBeanValue("#{AktuelleSchritteForm}");
+        String returnPath = stepBean.SchrittDurchBenutzerZurueckgeben();
         Process pr = this.myStep.getProzess();
         Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
         Files.deleteIfExists(manualF);
@@ -154,7 +157,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 hs.CloseStepObjectAutomatic(previousPreviousStep);
             }
         }
-        return finish();
+        return returnPath;
     }
 
     public String getJsonData() {

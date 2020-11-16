@@ -308,7 +308,9 @@
 		
 		restartAnalysis() {
 			var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse und startet eine neue automatische Analyse. Wirklich fortfahren?")
-			this.restartAnalysisButton.click();
+			if(confirmed) {
+				this.restartAnalysisButton.click();
+			}
 		}
 		
 		save_no_mets() {
