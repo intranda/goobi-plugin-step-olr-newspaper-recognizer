@@ -130,6 +130,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     public String deleteManualDataAndStartAutoAnalysis() throws IOException, InterruptedException, SwapException, DAOException {
+        log.info("deleteManualDataAndStartAutoAnalysis - start");
         StepBean stepBean = (StepBean) Helper.getManagedBeanValue("#{AktuelleSchritteForm}");
         String returnPath = stepBean.SchrittDurchBenutzerZurueckgeben();
         Process pr = this.myStep.getProzess();
@@ -143,6 +144,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 .filter(step -> step.getReihenfolge() < this.myStep.getReihenfolge())
                 .max(Comparator.comparing(Step::getReihenfolge));
         if (maybePreviousStep.isPresent()) {
+            log.info("deleteManualDataAndStartAutoAnalysis - found previous step");
             final Step previousStep = maybePreviousStep.get();
             Optional<Step> maybePreviousPreviousStep = previousStep.getProzess()
                     .getSchritte()
@@ -150,6 +152,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                     .filter(step -> step.getReihenfolge() < previousStep.getReihenfolge())
                     .max(Comparator.comparing(Step::getReihenfolge));
             if (maybePreviousPreviousStep.isPresent()) {
+                log.info("deleteManualDataAndStartAutoAnalysis - found previous previous step");
                 previousStep.setBearbeitungsstatusEnum(StepStatus.LOCKED);
                 StepManager.saveStep(previousStep);
                 Step previousPreviousStep = maybePreviousPreviousStep.get();
@@ -157,6 +160,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 hs.CloseStepObjectAutomatic(previousPreviousStep);
             }
         }
+        log.info("deleteManualDataAndStartAutoAnalysis - returning " + returnPath);
         return returnPath;
     }
 
