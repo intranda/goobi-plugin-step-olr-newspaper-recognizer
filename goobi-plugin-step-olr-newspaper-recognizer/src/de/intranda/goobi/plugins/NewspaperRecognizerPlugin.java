@@ -131,7 +131,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     public String deleteManualDataAndStartAutoAnalysis() throws IOException, InterruptedException, SwapException, DAOException {
         log.info("deleteManualDataAndStartAutoAnalysis - start");
-        StepBean stepBean = (StepBean) Helper.getManagedBeanValue("#{AktuelleSchritteForm}");
+        StepBean stepBean = (StepBean) Helper.getBeanByName("AktuelleSchritteForm", StepBean.class);
         String returnPath = stepBean.SchrittDurchBenutzerZurueckgeben();
         Process pr = this.myStep.getProzess();
         Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
@@ -241,7 +241,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     private String getContextPath() {
-        HelperForm hf = (HelperForm) Helper.getManagedBeanValue("#{HelperForm}");
+        HelperForm hf = (HelperForm) Helper.getBeanByName("HelperForm", HelperForm.class);
         return hf.getServletPathWithHostAsUrl();
     }
 
