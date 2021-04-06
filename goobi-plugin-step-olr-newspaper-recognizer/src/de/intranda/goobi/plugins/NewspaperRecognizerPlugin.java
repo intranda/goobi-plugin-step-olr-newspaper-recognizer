@@ -246,8 +246,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     private String createImageUrl(Image currentImage, Integer size, String format, String baseUrl, int processId, String imageDirName) {
-        String url = String.format("%s/api/image/%d/%s/%s/full/!%d,%d/0/default.jpg", baseUrl, processId, imageDirName, currentImage.getTooltip(),
-                size, size);
+        String url =
+                String.format("%s/api/process/image/%d/%s/%s/full/!%d,%d/0/default.jpg", baseUrl, processId, imageDirName, currentImage.getTooltip(),
+                        size, size);
         return url;
     }
 
