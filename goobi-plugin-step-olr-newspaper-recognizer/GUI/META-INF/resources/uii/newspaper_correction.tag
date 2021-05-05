@@ -34,7 +34,7 @@
 					<!-- Speicher-Button -->
 					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>Speichern</a>
 					<!-- // Speicher-Button -->
-					<a class="btn btn-primary " onclick={save}>METS schreiben</a>
+					<a if={opts.showWriteMetsButton} class="btn btn-primary " onclick={save}>METS schreiben</a>
 					<!-- // verlassen-Button -->
 					<a class="btn btn-primary" onclick={exit}>Plugin verlassen</a>
 				</div>
@@ -185,7 +185,7 @@
 					<!-- Speicher-Button -->
 					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>Speichern</a>
 					<!-- // Speicher-Button -->
-					<a class="btn btn-primary " onclick={save}>METS schreiben</a>
+					<a if={opts.showWriteMetsButton} class="btn btn-primary " onclick={save}>METS schreiben</a>
 					<!-- // verlassen-Button -->
 					<a class="btn btn-primary" onclick={exit}>Plugin verlassen</a>
 				</div>

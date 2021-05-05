@@ -62,7 +62,8 @@
            		restartAnalysisButton: document.getElementById('newspaper_form:delete_and_start_over_button'),
            		lang: '#{SpracheForm.locale.language}',
            		thumbHeight: 400,
-           		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages}
+           		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages},
+           		showWriteMetsButton: #{AktuelleSchritteForm.myPlugin.showWriteMetsButton}
            };
            console.log(opts);
            riot.mount("newspaper_correction", opts);

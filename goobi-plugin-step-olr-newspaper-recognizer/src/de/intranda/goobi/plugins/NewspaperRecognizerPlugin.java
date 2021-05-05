@@ -70,6 +70,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     private String returnPath;
     private boolean loadAllImages;
+    private boolean showWriteMetsButton = true;
 
     private Gson gson = new Gson();
     Type listType = new TypeToken<ArrayList<NewspaperPage>>() {
@@ -86,6 +87,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         HierarchicalConfiguration config = ConfigPlugins.getPluginConfig(PLUGIN_NAME);
         tocDepth = config.getInt("defaultDepth", 1);
         loadAllImages = config.getBoolean("loadAllImages", false);
+        showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
         try {
             readExportedFile();
         } catch (IOException | InterruptedException | SwapException | DAOException e) {
