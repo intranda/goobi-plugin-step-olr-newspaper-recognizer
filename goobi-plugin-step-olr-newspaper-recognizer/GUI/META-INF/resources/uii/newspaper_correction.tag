@@ -13,7 +13,7 @@
          </div>
 
          <div class="box-content" style="background-color:#eee">
-         
+         <div if={!opts.pagenumCorrect} class="alert alert-danger">Seitenzahlen stimmen nicht überein! Es empfielt sich noch einmal auf "Neu berechnen" zu klicken.</div>
          	<!-- Formular für Wochentage -->
        <div class="row">
            <div class="col-sm-12">

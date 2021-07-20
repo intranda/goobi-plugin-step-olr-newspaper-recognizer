@@ -63,7 +63,8 @@
            		lang: '#{SpracheForm.locale.language}',
            		thumbHeight: 400,
            		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages},
-           		showWriteMetsButton: #{AktuelleSchritteForm.myPlugin.showWriteMetsButton}
+           		showWriteMetsButton: #{AktuelleSchritteForm.myPlugin.showWriteMetsButton},
+           		pagenumCorrect: #{AktuelleSchritteForm.myPlugin.pageNumberCountEqual()}
            };
            console.log(opts);
            riot.mount("newspaper_correction", opts);

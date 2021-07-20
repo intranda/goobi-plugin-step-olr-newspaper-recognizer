@@ -34,6 +34,7 @@ import de.sub.goobi.config.ConfigPlugins;
 import de.sub.goobi.forms.HelperForm;
 import de.sub.goobi.helper.Helper;
 import de.sub.goobi.helper.HelperSchritte;
+import de.sub.goobi.helper.StorageProvider;
 import de.sub.goobi.helper.enums.StepStatus;
 import de.sub.goobi.helper.exceptions.DAOException;
 import de.sub.goobi.helper.exceptions.SwapException;
@@ -166,19 +167,15 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         return returnPath;
     }
 
+    public boolean pageNumberCountEqual() {
+        String imageDir = getImageDirectory(this.myStep.getProzess());
+        return this.pages.size() == StorageProvider.getInstance().list(imageDir).size();
+    }
+
     public String getJsonData() {
         if (this.pages.get(0).getImage() == null) {
             Process pr = this.myStep.getProzess();
-            String imageDir = null;
-            try {
-                imageDir = pr.getImagesTifDirectory(false);
-                if (!Files.exists(Paths.get(imageDir))) {
-                    imageDir = pr.getImagesOrigDirectory(false);
-                }
-            } catch (IOException | InterruptedException | SwapException | DAOException e) {
-                // TODO Auto-generated catch block
-                log.error(e);
-            }
+            String imageDir = getImageDirectory(pr);
             String imageDirName = Paths.get(imageDir).toFile().getName();
             int order = 0;
             int count = 0;
@@ -206,6 +203,20 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             log.info(String.format("Counted %d issues", count));
         }
         return gson.toJson(this.pages);
+    }
+
+    private String getImageDirectory(Process pr) {
+        String imageDir = null;
+        try {
+            imageDir = pr.getImagesTifDirectory(false);
+            if (!Files.exists(Paths.get(imageDir))) {
+                imageDir = pr.getImagesOrigDirectory(false);
+            }
+        } catch (IOException | InterruptedException | SwapException | DAOException e) {
+            // TODO Auto-generated catch block
+            log.error(e);
+        }
+        return imageDir;
     }
 
     public void setJsonData(String json) {
