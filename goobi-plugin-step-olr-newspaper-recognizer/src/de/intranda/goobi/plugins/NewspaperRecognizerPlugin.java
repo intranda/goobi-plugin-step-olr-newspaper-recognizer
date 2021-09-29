@@ -262,6 +262,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         String url =
                 String.format("%s/api/process/image/%d/%s/%s/full/!%d,%d/0/default.jpg", baseUrl, processId, imageDirName, currentImage.getTooltip(),
                         size, size);
+        String thumbsPath = String.format("/opt/digiverso/goobi/metadata/%d/thumbs/%s_%d/", processId, imageDirName, size);
+        if (StorageProvider.getInstance().isDirectory(Paths.get(thumbsPath))) {
+            url =
+                    String.format("%s/cs/cs?action=image&sourcepath=file:%s%s.jpg&format=jpg",
+                            baseUrl, thumbsPath, currentImage.getTooltip().substring(0, currentImage.getTooltip().lastIndexOf('.')));
+        }
         return url;
     }
 
