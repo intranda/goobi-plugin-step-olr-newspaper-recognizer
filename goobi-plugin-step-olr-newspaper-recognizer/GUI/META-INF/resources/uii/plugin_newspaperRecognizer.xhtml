@@ -45,12 +45,10 @@
 			</h:commandLink>
 			<h:commandLink id="finish_button" action="#{AktuelleSchritteForm.myPlugin.finish}"></h:commandLink>
 		</h:form>
-        <newspaper_correction></newspaper_correction>
+        <newspaper_correction id="root"></newspaper_correction>
       
-      <script src="template/js/riot+compiler.min.js" type="text/javascript"></script>
       <script src="template/js/xdate.js" type="text/javascript"></script>
-      <script src="newspaper_correction.tag?v=${buildNumber}" type="riot/tag"></script>
-      <script src="thumbcanvas_fixed.tag?v=${buildNumber}" type="riot/tag"></script>
+      <script src="newspaperjs/app.js"></script>
        <script>
        window.onload = function() {
            window.noLoadImages = true;
@@ -67,7 +65,7 @@
            		pagenumCorrect: #{AktuelleSchritteForm.myPlugin.pageNumberCountEqual()}
            };
            console.log(opts);
-           riot.mount("newspaper_correction", opts);
+           mountNewspaperCorrection(opts);
        }
        
 //       function loadThumbnails() {

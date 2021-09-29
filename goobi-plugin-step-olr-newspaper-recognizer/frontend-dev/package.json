@@ -1,0 +1,23 @@
+{
+  "name": "goobi-plugin-step-pagination-frontend",
+  "version": "1.0.0",
+  "description": "JS frontend for goobi pagination plugin",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Oliver Paetzel",
+  "license": "GPL-2.0-or-later",
+  "dependencies": {
+    "riot": "^4.3.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.4.5",
+    "@babel/preset-env": "^7.4.5",
+    "@riotjs/compiler": "^4.2.6",
+    "@riotjs/webpack-loader": "^4.0.1",
+    "babel-loader": "^8.0.6",
+    "filemanager-webpack-plugin": "^2.0.5",
+    "webpack": "^4.34.0"
+  }
+}
