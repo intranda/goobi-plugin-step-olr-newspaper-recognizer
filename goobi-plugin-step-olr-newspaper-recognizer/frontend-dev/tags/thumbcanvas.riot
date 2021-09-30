@@ -1,10 +1,12 @@
 <thumbcanvas>
-	<div ref="observable">
+	<div ref="observable" class="observable">
+		<img if={!small_image} src="newspaper_placeholder.png"></img>
 		<canvas class="thumb-canvas" ref="canvas" onmousemove={mousemove} onmouseout={mouseout}></canvas>
 	</div>
 	<script>
 	export default {
 	onBeforeMount() {
+		this.small_image = null;
 		this.state = {
 			mouseover: false,
 			imageUrl: null
@@ -38,19 +40,18 @@
 	createObserver() {
    		var observer;
    		var options = {
-   		    rootMargin: "100px 0px 1000px 0px",
+   		    rootMargin: "100px 0px 10000px 0px",
    		 	threshold: 0.9,
    		    threshold: 1
    		};
-   		
    		observer = new IntersectionObserver(this.drawFirst, options);
-   		observer.observe(this.refs.observable);
+   		observer.observe(this.$('div.observable'));
    	},
 	
 	drawFirst(entries, observer) {
 	    entries.forEach(entry => {
 		    if(entry.isIntersecting && !this.intersected) {
-			    console.log("draw on canvas intersect: " + this.image_small_url)
+			    //console.log("draw on canvas intersect: " + this.image_small_url)
 		    	this.intersected = true;
 			    this.drawOnCanvas();
 			    if(this.props.preload_large) {
@@ -71,7 +72,9 @@
         var ctx = this.canvas.getContext( '2d' );
         var img = new Image();
         img.onload = () => {
+        	//console.log("download done...", this.props.preload_large)
 	        this.small_image = img;
+	        this.update();
             var scale = this.width / img.width;
             if(scale*img.height > this.height) {
                 scale = this.height / img.height;

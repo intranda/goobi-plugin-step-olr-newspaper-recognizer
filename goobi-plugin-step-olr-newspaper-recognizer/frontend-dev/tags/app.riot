@@ -387,6 +387,7 @@
 	},
 	
 	noIssue(page) {
+		console.time("noIssue")
 	    this.dataDirty = true;
 	    console.log(page.pos)
 	    var currPage = page;
@@ -411,7 +412,10 @@
 	    delete currPage.dateStr;
 	    delete currPage.prefix;
 	    delete currPage.number;
+	    console.timeEnd("noIssue")
+	    console.time("repaint")
 	    this.update();
+	    console.timeEnd("repaint")
 	},
 	
 	otherOnclick(e, otherPage, idx) {
