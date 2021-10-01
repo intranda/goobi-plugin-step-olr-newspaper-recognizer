@@ -1,5 +1,5 @@
 <app>
-	<div class="box box-color lightgrey box-bordered">
+	<div if={!!msgsLoaded} class="box box-color lightgrey box-bordered">
          <div class="box-title">
              <h3>
                  <i class="fa fa-puzzle-piece"></i>
@@ -15,34 +15,41 @@
          <div class="box-content" style="background-color:#eee">
          <div if={!props.pagenumCorrect} class="alert alert-danger">Seitenzahlen stimmen nicht überein! Es empfielt sich noch einmal auf "Neu berechnen" zu klicken.</div>
          	<!-- Formular für Wochentage -->
+        <div if={!imagesLoaded}>
+            <div class="text-center">
+                <h4>{msgs['plugin_newspaperRecognizer_loadingImages']}...</h4>
+                <progress max={data.length} value={loadedImages}></progress>
+            </div>
+        </div>
+       <template if={imagesLoaded}>
        <div class="row">
            <div class="col-sm-12">
                	<!-- Wochentage als Checkboxen -->
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={monday} onclick={() => this.toggleDay('monday')}></input>Montag</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>Dienstag</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>Mittwoch</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>Donnerstag</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={friday} onclick={() => this.toggleDay('friday')}></input>Freitag</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>Samstag</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>Sonntag</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={monday} onclick={() => this.toggleDay('monday')}></input>{msgs['plugin_newspaperRecognizer_monday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>{msgs['plugin_newspaperRecognizer_tuesday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>{msgs['plugin_newspaperRecognizer_wednesday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>{msgs['plugin_newspaperRecognizer_thursday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={friday} onclick={() => this.toggleDay('friday')}></input>{msgs['plugin_newspaperRecognizer_friday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>{msgs['plugin_newspaperRecognizer_saturday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>{msgs['plugin_newspaperRecognizer_sunday']}</label>
                	<!-- // Wochentage als Checkboxen -->
                	
-               	<a class="btn btn-primary " onclick={delete_all_issues}>Alle Ausgaben entfernen</a>
-                <a class="btn btn-danger " onclick={restartAnalysis}>Neu berechnen</a>
+               	<a class="btn btn-primary margin-sides-10" onclick={delete_all_issues}>{msgs['plugin_newspaperRecognizer_removeAllIssues']}</a>
+                <a class="btn btn-danger " onclick={restartAnalysis}>{msgs['plugin_newspaperRecognizer_recompute']}</a>
 				
 				<div class="pull-right">
 					<!-- Speicher-Button -->
-					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>Speichern</a>
+					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
 					<!-- // Speicher-Button -->
-					<a if={props.showWriteMetsButton} class="btn btn-primary " onclick={save}>METS schreiben</a>
+					<a if={props.showWriteMetsButton} class="btn btn-primary margin-sides-10" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
 					<!-- // verlassen-Button -->
-					<a class="btn btn-primary" onclick={exit}>Plugin verlassen</a>
+					<a class="btn btn-primary" onclick={exit}>{msgs['pluginLeave']}</a>
 				</div>
 			</div>
 		</div>
 		<div class="row">
            <div class="col-sm-12">
-           		<label class="check-week"><input type="checkbox" class="checkbox-week" checked={biWeekly} onclick={toggleBiWeekly}></input>Zweiwöchentlich</label>
+           		<label class="check-week"><input type="checkbox" class="checkbox-week" checked={biWeekly} onclick={toggleBiWeekly}></input>{msgs['plugin_newspaperRecognizer_biWeekly']}</label>
            		<!-- <label class="check-week"><input type="checkbox" class="checkbox-week" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
            </div>
        </div>
@@ -91,32 +98,20 @@
 							<!-- Datum der Ausgabe -->
 							<div class="col-xs-5">
 								<div class="form-group {page.dateValid ? '' : 'has-error'}">
-									<input type="text" value={page.dateStr} onkeyup={e => changeDate(e, page)} placeholder="Datum" class="form-control"></input>
-									<span if={!page.dateValid} class="help-block">Wrong date format</span>
+									<input type="text" value={page.dateStr} onkeyup={e => changeDate(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_date']}" class="form-control"></input>
+									<span if={!page.dateValid} class="help-block">{msgs['plugin_newspaperRecognizer_wrongDateFormat']}</span>
 								</div>
 							</div>
 
-							<!-- Button für Datumsgenerierung -->
-							<div class="col-xs-1" style="padding: 0px">
-								<a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-default">
-									1<i class="btn-icon-right fa fa-play"></i>
-								</a>
-							</div>
-							
 							<!-- Nummer der Ausgabe -->
 							<div class="col-xs-5 ">
 								<div class="form-group">
 								<div class="input-group">
-									<input type="text" value={page.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{msg('prefix')}" class="form-control" style="width:33%"></input>
-									<input type="text" value={page.number} onkeyup={e => changeNumber(e, page)} placeholder="Nr." class="form-control" style="width:34%"></input>
-									<input type="text" value={page.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{msg('suffix')}" class="form-control" style="width:33%"></input>
+									<input type="text" value={page.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{msgs['prefix']}" class="form-control" style="width:33%"></input>
+									<input type="text" value={page.number} onkeyup={e => changeNumber(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_nro']}" class="form-control" style="width:34%"></input>
+									<input type="text" value={page.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{msgs['suffix']}" class="form-control" style="width:33%"></input>
 								</div>
 								</div>
-							</div>
-							<div class="col-xs-1" style="padding: 0px;">
-								 <a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-default ">
-                                    2<i class="btn-icon-right fa fa-play"></i>
-                                </a>
 							</div>
 							
 							<!-- "Typ" der Ausgabe -->
@@ -127,18 +122,30 @@
 									</select>
 								</div>
 							</div>
-                            <div class="col-xs-1" style="padding: 0px;">
-                                 <a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-default">
-                                    3<i class="btn-icon-right fa fa-play"></i>
-                                </a>
-                            </div>
 							
 							<!-- Details über zugehörige Seiten -->
 							<div class="col-xs-6">
-								{msg('otherPages')}: {page.otherPages.length}
+								{msgs['otherPages']}: {page.otherPages.length}
 							</div>
-<!-- 							<div class="col-xs-2"></div> -->
-							
+
+							<!-- Button für Datumsgenerierung -->
+                            <div class="col-xs-6" style="margin-top: 5px;">
+                                <a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-sm btn-primary">
+                                    {msgs['plugin_newspaperRecognizer_applyEveryIssue']}<i class="btn-icon-right fa fa-play"></i>
+                                </a>
+                            </div>
+                            
+                            <div class="col-xs-6" style="margin: 5px 0;">
+                                 <a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-sm btn-primary ">
+                                    {msgs['plugin_newspaperRecognizer_applyEverySecondIssue']}<i class="btn-icon-right fa fa-play"></i>
+                                </a>
+                            </div>
+                            
+                            <div class="col-xs-6" style="">
+                                 <a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-sm btn-primary">
+                                    {msgs['plugin_newspaperRecognizer_applyEveryThirdIssue']}<i class="btn-icon-right fa fa-play"></i>
+                                </a>
+                            </div>
 							
 						</div>
 						
@@ -173,24 +180,26 @@
                         <hr style="border-top:1px #bbb solid">
                      </my_row>
                  </div>
-             </div>             
+             </div>      
+             </template>       
          </div>
          
-         <hr />
-         
-         <div class="row">
-              <div class="col-sm-12">
-               	
-				<div class="pull-right">
-					<!-- Speicher-Button -->
-					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>Speichern</a>
-					<!-- // Speicher-Button -->
-					<a if={props.showWriteMetsButton} class="btn btn-primary " onclick={save}>METS schreiben</a>
-					<!-- // verlassen-Button -->
-					<a class="btn btn-primary" onclick={exit}>Plugin verlassen</a>
-				</div>
-			</div>
-		</div>
+         <template if={imagesLoaded}>
+             <hr />
+             
+             <div class="row">
+                  <div class="col-sm-12">
+                   	<div class="pull-right">
+    				<!-- Speicher-Button -->
+    					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
+    					<!-- // Speicher-Button -->
+    					<a if={props.showWriteMetsButton} class="btn btn-primary margin-sides-10" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
+    					<!-- // verlassen-Button -->
+    					<a class="btn btn-primary" onclick={exit}>{msgs['pluginLeave']}</a>
+                    </div>
+    			</div>
+    		</div>
+        </template>
     </div>
       
   <script>
@@ -211,23 +220,7 @@
 		this.sent = {};
 		this.msg_queue = [];
 		this.ws_ready = false;
-		if(window.location.protocol == "http:") {
-			this.msg_ws = new WebSocket("ws://" + location.host + "/" + location.pathname.split("/")[1] + "/messagesws");
-		} else {
-		    this.msg_ws = new WebSocket("wss://" + location.host + "/" + location.pathname.split("/")[1] + "/messagesws");
-		}
-		this.msg_ws.onopen = (evt) => {
-		    console.log("onopen", this.msg_queue)
-		    for(var i=0;i<this.msg_queue.length;i++) {
-		        this.msg_ws.send(JSON.stringify({key: this.msg_queue[i], lang: this.lang}));
-		    }
-		}
-		this.msg_ws.onmessage = (msg) => {
-		    var message = JSON.parse(msg.data);
-		    console.log(message)
-		    this.msgs[message.key] = message.value;
-		    this.update();
-		}
+		
 		this.data_el = props.data_el;
 		this.restartAnalysisButton = props.restartAnalysisButton;
 		this.save_button = props.saveButton;
@@ -273,33 +266,55 @@
 		this.friday = true;
 		this.saturday = true;
 		this.sunday = true;
+		fetch(`/goobi/api/messages/${props.language}`, {
+	          method: 'GET',
+	          credentials: 'same-origin'
+	      }).then(resp => {
+	        resp.json().then(json => {
+	          this.msgs = json;
+	          this.msgsLoaded = true;
+	          this.update();
+	        })
+	      });
     },
     onMounted(props, state) {
       console.log("mounted");
       setInterval(() => {
 	        this.save_no_mets();
 	    }, 15000);
+      if(this.loadallimages) {
+    	  this.loadedImages = 0;
+    	  window.npImages = {};
+    	  for(var i=0;i < this.data.length; i++) {
+    		  let dataImage = this.data[i];
+    		  let image = new Image()
+    		  image.onload = () => {
+    			  window.npImages[dataImage.image.thumbnailUrl] = image;
+    		  }
+    		  image.src = dataImage.image.thumbnailUrl;
+    	  }
+    	  this.downloadChecker = setInterval(() => {
+    		  this.loadedImages = Object.keys(window.npImages).length; 
+    		  if(this.loadedImages == this.data.length) {
+    			  this.update();
+    			  setTimeout(() => {
+        			  this.imagesLoaded = true;
+        			  clearInterval(this.downloadChecker);
+        			  this.update();
+    			  },100)
+    		  }
+			  this.update();
+    	  }, 500)
+      } else {
+    	  this.imagesLoaded = true;
+    	  this.update();
+      }
     },
     onBeforeUpdate(props, state) {
     },
     onUpdated(props, state) {
       
     },
-    msg(str) {
-	    if(this.msgs[str]) {
-	        return this.msgs[str]
-	    } else {
-	        if(!this.sent[str]) {
-	        	this.sent[str] = true;
-	            if(this.ws_ready) {
-		            this.msg_ws.send(JSON.stringify({key: str, lang: this.lang}));
-	            } else {
-	                this.msg_queue.push(str);
-	            }
-	        }
-	    }
-	    return str;
-	},
 	exit() {
 	    this.finish_button.click();
 	},
