@@ -61,3 +61,7 @@
 .btn-icon-right {
 	margin-left: 3px;
 }
+
+progress::-moz-progress-bar { background-color: #368ee0; !important;}
+progress::-webkit-progress-value { background: #368ee0; }
+progress { color: #368ee0; }
