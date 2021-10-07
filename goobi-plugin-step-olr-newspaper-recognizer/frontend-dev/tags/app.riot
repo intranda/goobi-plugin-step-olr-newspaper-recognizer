@@ -13,15 +13,22 @@
          </div>
 
          <div class="box-content" style="background-color:#eee">
-         <div if={!props.pagenumCorrect} class="alert alert-danger">Seitenzahlen stimmen nicht überein! Es empfielt sich noch einmal auf "Neu berechnen" zu klicken.</div>
+         <div if={!props.pagenumCorrect} class="row">
+            <div class="col-sm-12">
+             <div class="alert alert-danger">Seitenzahlen stimmen nicht überein! Es empfielt sich noch einmal auf "Neu berechnen" oder "Manuelle Ergebnisse löschen" zu klicken.</div>
+            
+                <a class="btn btn-danger " onclick={restartAnalysis}>{msgs['plugin_newspaperRecognizer_recompute']}</a>
+                <a class="btn btn-danger margin-sides-10" onclick={deleteManualResults}>{msgs['plugin_newspaperRecognizer_deleteManualResults']}</a>
+            </div>
+         </div>
          	<!-- Formular für Wochentage -->
-        <div if={!imagesLoaded}>
+        <div if={!imagesLoaded && props.pagenumCorrect}>
             <div class="text-center">
                 <h4>{msgs['plugin_newspaperRecognizer_loadingImages']}...</h4>
                 <progress max={data.length} value={loadedImages}></progress>
             </div>
         </div>
-       <template if={imagesLoaded}>
+       <template if={imagesLoaded && props.pagenumCorrect}>
        <div class="row">
            <div class="col-sm-12">
                	<!-- Wochentage als Checkboxen -->
@@ -35,7 +42,6 @@
                	<!-- // Wochentage als Checkboxen -->
                	
                	<a class="btn btn-primary margin-sides-10" onclick={delete_all_issues}>{msgs['plugin_newspaperRecognizer_removeAllIssues']}</a>
-                <a class="btn btn-danger " onclick={restartAnalysis}>{msgs['plugin_newspaperRecognizer_recompute']}</a>
 				
 				<div class="pull-right">
 					<!-- Speicher-Button -->
@@ -223,6 +229,7 @@
 		
 		this.data_el = props.data_el;
 		this.restartAnalysisButton = props.restartAnalysisButton;
+		this.deleteManualResultsButton = props.deleteManualResultsButton;
 		this.save_button = props.saveButton;
 		this.save_no_mets_button = props.saveDataButton;
 		this.save_props_button = props.savepropsButton;
@@ -282,7 +289,7 @@
       setInterval(() => {
 	        this.save_no_mets();
 	    }, 15000);
-      if(this.loadallimages) {
+      if(this.loadallimages && props.pagenumCorrect) {
     	  this.loadedImages = 0;
     	  window.npImages = {};
     	  for(var i=0;i < this.data.length; i++) {
@@ -329,6 +336,13 @@
 		var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse und startet eine neue automatische Analyse. Wirklich fortfahren?")
 		if(confirmed) {
 			this.restartAnalysisButton.click();
+		}
+	},
+	
+	deleteManualResults() {
+		var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse. Wirklich fortfahren?")
+		if(confirmed) {
+			this.deleteManualResultsButton.click();
 		}
 	},
 	

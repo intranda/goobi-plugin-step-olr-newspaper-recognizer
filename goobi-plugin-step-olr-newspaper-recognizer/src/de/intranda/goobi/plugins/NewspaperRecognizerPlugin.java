@@ -136,9 +136,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         log.info("deleteManualDataAndStartAutoAnalysis - start");
         StepBean stepBean = (StepBean) Helper.getBeanByName("AktuelleSchritteForm", StepBean.class);
         String returnPath = stepBean.SchrittDurchBenutzerZurueckgeben();
-        Process pr = this.myStep.getProzess();
-        Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
-        Files.deleteIfExists(manualF);
+        deleteManualData();
         this.myStep.setBearbeitungsstatusEnum(StepStatus.LOCKED);
         StepManager.saveStep(myStep);
         Optional<Step> maybePreviousStep = this.myStep.getProzess()
@@ -165,6 +163,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
         log.info("deleteManualDataAndStartAutoAnalysis - returning " + returnPath);
         return returnPath;
+    }
+
+    public void deleteManualData() throws IOException, InterruptedException, SwapException, DAOException {
+        Process pr = this.myStep.getProzess();
+        Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
+        Files.deleteIfExists(manualF);
     }
 
     public boolean pageNumberCountEqual() {

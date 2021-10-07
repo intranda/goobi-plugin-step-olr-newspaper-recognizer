@@ -35,7 +35,8 @@
         <h:outputStylesheet library="css" name="newspapergrid.css?v=${buildNumber}" />
         <h:form id="newspaper_form">
 			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
-            <h:commandLink id="delete_and_start_over_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualDataAndStartAutoAnalysis}">
+            <h:commandLink id="delete_and_start_over_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualDataAndStartAutoAnalysis}"/>
+            <h:commandLink id="delete_manual_results_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualData}">
             </h:commandLink>
 			<h:commandLink id="save_mets_button" action="#{AktuelleSchritteForm.myPlugin.saveMetsFile}">
 				<f:ajax execute="@form" />
@@ -50,7 +51,7 @@
       <script src="template/js/xdate.js" type="text/javascript"></script>
       <script src="newspaperjs/app.js"></script>
        <script>
-       window.onload = function() {
+       window.addEventListener("load", function() {
            window.noLoadImages = true;
            var opts = {
            		data_el: document.getElementById('newspaper_form:my_plugin_data'),
@@ -58,6 +59,7 @@
            		saveDataButton: document.getElementById('newspaper_form:save_data_button'),
            		finishButton: document.getElementById('newspaper_form:finish_button'),
            		restartAnalysisButton: document.getElementById('newspaper_form:delete_and_start_over_button'),
+           		deleteManualResultsButton: document.getElementById('newspaper_form:delete_manual_results_button'),
            		language: '#{SpracheForm.locale.language}',
            		thumbHeight: 400,
            		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages},
@@ -66,7 +68,7 @@
            };
            console.log(opts);
            mountNewspaperCorrection(opts);
-       }
+       });
        
 //       function loadThumbnails() {
 //           console.log("loading thumbnails");
