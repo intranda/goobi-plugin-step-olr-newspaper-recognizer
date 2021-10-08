@@ -41,7 +41,7 @@ import de.sub.goobi.helper.exceptions.SwapException;
 import de.sub.goobi.metadaten.Image;
 import de.sub.goobi.persistence.managers.StepManager;
 import lombok.Data;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 import ugh.dl.ContentFile;
 import ugh.dl.DigitalDocument;
@@ -60,7 +60,7 @@ import ugh.exceptions.TypeNotAllowedForParentException;
 import ugh.exceptions.WriteException;
 
 @PluginImplementation
-@Log4j
+@Log4j2
 @Data
 public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements IStepPlugin, IPlugin {
     private static final String PLUGIN_NAME = "intranda_step_newspaperRecognizer";
@@ -168,6 +168,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     public void deleteManualData() throws IOException, InterruptedException, SwapException, DAOException {
         Process pr = this.myStep.getProzess();
         Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
+
+        log.info("Deleting {}", manualF);
+
         Files.deleteIfExists(manualF);
     }
 
