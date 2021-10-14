@@ -273,7 +273,8 @@
 		this.friday = true;
 		this.saturday = true;
 		this.sunday = true;
-		fetch(`/goobi/api/messages/${props.language}`, {
+		path = path.substring(0, path.indexOf("/uii/"));
+		fetch(`${path}/api/messages/${props.language}`, {
 	          method: 'GET',
 	          credentials: 'same-origin'
 	      }).then(resp => {
