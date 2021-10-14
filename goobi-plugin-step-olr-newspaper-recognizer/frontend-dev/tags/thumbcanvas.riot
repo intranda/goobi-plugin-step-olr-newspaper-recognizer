@@ -43,8 +43,7 @@
    		var observer;
    		var options = {
    		    rootMargin: "500px 0px 10000px 0px",
-   		 	threshold: 0.9,
-   		    threshold: 1
+   		    threshold: 0.8
    		};
    		observer = new IntersectionObserver(this.drawFirst, options);
    		observer.observe(this.$('div.observable'));
