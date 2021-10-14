@@ -273,6 +273,7 @@
 		this.friday = true;
 		this.saturday = true;
 		this.sunday = true;
+		var path = window.location.pathname;
 		path = path.substring(0, path.indexOf("/uii/"));
 		fetch(`${path}/api/messages/${props.language}`, {
 	          method: 'GET',
