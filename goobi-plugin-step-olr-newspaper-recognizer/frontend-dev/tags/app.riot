@@ -3,7 +3,7 @@
          <div class="box-title">
              <h3>
                  <i class="fa fa-puzzle-piece"></i>
-                 <h:outputText id="id9a" value="#{myPageTitle}" />
+                 {props.title}
              </h3>
              <div class="actions">
                  <a id="id10" onclick={reload} class="btn btn-mini" style="color:white;">
@@ -137,19 +137,19 @@
 							<!-- Button für Datumsgenerierung -->
                             <div class="col-xs-6" style="margin-top: 5px;">
                                 <a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-sm btn-primary">
-                                    {msgs['plugin_newspaperRecognizer_applyEveryIssue']}<i class="btn-icon-right fa fa-play"></i>
+                                    {msgs['plugin_newspaperRecognizer_applyEveryIssue']}
                                 </a>
                             </div>
                             
                             <div class="col-xs-6" style="margin: 5px 0;">
                                  <a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-sm btn-primary ">
-                                    {msgs['plugin_newspaperRecognizer_applyEverySecondIssue']}<i class="btn-icon-right fa fa-play"></i>
+                                    {msgs['plugin_newspaperRecognizer_applyEverySecondIssue']}
                                 </a>
                             </div>
                             
                             <div class="col-xs-6" style="">
                                  <a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-sm btn-primary">
-                                    {msgs['plugin_newspaperRecognizer_applyEveryThirdIssue']}<i class="btn-icon-right fa fa-play"></i>
+                                    {msgs['plugin_newspaperRecognizer_applyEveryThirdIssue']}
                                 </a>
                             </div>
 							
@@ -241,7 +241,7 @@
 		this.data = JSON.parse(this.data_el.value);
 		for(var i=0;i < this.data.length; i++) {
 		    var page = this.data[i];
-		    if(page.dateValid === undefined) {
+		    if(typeof page.dateValid === "undefined" || page.dateValid === undefined) {
 			    page.dateValid = true;
 		    }
 		    page.pos = i;
