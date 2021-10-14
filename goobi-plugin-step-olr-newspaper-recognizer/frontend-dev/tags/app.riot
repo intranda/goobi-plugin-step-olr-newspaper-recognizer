@@ -521,6 +521,10 @@
 	    } else {
 		    origPage.issue = true;
 		    page.issue = true;
+		    if(!page.issueType) {
+		    	page.issueType = "Ausgabe";
+		    	origPage.issueType = "Ausgabe";
+		    }
 		    page.supplementPages = [];
 		    var newIssuePages = oldArr.splice(idx, oldArr.length-idx);
 		    console.log(newIssuePages)
@@ -586,7 +590,7 @@
         var issueCounter = 0;
         for (var i = startIdx + 1; i < this.data.length; i++) {
             var page = this.data[i];
-            if (page.issue && page.issueType.toLowerCase().indexOf("ausgabe") >= 0) {
+            if (page.issue && (!page.issueType || page.issueType.toLowerCase().indexOf("ausgabe") >= 0)) {
             	issueCounter++
                 startNumber++;
             	if(issueCounter % skip == 0) {
