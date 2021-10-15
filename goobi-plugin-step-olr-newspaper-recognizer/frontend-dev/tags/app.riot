@@ -196,8 +196,11 @@
              <div class="row">
                   <div class="col-sm-12">
                    	<div class="pull-right">
+                        <span id="ajaxloaderbottom" style="margin-right: 15px; display:none;">
+                            <img src="template/img/goobi/ajaxloader2.gif" />
+                        </span>
     				<!-- Speicher-Button -->
-    					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
+    					<a class="btn btn-primary" style="margin: 20px 0;" disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
     					<!-- // Speicher-Button -->
     					<a if={props.showWriteMetsButton} class="btn btn-primary margin-sides-10" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
     					<!-- // verlassen-Button -->
@@ -287,6 +290,7 @@
 	      });
     },
     onMounted(props, state) {
+      this.addAjaxEvent();
       console.log("mounted");
       setInterval(() => {
 	        this.save_no_mets();
@@ -323,6 +327,31 @@
     },
     onUpdated(props, state) {
       
+    },
+    addAjaxEvent() {
+    	jsf.ajax.addOnEvent((data) => {
+            var ajaxstatus = data.status; // Can be "begin", "complete" and "success"
+            var ajaxloader = this.$("#ajaxloaderbottom");
+
+            switch (ajaxstatus) {
+                case "begin": // This is called right before ajax request is been sent.
+                	console.log("ajaxloader:", ajaxloader)
+                	if(ajaxloader) {
+                    	ajaxloader.style.display = 'inline';
+                	}
+                    break;
+
+                case "complete": // This is called right after ajax response is received.
+                	if(ajaxloader) {
+                    	ajaxloader.style.display = 'none';
+                	}
+                    break;
+
+                case "success": // This is called when ajax response is successfully processed.
+                    // NOOP.
+                    break;
+            }
+        });
     },
 	exit() {
 	    this.finish_button.click();
