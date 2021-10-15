@@ -87,7 +87,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         this.myStep = step;
         HierarchicalConfiguration config = ConfigPlugins.getPluginConfig(PLUGIN_NAME);
         tocDepth = config.getInt("defaultDepth", 1);
-        loadAllImages = config.getBoolean("loadAllImages", false);
+        loadAllImages = true;
         showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
         try {
             readExportedFile();

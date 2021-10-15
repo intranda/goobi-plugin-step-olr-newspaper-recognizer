@@ -1,6 +1,5 @@
 <config_plugin>
 	<!-- which depth shall be used for the document analysis -->
 	<defaultDepth>1</defaultDepth>
-	<loadAllImages>false</loadAllImages>
     <showWriteMetsButton>true</showWriteMetsButton>
 </config_plugin>
