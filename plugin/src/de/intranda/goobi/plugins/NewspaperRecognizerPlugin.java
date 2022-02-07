@@ -262,6 +262,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                         .map(p -> new NewspaperPage(p.getFileName().toString()))
                         .collect(Collectors.toList());
             }
+            if (!Files.isDirectory(automaticF)) {
+                Files.createDirectories(automaticF);
+            }
             try (BufferedWriter bufw = Files.newBufferedWriter(automaticF, StandardOpenOption.CREATE_NEW)) {
                 gson.toJson(this.pages, bufw);
             }
