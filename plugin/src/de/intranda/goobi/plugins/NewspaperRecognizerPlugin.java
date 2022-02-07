@@ -262,6 +262,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                         .map(p -> new NewspaperPage(p.getFileName().toString()))
                         .collect(Collectors.toList());
             }
+            for (NewspaperPage page : pages) {
+                page.guessIssue();
+            }
             if (!Files.isDirectory(automaticF.getParent())) {
                 Files.createDirectories(automaticF.getParent());
             }

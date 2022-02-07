@@ -64,10 +64,16 @@ public class NewspaperPage {
     }
 
     public void addPage(NewspaperPage page) {
+        if (this.otherPages == null) {
+            this.otherPages = new ArrayList<>();
+        }
         this.otherPages.add(page);
     }
 
     public void addAllPages(List<NewspaperPage> otherPages2) {
+        if (this.otherPages == null) {
+            this.otherPages = new ArrayList<>();
+        }
         for (NewspaperPage page : otherPages2) {
             this.otherPages.add(page);
         }
