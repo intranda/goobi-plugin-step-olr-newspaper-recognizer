@@ -8,11 +8,14 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.goobi.beans.Process;
@@ -244,11 +247,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private void readExportedFile() throws IOException, InterruptedException, SwapException, DAOException {
         Process pr = this.myStep.getProzess();
         Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
+        Path automaticF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result.json");
         if (Files.exists(manualF)) {
             try (BufferedReader br = Files.newBufferedReader(manualF)) {
                 this.pages = gson.fromJson(br, listType);
             }
-        } else {
+        } else if (Files.exists(automaticF)) {
             String resultF = pr.getProcessDataDirectory() + "/taskmanager/issues_result.json";
             try (FileReader fr = new FileReader(resultF)) {
                 this.pages = gson.fromJson(new JsonReader(fr), listType);
@@ -256,6 +260,17 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
             for (NewspaperPage page : pages) {
                 page.guessIssue();
+            }
+        } else {
+            String imageDir = getImageDirectory(pr);
+            try (Stream<Path> imageFiles = Files.list(Paths.get(imageDir))) {
+                this.pages = imageFiles
+                        .sorted()
+                        .map(p -> new NewspaperPage(p.getFileName().toString()))
+                        .collect(Collectors.toList());
+            }
+            try (BufferedWriter bufw = Files.newBufferedWriter(automaticF, StandardOpenOption.CREATE_NEW)) {
+                gson.toJson(this.pages, bufw);
             }
         }
     }

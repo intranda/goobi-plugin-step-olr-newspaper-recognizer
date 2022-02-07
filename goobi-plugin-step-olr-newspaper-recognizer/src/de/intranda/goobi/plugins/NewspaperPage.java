@@ -85,4 +85,9 @@ public class NewspaperPage {
         }
         return b.toString();
     }
+
+    public NewspaperPage(String filename) {
+        super();
+        this.filename = filename;
+    }
 }
