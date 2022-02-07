@@ -34,6 +34,11 @@ public class NewspaperPage {
     private boolean dateValid;
     private String issueType;
 
+    public NewspaperPage(String filename) {
+        super();
+        this.filename = filename;
+    }
+
     public String getFilenameAsTif() {
         return filename.replace(".jpg", ".tif");
     }
