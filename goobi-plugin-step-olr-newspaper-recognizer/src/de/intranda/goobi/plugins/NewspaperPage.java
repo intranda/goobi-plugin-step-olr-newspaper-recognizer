@@ -59,6 +59,10 @@ public class NewspaperPage {
     }
 
     public void addPage(NewspaperPage page) {
+        if (this.otherPages == null) {
+            this.otherPages = new ArrayList<NewspaperPage>();
+            this.showOtherImages = true;
+        }
         this.otherPages.add(page);
     }
 
