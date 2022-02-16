@@ -33,10 +33,12 @@
 
     <ui:define name="content">
         <h:outputStylesheet library="css" name="newspapergrid.css?v=${buildNumber}" />
+        <h:form id="extra_form">
+            <h:commandLink id="delete_and_start_over_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualDataAndStartAutoAnalysis}"/>
+            <h:commandLink id="delete_manual_results_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualData}"/>
+        </h:form>
         <h:form id="newspaper_form">
 			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
-            <h:commandLink id="delete_and_start_over_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualDataAndStartAutoAnalysis}">
-            </h:commandLink>
 			<h:commandLink id="save_mets_button" action="#{AktuelleSchritteForm.myPlugin.saveMetsFile}">
 				<f:ajax execute="@form" />
 			</h:commandLink>
@@ -45,30 +47,30 @@
 			</h:commandLink>
 			<h:commandLink id="finish_button" action="#{AktuelleSchritteForm.myPlugin.finish}"></h:commandLink>
 		</h:form>
-        <newspaper_correction></newspaper_correction>
+        <div id="root"></div>
       
-      <script src="template/js/riot+compiler.min.js" type="text/javascript"></script>
       <script src="template/js/xdate.js" type="text/javascript"></script>
-      <script src="newspaper_correction.tag?v=${buildNumber}" type="riot/tag"></script>
-      <script src="thumbcanvas_fixed.tag?v=${buildNumber}" type="riot/tag"></script>
+      <script src="newspaperjs/app.js"></script>
        <script>
-       window.onload = function() {
+       window.addEventListener("load", function() {
            window.noLoadImages = true;
            var opts = {
            		data_el: document.getElementById('newspaper_form:my_plugin_data'),
            		saveButton: document.getElementById('newspaper_form:save_mets_button'),
            		saveDataButton: document.getElementById('newspaper_form:save_data_button'),
            		finishButton: document.getElementById('newspaper_form:finish_button'),
-           		restartAnalysisButton: document.getElementById('newspaper_form:delete_and_start_over_button'),
-           		lang: '#{SpracheForm.locale.language}',
+           		restartAnalysisButton: document.getElementById('extra_form:delete_and_start_over_button'),
+           		deleteManualResultsButton: document.getElementById('extra_form:delete_manual_results_button'),
+           		language: '#{SpracheForm.locale.language}',
            		thumbHeight: 400,
+           		title: "#{msgs[('plugin_').concat(AktuelleSchritteForm.myPlugin.title)]}",
            		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages},
            		showWriteMetsButton: #{AktuelleSchritteForm.myPlugin.showWriteMetsButton},
            		pagenumCorrect: #{AktuelleSchritteForm.myPlugin.pageNumberCountEqual()}
            };
            console.log(opts);
-           riot.mount("newspaper_correction", opts);
-       }
+           mountNewspaperCorrection(opts);
+       });
        
 //       function loadThumbnails() {
 //           console.log("loading thumbnails");

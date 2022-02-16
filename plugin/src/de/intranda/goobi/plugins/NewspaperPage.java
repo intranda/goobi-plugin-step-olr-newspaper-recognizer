@@ -66,6 +66,7 @@ public class NewspaperPage {
     public void addPage(NewspaperPage page) {
         if (this.otherPages == null) {
             this.otherPages = new ArrayList<>();
+            this.showOtherImages = true;
         }
         this.otherPages.add(page);
     }
@@ -96,4 +97,5 @@ public class NewspaperPage {
         }
         return b.toString();
     }
+
 }

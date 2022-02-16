@@ -44,7 +44,7 @@ import de.sub.goobi.helper.exceptions.SwapException;
 import de.sub.goobi.metadaten.Image;
 import de.sub.goobi.persistence.managers.StepManager;
 import lombok.Data;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 import ugh.dl.ContentFile;
 import ugh.dl.DigitalDocument;
@@ -63,7 +63,7 @@ import ugh.exceptions.TypeNotAllowedForParentException;
 import ugh.exceptions.WriteException;
 
 @PluginImplementation
-@Log4j
+@Log4j2
 @Data
 public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements IStepPlugin, IPlugin {
     private static final String PLUGIN_NAME = "intranda_step_newspaperRecognizer";
@@ -90,7 +90,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         this.myStep = step;
         HierarchicalConfiguration config = ConfigPlugins.getPluginConfig(PLUGIN_NAME);
         tocDepth = config.getInt("defaultDepth", 1);
-        loadAllImages = config.getBoolean("loadAllImages", false);
+        loadAllImages = true;
         showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
         try {
             readExportedFile();
@@ -139,9 +139,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         log.info("deleteManualDataAndStartAutoAnalysis - start");
         StepBean stepBean = (StepBean) Helper.getBeanByName("AktuelleSchritteForm", StepBean.class);
         String returnPath = stepBean.SchrittDurchBenutzerZurueckgeben();
-        Process pr = this.myStep.getProzess();
-        Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
-        Files.deleteIfExists(manualF);
+        deleteManualData();
         this.myStep.setBearbeitungsstatusEnum(StepStatus.LOCKED);
         StepManager.saveStep(myStep);
         Optional<Step> maybePreviousStep = this.myStep.getProzess()
@@ -168,6 +166,15 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
         log.info("deleteManualDataAndStartAutoAnalysis - returning " + returnPath);
         return returnPath;
+    }
+
+    public void deleteManualData() throws IOException, InterruptedException, SwapException, DAOException {
+        Process pr = this.myStep.getProzess();
+        Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
+
+        log.info("Deleting {}", manualF);
+
+        Files.deleteIfExists(manualF);
     }
 
     public boolean pageNumberCountEqual() {
@@ -283,6 +290,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         String url =
                 String.format("%s/api/process/image/%d/%s/%s/full/!%d,%d/0/default.jpg", baseUrl, processId, imageDirName, currentImage.getTooltip(),
                         size, size);
+        String thumbsPath = String.format("/opt/digiverso/goobi/metadata/%d/thumbs/%s_%d/", processId, imageDirName, size);
+        if (StorageProvider.getInstance().isDirectory(Paths.get(thumbsPath))) {
+            url =
+                    String.format("%s/cs/cs?action=image&sourcepath=file:%s%s.jpg&format=jpg",
+                            baseUrl, thumbsPath, currentImage.getTooltip().substring(0, currentImage.getTooltip().lastIndexOf('.')));
+        }
         return url;
     }
 

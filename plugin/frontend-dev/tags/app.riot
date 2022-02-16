@@ -1,0 +1,765 @@
+<app>
+	<div if={!!msgsLoaded} class="box box-color lightgrey box-bordered">
+         <div class="box-title">
+             <h3>
+                 <i class="fa fa-puzzle-piece"></i>
+                 {props.title}
+             </h3>
+             <div class="actions">
+                 <a id="id10" onclick={reload} class="btn btn-mini" style="color:white;">
+                     <i class="fa fa-refresh" ></i>
+                 </a>
+             </div>
+         </div>
+
+         <div class="box-content" style="background-color:#eee">
+         <div if={!props.pagenumCorrect} class="row">
+            <div class="col-sm-12">
+             <div class="alert alert-danger">Seitenzahlen stimmen nicht überein! Es empfielt sich noch einmal auf "Neu berechnen" oder "Manuelle Ergebnisse löschen" zu klicken.</div>
+            
+                <a class="btn btn-danger " onclick={restartAnalysis}>{msgs['plugin_newspaperRecognizer_recompute']}</a>
+                <a class="btn btn-danger margin-sides-10" onclick={deleteManualResults}>{msgs['plugin_newspaperRecognizer_deleteManualResults']}</a>
+            </div>
+         </div>
+         	<!-- Formular für Wochentage -->
+        <div if={!imagesLoaded && props.pagenumCorrect}>
+            <div class="text-center">
+                <h4>{msgs['plugin_newspaperRecognizer_loadingImages']}...</h4>
+                <progress max={data.length} value={loadedImages}></progress>
+            </div>
+        </div>
+       <template if={imagesLoaded && props.pagenumCorrect}>
+       <div class="row">
+           <div class="col-sm-12">
+               	<!-- Wochentage als Checkboxen -->
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={monday} onclick={() => this.toggleDay('monday')}></input>{msgs['plugin_newspaperRecognizer_monday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>{msgs['plugin_newspaperRecognizer_tuesday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>{msgs['plugin_newspaperRecognizer_wednesday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>{msgs['plugin_newspaperRecognizer_thursday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={friday} onclick={() => this.toggleDay('friday')}></input>{msgs['plugin_newspaperRecognizer_friday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>{msgs['plugin_newspaperRecognizer_saturday']}</label>
+				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>{msgs['plugin_newspaperRecognizer_sunday']}</label>
+               	<!-- // Wochentage als Checkboxen -->
+               	
+               	<a class="btn btn-primary margin-sides-10" onclick={delete_all_issues}>{msgs['plugin_newspaperRecognizer_removeAllIssues']}</a>
+				
+				<div class="pull-right">
+					<!-- Speicher-Button -->
+					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
+					<!-- // Speicher-Button -->
+					<a if={props.showWriteMetsButton} class="btn btn-primary margin-sides-10" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
+					<!-- // verlassen-Button -->
+					<a class="btn btn-primary" onclick={exit}>{msgs['pluginLeave']}</a>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+           <div class="col-sm-12">
+           		<label class="check-week"><input type="checkbox" class="checkbox-week" checked={biWeekly} onclick={toggleBiWeekly}></input>{msgs['plugin_newspaperRecognizer_biWeekly']}</label>
+           		<!-- <label class="check-week"><input type="checkbox" class="checkbox-week" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
+           </div>
+       </div>
+	<hr />
+	<!-- // Formular für Wochentage -->
+	
+	
+	<!-- Bereich für Ausgaben -->
+	<div layout="block" class="col-sm-12">
+        <div class="row margin-top-most margin-bottom-most">
+		
+		<!-- Auflistung aller Ausgaben -->
+				<my_row each={page in data} if={page.issue}>
+                  	<div  class="row thumbnail-row">
+						<div class="col-sm-4">
+							
+							<div class="col-xs-6 thumbnail-image" style="position: relative;">
+
+								<!-- Bild der Ausgabe -->
+								<div class="goobi-thumbnail font-light">
+									<div class="goobi-thumbnail-image">
+										<div class="thumb" style="min-height: {thumb_height}px;">
+											<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl} 
+												image_large={page.image.largeThumbnailUrl} 
+												title={page.image.tooltip}
+												page_id={page.pos}
+												loadallimages={loadallimages}
+												preload_large={true}>
+											</thumbcanvas>
+										</div>
+									</div>
+								</div>
+								<!-- // Bild der Ausgabe -->
+
+								<!-- Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
+								<a
+									onclick="{() => noIssue(page)}"
+									class="btn btn-default fa fa-trash"
+									style="position: absolute; right: 10px; bottom: 5px;">
+									
+								</a>
+								<!-- // Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
+								
+							</div>
+
+							<!-- Datum der Ausgabe -->
+							<div class="col-xs-5">
+								<div class="form-group {page.dateValid ? '' : 'has-error'}">
+									<input type="text" value={page.dateStr} onkeyup={e => changeDate(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_date']}" class="form-control"></input>
+									<span if={!page.dateValid} class="help-block">{msgs['plugin_newspaperRecognizer_wrongDateFormat']}</span>
+								</div>
+							</div>
+
+							<!-- Nummer der Ausgabe -->
+							<div class="col-xs-5 ">
+								<div class="form-group">
+								<div class="input-group">
+									<input type="text" value={page.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{msgs['prefix']}" class="form-control" style="width:33%"></input>
+									<input type="text" value={page.number} onkeyup={e => changeNumber(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_nro']}" class="form-control" style="width:34%"></input>
+									<input type="text" value={page.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{msgs['suffix']}" class="form-control" style="width:33%"></input>
+								</div>
+								</div>
+							</div>
+							
+							<!-- "Typ" der Ausgabe -->
+							<div class="col-xs-5">
+								<div class="form-group">
+									<select class="form-control" onchange={e => changeIssueType(e, page)}>
+										<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}">{type}</option>
+									</select>
+								</div>
+							</div>
+							
+							<!-- Details über zugehörige Seiten -->
+							<div class="col-xs-6">
+								{msgs['otherPages']}: {page.otherPages.length}
+							</div>
+
+							<!-- Button für Datumsgenerierung -->
+                            <div class="col-xs-6" style="margin-top: 5px;">
+                                <a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-sm btn-primary">
+                                    {msgs['plugin_newspaperRecognizer_applyEveryIssue']}
+                                </a>
+                            </div>
+                            
+                            <div class="col-xs-6" style="margin: 5px 0;">
+                                 <a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-sm btn-primary ">
+                                    {msgs['plugin_newspaperRecognizer_applyEverySecondIssue']}
+                                </a>
+                            </div>
+                            
+                            <div class="col-xs-6" style="">
+                                 <a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-sm btn-primary">
+                                    {msgs['plugin_newspaperRecognizer_applyEveryThirdIssue']}
+                                </a>
+                            </div>
+							
+						</div>
+						
+						<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
+						<div class="other-pages">
+							<div class="col-sm-8" if={page.showOtherImages}>
+								<div class="newspaper-thumbnails">
+									<!-- THUMBNAIL -->
+									<div each={(otherPage, idx) in page.otherPages} class="newspaper-thumbnail">
+										<div class="newspaper-thumbnail__image" style="min-height: {thumb_height/2}px;">
+											<a onclick={(e) => otherOnclick(e, otherPage, idx)}>
+												<thumbcanvas
+													width={thumb_height/2} 
+													height={thumb_height/2}
+													render_text={otherPage.supplement ? otherPage.supplementNo : null}
+													render_size="24"
+													render_bg_color={otherPage.supplement ? suppl_colors[(otherPage.supplementNo-1)%5] : null}
+													image_small={otherPage.image.thumbnailUrl}
+													image_large={otherPage.image.largeThumbnailUrl}
+													title={otherPage.image.tooltip} page_id={otherPage.pos}
+													loadallimages={loadallimages}
+													preload_large={false}>
+												</thumbcanvas>
+											</a>
+										</div>
+									</div>
+								</div>
+                            </div>
+                       </div>
+                             	
+                        </div>
+                        <hr style="border-top:1px #bbb solid">
+                     </my_row>
+                 </div>
+             </div>      
+             </template>       
+         </div>
+         
+         <template if={imagesLoaded}>
+             <hr />
+             
+             <div class="row">
+                  <div class="col-sm-12">
+                   	<div class="pull-right">
+                        <span id="ajaxloaderbottom" style="margin-right: 15px; display:none;">
+                            <img src="template/img/goobi/ajaxloader2.gif" />
+                        </span>
+    				<!-- Speicher-Button -->
+    					<a class="btn btn-primary" style="margin: 20px 0;" disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
+    					<!-- // Speicher-Button -->
+    					<a if={props.showWriteMetsButton} class="btn btn-primary margin-sides-10" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
+    					<!-- // verlassen-Button -->
+    					<a class="btn btn-primary" onclick={exit}>{msgs['pluginLeave']}</a>
+                    </div>
+    			</div>
+    		</div>
+        </template>
+    </div>
+      
+  <script>
+  import Thumbcanvas from './thumbcanvas.riot'
+  export default {
+	components: {
+		Thumbcanvas
+	},
+    onBeforeMount(props, state) {
+		this.suppl_colors = ["#146abf", "#e00404", "#6300b5", "#ba5d06", "#467021"];
+		this.biWeekly = false;
+		this.monthly = false;
+		this.dataDirty = false;
+		this.propsDirty = false;
+		this.issueTypes = ["Ausgabe", "Morgenausgabe", "Abendausgabe", "Beilage", "Inhaltsverzeichnis", "Leading page", "Einband und Profil"]
+		this.lang = props.lang;
+		this.msgs = {};
+		this.sent = {};
+		this.msg_queue = [];
+		this.ws_ready = false;
+		
+		this.data_el = props.data_el;
+		this.restartAnalysisButton = props.restartAnalysisButton;
+		this.deleteManualResultsButton = props.deleteManualResultsButton;
+		this.save_button = props.saveButton;
+		this.save_no_mets_button = props.saveDataButton;
+		this.save_props_button = props.savepropsButton;
+		this.finish_button = props.finishButton;
+		this.thumb_height = props.thumbHeight;
+		this.loadallimages = props.loadallimages;
+		console.log(props, this.thumb_height)
+		console.log(this.data_el.value);
+		this.data = JSON.parse(this.data_el.value);
+		for(var i=0;i < this.data.length; i++) {
+		    var page = this.data[i];
+		    if(typeof page.dateValid === "undefined" || page.dateValid === undefined) {
+			    page.dateValid = true;
+		    }
+		    page.pos = i;
+		    if(page.issue) {
+		        if(!page.issueType) {
+		            console.log("issueType not set")
+		            page.issueType = "Ausgabe";
+		        } else {
+		            console.log("issueType:", page.issueType)
+		        }
+		        var supplCount = 0;
+		        for(var k=0;k<page.otherPages.length;k++) {
+		            page.otherPages[k].parent = page.pos;
+		            page.otherPages[k].pos = i+k+1;
+		            if(page.otherPages[k].supplementTitle) {
+		                supplCount++;
+		            }
+		            if(supplCount > 0) {
+		                page.otherPages[k].supplementNo = supplCount;
+		            }
+		        }
+		    }
+		}
+		console.log(this.data);
+		this.monday = true;
+		this.tuesday = true;
+		this.wednesday = true;
+		this.thursday = true;
+		this.friday = true;
+		this.saturday = true;
+		this.sunday = true;
+		var path = window.location.pathname;
+		path = path.substring(0, path.indexOf("/uii/"));
+		fetch(`${path}/api/messages/${props.language}`, {
+	          method: 'GET',
+	          credentials: 'same-origin'
+	      }).then(resp => {
+	        resp.json().then(json => {
+	          this.msgs = json;
+	          this.msgsLoaded = true;
+	          this.update();
+	        })
+	      });
+    },
+    onMounted(props, state) {
+      this.addAjaxEvent();
+      console.log("mounted");
+      setInterval(() => {
+	        this.save_no_mets();
+	    }, 15000);
+      if(this.loadallimages && props.pagenumCorrect) {
+    	  this.loadedImages = 0;
+    	  window.npImages = {};
+    	  for(var i=0;i < this.data.length; i++) {
+    		  let dataImage = this.data[i];
+    		  let image = new Image()
+    		  image.onload = () => {
+    			  window.npImages[dataImage.image.thumbnailUrl] = image;
+    		  }
+    		  image.src = dataImage.image.thumbnailUrl;
+    	  }
+    	  this.downloadChecker = setInterval(() => {
+    		  this.loadedImages = Object.keys(window.npImages).length; 
+    		  if(this.loadedImages == this.data.length) {
+    			  this.update();
+    			  setTimeout(() => {
+        			  this.imagesLoaded = true;
+        			  clearInterval(this.downloadChecker);
+        			  this.update();
+    			  },100)
+    		  }
+			  this.update();
+    	  }, 500)
+      } else {
+    	  this.imagesLoaded = true;
+    	  this.update();
+      }
+    },
+    onBeforeUpdate(props, state) {
+    },
+    onUpdated(props, state) {
+      
+    },
+    addAjaxEvent() {
+    	jsf.ajax.addOnEvent((data) => {
+            var ajaxstatus = data.status; // Can be "begin", "complete" and "success"
+            var ajaxloader = this.$("#ajaxloaderbottom");
+
+            switch (ajaxstatus) {
+                case "begin": // This is called right before ajax request is been sent.
+                	console.log("ajaxloader:", ajaxloader)
+                	if(ajaxloader) {
+                    	ajaxloader.style.display = 'inline';
+                	}
+                    break;
+
+                case "complete": // This is called right after ajax response is received.
+                	if(ajaxloader) {
+                    	ajaxloader.style.display = 'none';
+                	}
+                    break;
+
+                case "success": // This is called when ajax response is successfully processed.
+                    // NOOP.
+                    break;
+            }
+        });
+    },
+	exit() {
+	    this.finish_button.click();
+	},
+	
+	save() {
+	    this.data_el.value = this.createSaveData();
+	    this.save_button.click();
+	    this.dataDirty = false;
+	},
+	
+	restartAnalysis() {
+		var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse und startet eine neue automatische Analyse. Wirklich fortfahren?")
+		if(confirmed) {
+			this.restartAnalysisButton.click();
+		}
+	},
+	
+	deleteManualResults() {
+		var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse. Wirklich fortfahren?")
+		if(confirmed) {
+			this.deleteManualResultsButton.click();
+		}
+	},
+	
+	save_no_mets() {
+	    var saved = false;
+	    if(this.dataDirty) {
+	        var saveData = this.createSaveData();
+		    this.data_el.value = saveData;
+		    this.save_no_mets_button.click();
+		    console.log("save no mets")
+		    this.dataDirty = false;
+		    saved = true;
+		}
+	    if(this.optsDirty) {
+	        //TODO:
+//		        this.save_opts_button.click();
+	        this.optsDirty = false;
+	        saved = true;
+	    }
+	    if(saved) {
+	        this.update();
+	    }
+	},
+	
+	createSaveData() {
+		var saveData = [];
+        for(var i=0;i<this.data.length;i++) {
+            var page = this.data[i];
+            saveData.push({
+                issue: page.issue,
+                supplementTitle: page.supplementTitle,
+                supplement: page.supplement,
+                dateStr: page.dateStr,
+                prefix: page.prefix,
+                number: page.number,
+                suffix: page.suffix,
+                filename: page.filename,
+                dateValid: page.dateValid,
+                issueType: page.issueType
+            });
+        }
+        return JSON.stringify(saveData);
+	},
+	
+	toggleBiWeekly() {
+	    this.biWeekly = !this.biWeekly;
+	    console.log(this.biWeekly);
+	},
+	
+	toggleDay(day) {
+	    this.optsDirty = true;
+	    console.log(day);
+	    this[day] = !this[day];
+	},
+	
+	toggleShowOtherImages(page) {
+	    page.showOtherImages = !page.showOtherImages;
+	},
+	
+	delete_all_issues(e) {
+	    this.dataDirty = true;
+	    this.data[0].issue = true;
+	    this.data[0].otherPages = [];
+	    for(var i=1;i<this.data.length;i++) {
+	        this.data[i].issue=false;
+	        this.data[0].otherPages.push(this.data[i]);
+	        this.data[i].parent=0;
+	        this.data[i].supplementTitle = false;
+	        this.data[i].otherPages = [];
+	    }
+	},
+	
+	noIssue(page) {
+		console.time("noIssue")
+	    this.dataDirty = true;
+	    console.log(page.pos)
+	    var currPage = page;
+	    // find previous and add this and it's other images to it
+	    for(var i=currPage.pos-1; i>=0; i--) {
+	        if(this.data[i].issue) {
+	            this.data[i].otherPages.push(currPage);
+	            console.log(currPage.otherPages.length)
+	            currPage.parent= i;
+	            var length = currPage.otherPages.length
+	            var k = 0;
+	            for(k;k<length;k++) {
+	                currPage.otherPages[k].parent = i;
+	                this.data[i].otherPages.push(currPage.otherPages[k]);
+	            }
+	            break;
+	        } 
+	    }
+	    console.log("done")
+	    currPage.otherPages = [];
+	    currPage.issue = false;
+	    delete currPage.dateStr;
+	    delete currPage.prefix;
+	    delete currPage.number;
+	    console.timeEnd("noIssue")
+	    console.time("repaint")
+	    this.update();
+	    console.timeEnd("repaint")
+	},
+	
+	otherOnclick(e, otherPage, idx) {
+	    this.dataDirty = true;
+	    var page = otherPage;
+	    var origPage = this.data[page.pos];
+	    var oldArr = this.data[page.parent].otherPages;
+	    if(e.altKey || e.ctrlKey) {
+	    	if(!page.supplementTitle) {
+	    		//page is not the beginning of a supplement => create new supplement
+			    page.supplementTitle = true;
+			    origPage.supplementTitle = true;
+		        //check if this page already is in another supplement
+		        if(origPage.supplement) {
+		            //find parent by looking backwards
+		            var i = 1;
+		            while(idx-i>=0) {
+	                    var otherPage = oldArr[idx-i]
+		                if(otherPage.supplementTitle) {
+		                    var supplementPages = otherPage.supplementPages;
+		                    //cut the pages from the old supplement and add them to the new one 
+		                    var newSupplementPages = supplementPages.splice(supplementPages.length-i, i);
+		                    page.supplementPages = newSupplementPages.splice(1);
+		                    break;
+		                }
+		                i++;
+		            }
+		        } else {
+				    origPage.supplement = true;
+				    page.supplement = true;
+				    page.supplementPages = [];
+				    for(var i=idx+1;i<oldArr.length;i++) {
+				        if(oldArr[i].supplement) {
+				            break;
+				        }
+				        oldArr[i].supplement = true;
+				        this.data[oldArr[i].pos].supplement = true;
+				        page.supplementPages.push(oldArr[i]);
+				    }
+		        }
+	    	} else {
+	    		//start page of a supplement has been clicked, remove the supplement
+	        	page.supplementTitle = false;
+	        	origPage.supplementTitle = false;
+	        	page.supplement = false;
+	        	origPage.supplement = false;
+	        	if(oldArr[idx-1].supplement || oldArr[idx-1].supplementTitle) {
+	        		// if there is another supplement preceding this page, it simply becomes part of it.
+	        		page.supplement = true
+	        		origPage.supplement = true;
+	        	} else {
+	        		//this is the first or the only supplement in this issue. Remove the supplement status from all children
+	        		for(var i=idx+1;i<oldArr.length;i++) {
+				        if(oldArr[i].supplementTitle) {
+				            break;
+				        }
+				        oldArr[i].supplement = false;
+				        this.data[oldArr[i].pos].supplement = false;
+				    }
+	        	}
+	        }
+	    	//re-count all supplement-numbers
+	    	var supplCount = 0;
+	        for(var i=0;i<oldArr.length;i++) {
+	            if(oldArr[i].supplementTitle) {
+	                supplCount++;
+	            }
+	            if(supplCount > 0) {
+	            	oldArr[i].supplementNo = supplCount;
+	            }
+	        }
+	    } else {
+		    origPage.issue = true;
+		    page.issue = true;
+		    if(!page.issueType) {
+		    	page.issueType = "Ausgabe";
+		    	origPage.issueType = "Ausgabe";
+		    }
+		    page.supplementPages = [];
+		    var newIssuePages = oldArr.splice(idx, oldArr.length-idx);
+		    console.log(newIssuePages)
+		    var supplCount = 0;
+		    for(var i=1;i<newIssuePages.length;i++) {
+		        newIssuePages[i].parent = origPage.pos;
+		        newIssuePages[i].pos = origPage.pos+i;
+		        newIssuePages[i].supplementPages = [];
+		    	origPage.otherPages.push(newIssuePages[i]);
+		    	if(newIssuePages[i].supplementTitle) {
+		    	    supplCount++;
+		    	} 
+		    	if(supplCount > 0) {
+		    	    newIssuePages[i].supplementNo = supplCount;
+		    	}
+		    }
+	    }
+	    this.update();
+	},
+	
+	changeDate(e, page) {
+	    this.dataDirty = true;
+	    page.dateStr = e.target.value;
+	    page.dateValid = this.validateDate(e.target.value);
+	},
+	
+	changeIssueType(e, page) {
+	    this.dataDirty = true;
+	    page.issueType = e.target.selectedOptions[0].text;
+	},
+	
+	changeNumber(e, page) {
+	    this.dataDirty = true;
+	    page.number = e.target.value;
+	},
+	
+	changePrefix(e, page) {
+	    this.dataDirty = true;
+	    page.prefix = e.target.value;
+	},
+	
+	changeSuffix(e, page) {
+	    this.dataDirty = true;
+	    page.suffix = e.target.value;
+	},
+	
+	doGenerateDates(e, page, skip) {
+		console.log("skip:", skip)
+		var dateRegex = /^\d{2}\.\d{2}\.\d{4}$/
+	    var startIdx = page.pos;
+        var startPage = this.data[startIdx];
+		if(!startPage.dateStr || !startPage.dateStr.match(dateRegex)) {
+			alert("Valid date format is: dd.mm.yyyy");
+			return;
+		}
+	    this.dataDirty = true;
+	    var issueType = startPage.issueType;
+	    var prefix = startPage.prefix;
+	    var suffix = startPage.suffix;
+        var startNumber = parseInt(startPage.number);
+        var dateArr = startPage.dateStr.split(".");
+        var startDate = new XDate(parseInt(dateArr[2]), parseInt(dateArr[1]-1), parseInt(dateArr[0]));
+        var issueCounter = 0;
+        for (var i = startIdx + 1; i < this.data.length; i++) {
+            var page = this.data[i];
+            if (page.issue && (!page.issueType || page.issueType.toLowerCase().indexOf("ausgabe") >= 0)) {
+            	issueCounter++
+                startNumber++;
+            	if(issueCounter % skip == 0) {
+	                startDate = this.getNextDate(startDate);
+	                page.issueType = issueType;
+	                page.prefix = prefix;
+	                page.suffix = suffix;
+	                page.number = "" + startNumber;
+	                page.dateStr = startDate.toString("dd.MM.yyyy");
+	                page.dateValid = true;
+            	}
+            }
+        }
+        this.update();
+    },
+
+    getNextDate(currentDate) {
+        var newDate = null;
+        console.log(this.biWeekly);
+        console.log(currentDate.getDay())
+        if(this.biWeekly) {
+            newDate = new XDate(currentDate).addDays(8);
+        } else {
+        	newDate = new XDate(currentDate).addDays(1);
+        }
+        while (true) {
+            var dayOfWeek = newDate.getDay();
+            console.log(dayOfWeek);
+            switch (dayOfWeek) {
+                case 1:
+                    if (this.monday) {
+                        return newDate;
+                    }
+                    break;
+                case 2:
+                    if (this.tuesday) {
+                        return newDate;
+                    }
+                    break;
+                case 3:
+                    if (this.wednesday) {
+                        return newDate;
+                    }
+                    break;
+                case 4:
+                    if (this.thursday) {
+                        return newDate;
+                    }
+                    break;
+                case 5:
+                    if (this.friday) {
+                        return newDate;
+                    }
+                    break;
+                case 6:
+                    if (this.saturday) {
+                        return newDate;
+                    }
+                    break;
+                case 0:
+                    if (this.sunday) {
+                        return newDate;
+                    }
+                    break;
+                default:
+                    break;
+
+            }
+            newDate.addDays(1);
+        }
+    },
+    
+    validateDate(date) {
+		if(date.length == 0) {
+		    return true;
+		}
+        // check for standard format
+        if(/^\d{2}\.\d{2}\.\d{4}$/.test(date)) {
+            var dateArr = date.split(".");
+            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
+                return false;
+            }
+            return true;
+        }
+     	// check for month format, e.g.: 01.1870
+        if(/^\d{2}\.\d{4}$/.test(date)) {
+            // check for sanity of month
+            var month = parseInt(date.split(".")[0]);
+        	if(month > 0 && month < 13) {
+        	    return true;
+        	}
+        }
+        // check for issue for two days, e.g.: 14.06.2011/15.06.2011
+        if(/^\d{2}\.\d{2}\.\d{4}\/\d{2}\.\d{2}\.\d{4}$/.test(date)) {
+            // check for sanity of day/month
+            var dates = date.split("/");
+            //check first date
+            var dateArr = dates[0].split(".");
+            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
+                return false;
+            }
+            dateArr = dates[1].split(".");
+            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
+                return false;
+            }
+            return true;
+        }
+     // check for multi-month issues, e.g.: 01.1870/03.1870
+        if(/^\d{2}\.\d{4}\/\d{2}\.\d{4}$/.test(date)) {
+        	// check for sanity of months
+            var dates = date.split("/");
+        	var month0 = dates[0].split(".")[0];
+        	var month1 = dates[1].split(".")[0];
+        	if(month0>0 && month0<13 && month1>0 && month1<13) {
+        	    return true;
+        	}
+        }
+        // check for two-year issues, e.g.: 1915/1916
+        if(/^\d{4}\/\d{4}$/.test(date)) {
+            return true;
+        }
+        return false;
+    },
+    
+    checkDate(day, month, year) {
+        if(day < 1 || month < 1 || month > 12) {
+            return false;
+        }
+        var dayList = [31,28,31,30,31,30,31,31,30,31,30,31];
+        if(month === 2) {
+            var leapyear = year % 400 == 0 || (year % 100 != 0 && year % 4 == 0);
+            if(leapYear) {
+                return day <= 29;
+            } else {
+                return day <= 28;
+            }
+        } else {
+            return dayList[month-1] >= day;
+        }
+    }
+  }
+  </script>
+</app>
