@@ -75,6 +75,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private String returnPath;
     private boolean loadAllImages;
     private boolean showWriteMetsButton = true;
+    private boolean createNewPagination;
 
     private Gson gson = new Gson();
     Type listType = new TypeToken<ArrayList<NewspaperPage>>() {
@@ -92,6 +93,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         tocDepth = config.getInt("defaultDepth", 1);
         loadAllImages = true;
         showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
+        createNewPagination = config.getBoolean("createNewPagination", true);
         try {
             readExportedFile();
         } catch (IOException | InterruptedException | SwapException | DAOException e) {
@@ -369,6 +371,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         DocStruct currentSupplement = null;
 
         // create entry for each page
+        int currentPageNo = 0;
         for (int i = 0; i < pages.size(); i++) {
             NewspaperPage newspaperPage = pages.get(i);
             DocStruct page = null;
@@ -390,10 +393,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 }
 
                 List<Metadata> oldLogPage = (List<Metadata>) oldPage.getAllMetadataByType(logPageNoType);
-                if (oldLogPage.size() > 0) {
-                    createMetadata(logPageNoType, oldLogPage.get(0).getValue(), page);
-                } else {
-                    createMetadata(logPageNoType, "uncounted", page);
+                if (!createNewPagination) {
+                    if (oldLogPage.size() > 0) {
+                        createMetadata(logPageNoType, oldLogPage.get(0).getValue(), page);
+                    } else {
+                        createMetadata(logPageNoType, "uncounted", page);
+                    }
                 }
             } else {
                 createMetadata(physPageNoType, "" + (i + 1), page);
@@ -404,6 +409,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             }
             // create new issue if needed
             if (currentIssue == null || newspaperPage.isIssue()) {
+                currentPageNo = 1;
                 try {
                     currentIssue = dd.createDocStruct(issueType);
 
@@ -421,6 +427,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);
             }
             if (newspaperPage.isSupplementTitle()) {
+                currentPageNo = 1;
                 try {
                     currentSupplement = dd.createDocStruct(supplementType);
                     currentIssue.addChild(currentSupplement);
@@ -432,10 +439,14 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             if (currentSupplement != null) {
                 currentSupplement.addReferenceTo(page, "logical_physical");
             }
+            if (createNewPagination) {
+                createMetadata(logPageNoType, Integer.toString(currentPageNo), page);
+            }
             // link pages to issue and volume
             currentIssue.addReferenceTo(page, "logical_physical");
             volume.addReferenceTo(page, "logical_physical");
 
+            currentPageNo++;
         }
 
         try {

@@ -2,4 +2,6 @@
 	<!-- which depth shall be used for the document analysis -->
 	<defaultDepth>1</defaultDepth>
     <showWriteMetsButton>true</showWriteMetsButton>
+    <!-- Create a new logical pagination, starting at arabic 1 at the beginning of each issue and supplement -->
+    <createNewPagination>true</createNewPagination>
 </config_plugin>
