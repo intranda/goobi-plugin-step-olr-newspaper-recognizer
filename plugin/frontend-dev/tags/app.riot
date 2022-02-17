@@ -15,7 +15,7 @@
          <div class="box-content" style="background-color:#eee">
          <div if={!props.pagenumCorrect} class="row">
             <div class="col-sm-12">
-             <div class="alert alert-danger">Seitenzahlen stimmen nicht überein! Es empfielt sich noch einmal auf "Neu berechnen" oder "Manuelle Ergebnisse löschen" zu klicken.</div>
+             <div class="alert alert-danger">{msgs['plugin_newspaperRecognizer_pagenumWarning']}</div>
             
                 <a class="btn btn-danger " onclick={restartAnalysis}>{msgs['plugin_newspaperRecognizer_recompute']}</a>
                 <a class="btn btn-danger margin-sides-10" onclick={deleteManualResults}>{msgs['plugin_newspaperRecognizer_deleteManualResults']}</a>
@@ -283,7 +283,9 @@
 	          credentials: 'same-origin'
 	      }).then(resp => {
 	        resp.json().then(json => {
-	          this.msgs = json;
+	          for(let key of Object.keys(json)) {
+	        	  this.msgs[key] = json[key].replace(" zzz", "");
+	          }
 	          this.msgsLoaded = true;
 	          this.update();
 	        })
