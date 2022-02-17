@@ -335,7 +335,11 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         DocStructType supplementType = prefs.getDocStrctTypeByName("NewspaperSupplement");
         MetadataType partNumberType = prefs.getMetadataTypeByName("PartNumber");
         MetadataType dateIssuedType = prefs.getMetadataTypeByName("DateIssued");
+        if (dateIssuedType == null) {
+            dateIssuedType = prefs.getMetadataTypeByName("PublicationYear");
+        }
         MetadataType numberType = prefs.getMetadataTypeByName("CurrentNo");
+        MetadataType numberSortType = prefs.getMetadataTypeByName("CurrentNoSorting");
         MetadataType titleType = prefs.getMetadataTypeByName("TitleDocMain");
 
         MetadataType logPageNoType = prefs.getMetadataTypeByName("logicalPageNumber");
@@ -421,6 +425,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 createMetadata(partNumberType, newspaperPage.generateTitle(), currentIssue);
 
                 createMetadata(numberType, newspaperPage.getNumber(), currentIssue);
+                createMetadata(numberSortType, newspaperPage.getNumber(), currentIssue);
 
                 createMetadata(dateIssuedType, w3cdtf.print(newspaperPage.getDate()), currentIssue);
 
