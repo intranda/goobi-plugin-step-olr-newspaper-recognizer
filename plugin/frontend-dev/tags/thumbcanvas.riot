@@ -33,37 +33,18 @@
 	    //console.log(props.loadallimages)
 	    if(typeof props.loadallimages != 'undefined') {
 		    if(props.loadallimages) {
-		    	//this.drawOnCanvas();
 		    } else {
 		    }
 	    }
-    	this.createObserver()
-	},
-	createObserver() {
-   		var observer;
-   		var options = {
-   		    rootMargin: "500px 0px 10000px 0px",
-   		    threshold: 0.8
-   		};
-   		observer = new IntersectionObserver(this.drawFirst, options);
-   		observer.observe(this.$('div.observable'));
-   	},
-	
-	drawFirst(entries, observer) {
-	    entries.forEach(entry => {
-		    if(entry.isIntersecting && !this.intersected) {
-			    //console.log("draw on canvas intersect: " + this.image_small_url)
-		    	this.intersected = true;
-			    this.drawOnCanvas();
-			    if(this.props.preload_large) {
-			        var img = new Image();
-			        img.onload = function() {
-			            this.image_large = img;
-			        }.bind(this);
-			        img.src = this.image_large_url;
-			    }
-		    }
-	    })
+    	this.drawOnCanvas();
+    	 if(this.props.preload_large) {
+	        var img = new Image();
+	        img.onload = function() {
+	            this.image_large = img;
+	        }.bind(this);
+	        img.src = this.image_large_url;
+	    }
+    	//this.createObserver()
 	},
 	
 	drawOnCanvas() {
