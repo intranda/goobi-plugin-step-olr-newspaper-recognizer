@@ -1,4 +1,17 @@
 <app>
+    <div if={!msgsLoaded} class="box box-color lightgrey box-bordered">
+         <div class="box-title">
+             <h3>
+                 <i class="fa fa-puzzle-piece"></i>
+                 {props.title}
+             </h3>
+         </div>
+         <div class="box-content" style="background-color:#eee;" >
+            <div class="text-center">
+                <img src="template/img/goobi/ajaxloader2.gif" style="max-height: 140px;"></img>
+            </div>
+         </div>
+     </div>
 	<div if={!!msgsLoaded} class="box box-color lightgrey box-bordered">
          <div class="box-title">
              <h3>
