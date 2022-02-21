@@ -41,7 +41,10 @@
 				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>{msgs['plugin_newspaperRecognizer_sunday']}</label>
                	<!-- // Wochentage als Checkboxen -->
                	
-               	<a class="btn btn-primary margin-sides-10" onclick={delete_all_issues}>{msgs['plugin_newspaperRecognizer_removeAllIssues']}</a>
+               	<a class="btn btn-primary margin-sides-10" onclick={delete_all_issues} style="position: relative;">
+                    <span style="opacity: {deletingIssues ? '0' : '1'}">{msgs['plugin_newspaperRecognizer_removeAllIssues']}</span>
+                    <img if={deletingIssues} style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif"></img>
+                </a>
 				
 				<div class="pull-right">
 					<!-- Speicher-Button -->
@@ -229,6 +232,7 @@
 		this.sent = {};
 		this.msg_queue = [];
 		this.ws_ready = false;
+		this.deletingIssues = false;
 		
 		this.data_el = props.data_el;
 		this.restartAnalysisButton = props.restartAnalysisButton;
@@ -436,16 +440,23 @@
 	},
 	
 	delete_all_issues(e) {
+		console.time("prepareDelete");
+		this.deletingIssues = true;
+		this.update();
 	    this.dataDirty = true;
 	    this.data[0].issue = true;
-	    this.data[0].otherPages = [];
-	    for(var i=1;i<this.data.length;i++) {
+	    this.data[0].otherPages.length=0;
+	    console.timeEnd("prepareDelete");
+	    console.time("forSchleife");
+	    for(let i=1;i<this.data.length;i++) {
 	        this.data[i].issue=false;
 	        this.data[0].otherPages.push(this.data[i]);
 	        this.data[i].parent=0;
 	        this.data[i].supplementTitle = false;
 	        this.data[i].otherPages = [];
 	    }
+	    console.timeEnd("forSchleife");
+	    this.deletingIssues = false;
 	},
 	
 	noIssue(page) {
@@ -550,8 +561,14 @@
 	            }
 	        }
 	    } else {
+	    	console.log(origPage)
+	    	console.log(page)
 		    origPage.issue = true;
+	    	origPage.showOtherImages = true;
 		    page.issue = true;
+		    if(!origPage.otherPages) {
+		    	origPage.otherPages = [];
+		    }
 		    if(!page.issueType) {
 		    	page.issueType = "Ausgabe";
 		    	origPage.issueType = "Ausgabe";
@@ -572,6 +589,8 @@
 		    	    newIssuePages[i].supplementNo = supplCount;
 		    	}
 		    }
+		    console.log(page)
+		    console.log(origPage)
 	    }
 	    this.update();
 	},
