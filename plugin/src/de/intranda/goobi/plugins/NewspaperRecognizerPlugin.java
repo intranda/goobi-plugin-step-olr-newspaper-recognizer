@@ -224,7 +224,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             if (!Files.exists(Paths.get(imageDir))) {
                 imageDir = pr.getImagesOrigDirectory(false);
             }
-        } catch (IOException | InterruptedException | SwapException | DAOException e) {
+        } catch (IOException | SwapException | DAOException e) {
             // TODO Auto-generated catch block
             log.error(e);
         }
@@ -240,7 +240,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(manualF))) {
                 bw.write(json);
             }
-        } catch (IOException | InterruptedException | SwapException | DAOException e) {
+        } catch (IOException | SwapException e) {
             // TODO Auto-generated catch block
             log.error(e);
         }
@@ -266,10 +266,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         } else {
             String imageDir = getImageDirectory(pr);
             try (Stream<Path> imageFiles = Files.list(Paths.get(imageDir))) {
-                this.pages = imageFiles
-                        .sorted()
-                        .map(p -> new NewspaperPage(p.getFileName().toString()))
-                        .collect(Collectors.toList());
+                this.pages = imageFiles.sorted().map(p -> new NewspaperPage(p.getFileName().toString())).collect(Collectors.toList());
             }
             for (NewspaperPage page : pages) {
                 page.guessIssue();
@@ -289,14 +286,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     private String createImageUrl(Image currentImage, Integer size, String format, String baseUrl, int processId, String imageDirName) {
-        String url =
-                String.format("%s/api/process/image/%d/%s/%s/full/!%d,%d/0/default.jpg", baseUrl, processId, imageDirName, currentImage.getTooltip(),
-                        size, size);
+        String url = String.format("%s/api/process/image/%d/%s/%s/full/!%d,%d/0/default.jpg", baseUrl, processId, imageDirName,
+                currentImage.getTooltip(), size, size);
         String thumbsPath = String.format("/opt/digiverso/goobi/metadata/%d/thumbs/%s_%d/", processId, imageDirName, size);
         if (StorageProvider.getInstance().isDirectory(Paths.get(thumbsPath))) {
-            url =
-                    String.format("%s/cs/cs?action=image&sourcepath=file:%s%s.jpg&format=jpg",
-                            baseUrl, thumbsPath, currentImage.getTooltip().substring(0, currentImage.getTooltip().lastIndexOf('.')));
+            url = String.format("%s/cs/cs?action=image&sourcepath=file:%s%s.jpg&format=jpg", baseUrl, thumbsPath,
+                    currentImage.getTooltip().substring(0, currentImage.getTooltip().lastIndexOf('.')));
         }
         return url;
     }
@@ -324,7 +319,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         try {
             fileformat = process.readMetadataFile();
             dd = fileformat.getDigitalDocument();
-        } catch (ReadException | PreferencesException | WriteException | IOException | InterruptedException | SwapException | DAOException e) {
+        } catch (ReadException | PreferencesException | IOException | SwapException e) {
             log.error(e);
             return "";
         }
@@ -456,7 +451,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
         try {
             process.writeMetadataFile(fileformat);
-        } catch (WriteException | PreferencesException | IOException | InterruptedException | SwapException | DAOException e) {
+        } catch (WriteException | PreferencesException | IOException | SwapException e) {
             log.error(e);
             return "";
         }
