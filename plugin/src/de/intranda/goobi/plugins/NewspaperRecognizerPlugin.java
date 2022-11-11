@@ -4,18 +4,17 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.goobi.beans.Process;
@@ -44,6 +43,7 @@ import de.sub.goobi.helper.exceptions.SwapException;
 import de.sub.goobi.metadaten.Image;
 import de.sub.goobi.persistence.managers.StepManager;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 import ugh.dl.ContentFile;
@@ -65,22 +65,23 @@ import ugh.exceptions.WriteException;
 @PluginImplementation
 @Log4j2
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements IStepPlugin, IPlugin {
+    private static final long serialVersionUID = -4130813487217128097L;
     private static final String PLUGIN_NAME = "intranda_step_newspaperRecognizer";
     private static final String GUI = "/uii/plugin_newspaperRecognizer.xhtml";
     private static final DateTimeFormatter w3cdtf = DateTimeFormat.forPattern("yyyy-MM-dd");
 
     private int tocDepth = 0;
 
-    private String returnPath;
     private boolean loadAllImages;
     private boolean showWriteMetsButton = true;
     private boolean createNewPagination;
 
-    private Gson gson = new Gson();
-    Type listType = new TypeToken<ArrayList<NewspaperPage>>() {
+    private transient Gson gson = new Gson();
+    transient Type listType = new TypeToken<ArrayList<NewspaperPage>>() {
     }.getType();
-    private List<NewspaperPage> pages;
+    private transient List<NewspaperPage> pages;
 
     /**
      * initialise, read config etc.
@@ -96,8 +97,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         createNewPagination = config.getBoolean("createNewPagination", true);
         try {
             readExportedFile();
-        } catch (IOException | InterruptedException | SwapException | DAOException e) {
-            // TODO Auto-generated catch block
+        } catch (IOException | SwapException e) {
             log.error(e);
         }
     }
@@ -119,7 +119,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     @Override
     public String getDescription() {
-        return PLUGIN_NAME;
+        return getTitle();
     }
 
     @Override
@@ -175,8 +175,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
 
         log.info("Deleting {}", manualF);
-
-        Files.deleteIfExists(manualF);
+        StorageProvider.getInstance().deleteFile(manualF);
     }
 
     public boolean pageNumberCountEqual() {
@@ -205,6 +204,13 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                         currentIssue.addPage(page);
                     }
                 }
+//                try {
+//                    Image image = new Image(pr, imageDirName, page.getFilename(), order++, 400);
+//                    page.setImage(image);
+//                } catch (IOException | SwapException | DAOException e) {
+//                    log.error(e);
+//                }
+                
                 Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
                 String thumbUrl = createImageUrl(image, 400, "jpeg", contextPath, getStep().getProcessId(), imageDirName);
                 image.setThumbnailUrl(thumbUrl);
@@ -221,11 +227,10 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         String imageDir = null;
         try {
             imageDir = pr.getImagesTifDirectory(false);
-            if (!Files.exists(Paths.get(imageDir))) {
+            if (!StorageProvider.getInstance().isDirectory(Paths.get(imageDir))) {
                 imageDir = pr.getImagesOrigDirectory(false);
             }
         } catch (IOException | SwapException | DAOException e) {
-            // TODO Auto-generated catch block
             log.error(e);
         }
         return imageDir;
@@ -237,26 +242,26 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         Process pr = this.myStep.getProzess();
         try {
             String manualF = pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json";
-            try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(manualF))) {
+            OutputStream out = StorageProvider.getInstance().newOutputStream(Paths.get(manualF));
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out))) {
                 bw.write(json);
             }
         } catch (IOException | SwapException e) {
-            // TODO Auto-generated catch block
             log.error(e);
         }
     }
 
-    private void readExportedFile() throws IOException, InterruptedException, SwapException, DAOException {
+    private void readExportedFile() throws IOException, SwapException {
         Process pr = this.myStep.getProzess();
         Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
         Path automaticF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result.json");
-        if (Files.exists(manualF)) {
-            try (BufferedReader br = Files.newBufferedReader(manualF)) {
+        if (StorageProvider.getInstance().isFileExists(manualF)) {
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(StorageProvider.getInstance().newInputStream(manualF)))) {
                 this.pages = gson.fromJson(br, listType);
             }
-        } else if (Files.exists(automaticF)) {
-            String resultF = pr.getProcessDataDirectory() + "/taskmanager/issues_result.json";
-            try (FileReader fr = new FileReader(resultF)) {
+        } else if (StorageProvider.getInstance().isFileExists(automaticF)) {
+            try (BufferedReader fr = new BufferedReader(new InputStreamReader(StorageProvider.getInstance().newInputStream(automaticF)))) {
                 this.pages = gson.fromJson(new JsonReader(fr), listType);
             }
 
@@ -265,16 +270,21 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             }
         } else {
             String imageDir = getImageDirectory(pr);
-            try (Stream<Path> imageFiles = Files.list(Paths.get(imageDir))) {
-                this.pages = imageFiles.sorted().map(p -> new NewspaperPage(p.getFileName().toString())).collect(Collectors.toList());
+            List<Path> files = StorageProvider.getInstance().listFiles(imageDir);
+            pages = new ArrayList<>();
+            for (Path p : files) {
+                pages.add(new NewspaperPage(p.getFileName().toString()));
             }
+
             for (NewspaperPage page : pages) {
                 page.guessIssue();
             }
-            if (!Files.isDirectory(automaticF.getParent())) {
-                Files.createDirectories(automaticF.getParent());
+            if (!StorageProvider.getInstance().isDirectory(automaticF.getParent())) {
+                StorageProvider.getInstance().createDirectories(automaticF.getParent());
             }
-            try (BufferedWriter bufw = Files.newBufferedWriter(automaticF, StandardOpenOption.CREATE_NEW)) {
+
+            OutputStream out = StorageProvider.getInstance().newOutputStream(automaticF);
+            try (BufferedWriter bufw = new BufferedWriter(new OutputStreamWriter(out))) {
                 gson.toJson(this.pages, bufw);
             }
         }
