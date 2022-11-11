@@ -56,11 +56,8 @@ import ugh.dl.Metadata;
 import ugh.dl.MetadataType;
 import ugh.dl.Prefs;
 import ugh.exceptions.MetadataTypeNotAllowedException;
-import ugh.exceptions.PreferencesException;
-import ugh.exceptions.ReadException;
 import ugh.exceptions.TypeNotAllowedAsChildException;
 import ugh.exceptions.TypeNotAllowedForParentException;
-import ugh.exceptions.WriteException;
 
 @PluginImplementation
 @Log4j2
@@ -97,7 +94,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         createNewPagination = config.getBoolean("createNewPagination", true);
         try {
             readExportedFile();
-        } catch (IOException | SwapException e) {
+        } catch (Exception e) {
             log.error(e);
         }
     }
@@ -204,13 +201,13 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                         currentIssue.addPage(page);
                     }
                 }
-//                try {
-//                    Image image = new Image(pr, imageDirName, page.getFilename(), order++, 400);
-//                    page.setImage(image);
-//                } catch (IOException | SwapException | DAOException e) {
-//                    log.error(e);
-//                }
-                
+                //                try {
+                //                    Image image = new Image(pr, imageDirName, page.getFilename(), order++, 400);
+                //                    page.setImage(image);
+                //                } catch (IOException | SwapException | DAOException e) {
+                //                    log.error(e);
+                //                }
+
                 Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
                 String thumbUrl = createImageUrl(image, 400, "jpeg", contextPath, getStep().getProcessId(), imageDirName);
                 image.setThumbnailUrl(thumbUrl);
@@ -230,7 +227,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             if (!StorageProvider.getInstance().isDirectory(Paths.get(imageDir))) {
                 imageDir = pr.getImagesOrigDirectory(false);
             }
-        } catch (IOException | SwapException | DAOException e) {
+        } catch (Exception e) {
             log.error(e);
         }
         return imageDir;
@@ -246,12 +243,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out))) {
                 bw.write(json);
             }
-        } catch (IOException | SwapException e) {
+        } catch (Exception e) {
             log.error(e);
         }
     }
 
-    private void readExportedFile() throws IOException, SwapException {
+    private void readExportedFile() throws Exception {
         Process pr = this.myStep.getProzess();
         Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
         Path automaticF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result.json");
@@ -329,7 +326,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         try {
             fileformat = process.readMetadataFile();
             dd = fileformat.getDigitalDocument();
-        } catch (ReadException | PreferencesException | IOException | SwapException e) {
+        } catch (Exception e) {
             log.error(e);
             return "";
         }
@@ -461,7 +458,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
         try {
             process.writeMetadataFile(fileformat);
-        } catch (WriteException | PreferencesException | IOException | SwapException e) {
+        } catch (Exception e) {
             log.error(e);
             return "";
         }
