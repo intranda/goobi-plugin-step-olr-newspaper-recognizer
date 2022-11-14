@@ -217,6 +217,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             }
             log.info(String.format("Counted %d issues", count));
         }
+        
+        this.pages.forEach(p -> p.initializeProperties());
+        
         return gson.toJson(this.pages);
     }
 
@@ -306,15 +309,29 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     public static void main(String[] args) throws Exception {
 
         Gson gson = new Gson();
-        Type nt = new TypeToken<Collection<NewspaperPage>>() {
-        }.getType();
-        Collection<NewspaperPage> pages = gson.fromJson(new JsonReader(new FileReader(
-                "/Users/steffen/git/goobi-plugin-step-olr-newspaper-recognizer/goobi-plugin-step-olr-newspaper-recognizer/doc/demmta_1911.json")),
-                nt);
-
-        for (NewspaperPage page : pages) {
-            page.setIssue(page.guessIssue());
-        }
+//        Type nt = new TypeToken<Collection<NewspaperPage>>() {
+//        }.getType();
+//        Collection<NewspaperPage> pages = gson.fromJson(new JsonReader(new FileReader(
+//                "/Users/steffen/git/goobi-plugin-step-olr-newspaper-recognizer/goobi-plugin-step-olr-newspaper-recognizer/doc/demmta_1911.json")),
+//                nt);
+//
+//        for (NewspaperPage page : pages) {
+//            page.setIssue(page.guessIssue());
+//        }
+        
+        NewspaperPage page = new NewspaperPage("test.jpg");
+        String json = gson.toJson(page);
+        System.out.println(json);
+        NewspaperPage copy = gson.fromJson(json, NewspaperPage.class);
+        String json2 = gson.toJson(copy);
+        System.out.println(json2);
+        
+        String page3String = "{\"filename\":\"test.jpg\",\"result\":0.0,\"issue\":false,\"supplement\":false,\"supplementTitle\":false,\"showOtherImages\":true,\"supplementPages\":[],\"dateValid\":false}";
+        NewspaperPage copy3 = gson.fromJson(page3String, NewspaperPage.class);
+        copy3.initializeProperties();
+        System.out.println("copy3 otherpages = " + copy3.getOtherPages());
+        String json3 = gson.toJson(copy3);
+        System.out.println(json3);
 
     }
 

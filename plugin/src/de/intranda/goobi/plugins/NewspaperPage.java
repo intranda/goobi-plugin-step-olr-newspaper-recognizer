@@ -98,4 +98,16 @@ public class NewspaperPage {
         return b.toString();
     }
 
+    /**
+     * Make sure that collection properties are not null. Otherwise it will cause issues in javascript code
+     */
+    public void initializeProperties() {
+        if(this.otherPages == null) {
+            this.otherPages = new ArrayList<>();
+        }
+        if(this.supplementPages == null) {
+            this.supplementPages = new ArrayList<>();
+        }
+    }
+
 }
