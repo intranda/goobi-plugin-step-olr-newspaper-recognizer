@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -365,7 +366,14 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         MetadataType physPageNoType = prefs.getMetadataTypeByName("physPageNumber");
 
         DocStruct anchor = dd.getLogicalDocStruct();
-        DocStruct volume = anchor.getAllChildren().get(0);
+        DocStruct volume;
+        if(anchor.getType().isAnchor() && anchor.getAllChildren() != null && !anchor.getAllChildren().isEmpty()) {
+            volume = anchor.getAllChildren().get(0);
+        } else {
+            volume = anchor;
+            anchor = null;
+        }
+        
         if (volume.getAllChildren() != null) {
             List<DocStruct> children = new ArrayList<>(volume.getAllChildren());
             for (DocStruct child : children) {
@@ -407,20 +415,20 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             }
             page.setImageName(newspaperPage.getFilename());
             if (bbChildren != null) {
-                DocStruct oldPage = bbChildren.get(i);
-                List<Metadata> oldPhysPage = (List<Metadata>) oldPage.getAllMetadataByType(physPageNoType);
-                if (oldPhysPage.size() > 0) {
-                    createMetadata(physPageNoType, oldPhysPage.get(0).getValue(), page);
-                } else {
+                Optional<DocStruct> oldPage = bbChildren.stream().filter(p -> newspaperPage.getFilename().equals(p.getImageName())).findAny();
+                List<Metadata> oldPhysPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(physPageNoType)).orElse(Collections.emptyList());
+                if (oldPhysPage.isEmpty()) {
                     createMetadata(physPageNoType, "" + (i + 1), page);
+                } else {
+                    createMetadata(physPageNoType, oldPhysPage.get(0).getValue(), page);
                 }
 
-                List<Metadata> oldLogPage = (List<Metadata>) oldPage.getAllMetadataByType(logPageNoType);
+                List<Metadata> oldLogPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(logPageNoType)).orElse(Collections.emptyList());
                 if (!createNewPagination) {
-                    if (oldLogPage.size() > 0) {
-                        createMetadata(logPageNoType, oldLogPage.get(0).getValue(), page);
-                    } else {
+                    if (oldLogPage.isEmpty()) {
                         createMetadata(logPageNoType, "uncounted", page);
+                    } else {
+                        createMetadata(logPageNoType, oldLogPage.get(0).getValue(), page);
                     }
                 }
             } else {
