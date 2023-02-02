@@ -67,6 +67,7 @@
 	},
 	
 	drawSmall() {
+		console.log("draw small ", this.image_small_url);
 		var ctx = this.canvas.getContext( '2d' );
 		var scale = this.width / this.small_image.width;
         if(scale*this.small_image.height > this.height) {
