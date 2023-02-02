@@ -16,9 +16,9 @@
 		this.mouseover = false;
 	    this.image_small_url = props.image_small;
 	    this.image_large_url = props.image_large;
-	    if(window.npImages[props.image_small]) {
+	    if(window.npImages && window.npImages[props.image_small]) {
 	    	this.small_image = window.npImages[props.image_small];
-    	} 
+    	}
 	    this.image_large = null;
 	    this.height = props.height;
 	    this.width = props.width;
