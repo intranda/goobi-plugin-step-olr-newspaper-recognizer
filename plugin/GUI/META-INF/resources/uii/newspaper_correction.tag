@@ -1,124 +1,128 @@
 <newspaper_correction>
 	<div class="box box-color lightgrey box-bordered">
-         <div class="box-title">
-             <h3>
-                 <i class="fa fa-puzzle-piece"></i>
-                 <h:outputText id="id9a" value="#{myPageTitle}" />
-             </h3>
-             <div class="actions">
-                 <a id="id10" onclick={reload} class="btn btn-mini" style="color:white;">
-                     <i class="fa fa-refresh" ></i>
-                 </a>
-             </div>
-         </div>
-
-         <div class="box-content" style="background-color:#eee">
-         <div if={!opts.pagenumCorrect} class="alert alert-danger">Seitenzahlen stimmen nicht überein! Es empfielt sich noch einmal auf "Neu berechnen" zu klicken.</div>
-         	<!-- Formular für Wochentage -->
-       <div class="row">
-           <div class="col-sm-12">
-               	<!-- Wochentage als Checkboxen -->
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={monday} onclick={() => this.toggleDay('monday')}></input>Montag</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>Dienstag</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>Mittwoch</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>Donnerstag</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={friday} onclick={() => this.toggleDay('friday')}></input>Freitag</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>Samstag</label>
-				<label class="check-week"><input type="checkbox" class="checkbox-week" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>Sonntag</label>
-               	<!-- // Wochentage als Checkboxen -->
-               	
-               	<a class="btn btn-primary " onclick={delete_all_issues}>Alle Ausgaben entfernen</a>
-                <a class="btn btn-danger " onclick={restartAnalysis}>Neu berechnen</a>
-				
-				<div class="pull-right">
-					<!-- Speicher-Button -->
-					<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>Speichern</a>
-					<!-- // Speicher-Button -->
-					<a if={opts.showWriteMetsButton} class="btn btn-primary " onclick={save}>METS schreiben</a>
-					<!-- // verlassen-Button -->
-					<a class="btn btn-primary" onclick={exit}>Plugin verlassen</a>
-				</div>
+		<div class="box-title">
+			<h3>
+				<i class="fa fa-puzzle-piece"></i>
+				<h:outputText id="id9a" value="#{myPageTitle}" />
+			</h3>
+			<div class="actions">
+				<a id="id10" onclick={reload} class="btn btn-mini" style="color:white;">
+					<i class="fa fa-refresh" ></i>
+				</a>
 			</div>
 		</div>
-		<div class="row">
-           <div class="col-sm-12">
-           		<label class="check-week"><input type="checkbox" class="checkbox-week" checked={biWeekly} onclick={toggleBiWeekly}></input>Zweiwöchentlich</label>
-           		<!-- <label class="check-week"><input type="checkbox" class="checkbox-week" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
-           </div>
-       </div>
-	<hr />
-	<!-- // Formular für Wochentage -->
-	
-	
-	<!-- Bereich für Ausgaben -->
-	<div layout="block" class="col-sm-12">
-        <div class="row margin-top-most margin-bottom-most">
-		
-		<!-- Auflistung aller Ausgaben -->
-				<my_row each={page in data} if={page.issue}>
-                  	<div  class="row thumbnail-row">
-						<div class="col-sm-4">
-							
-							<div class="col-xs-6 thumbnail-image" style="position: relative;">
 
+		<div class="box-content" style="background-color:#eee">
+			<div if={!opts.pagenumCorrect} class="alert alert-danger">Seitenzahlen stimmen nicht überein! Es empfielt sich noch einmal auf "Neu berechnen" zu klicken.</div>
+	         	<!-- Formular für Wochentage -->
+			<div class="row">
+				<div class="col-sm-12">
+					<!-- Wochentage als Checkboxen -->
+					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={monday} onclick={() => this.toggleDay('monday')}></input>Montag</label>
+					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>Dienstag</label>
+					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>Mittwoch</label>
+					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>Donnerstag</label>
+					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={friday} onclick={() => this.toggleDay('friday')}></input>Freitag</label>
+					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>Samstag</label>
+					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>Sonntag</label>
+					<!-- // Wochentage als Checkboxen -->
+	               	
+					<a class="btn btn-primary " onclick={delete_all_issues}>Alle Ausgaben entfernen</a>
+	               	
+					<!-- Seems not in use. -->
+					<a class="btn btn-danger " onclick={restartAnalysis}>Neu berechnen</a>
+					
+					<div class="pull-right">
+						<!-- Speicher-Button -->
+						<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>Speichern</a>
+						<!-- // Speicher-Button -->
+						<a if={opts.showWriteMetsButton} class="btn btn-primary " onclick={save}>METS schreiben</a>
+						<!-- // verlassen-Button -->
+						<a class="btn btn-primary" onclick={exit}>Plugin verlassen</a>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12">
+					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={biWeekly} onclick={toggleBiWeekly}></input>Zweiwöchentlich</label>
+					<!-- <label class="check-week"><input type="checkbox" class="checkbox-week" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
+				</div>
+			</div>
+			<hr />
+		<!-- // Formular für Wochentage -->
+		
+		
+		<!-- Bereich für Ausgaben -->
+		<div layout="block" class="col-sm-12">
+			<div class="row margin-top-most margin-bottom-most">
+			
+			<!-- Auflistung aller Ausgaben -->
+				<my_row each={page in data} if={page.issue}>
+					<div  class="row thumbnail-row">
+						<div class="col-sm-4">
+								
+							<div class="col-xs-6 thumbnail-image" style="position: relative;">
+	
 								<!-- Bild der Ausgabe -->
 								<div class="goobi-thumbnail font-light">
 									<div class="goobi-thumbnail-image">
 										<div class="thumb" style="min-height: {thumb_height}px;">
 											<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl} 
-												image_large={page.image.largeThumbnailUrl} 
-												title={page.image.tooltip}
-												page_id={page.pos}
-												loadallimages={loadallimages}
-												preload_large={true}>
+													image_large={page.image.largeThumbnailUrl} 
+													title={page.image.tooltip}
+													page_id={page.pos}
+													loadallimages={loadallimages}
+													preload_large={true}>
 											</thumbcanvas>
 										</div>
 									</div>
 								</div>
 								<!-- // Bild der Ausgabe -->
-
+	
 								<!-- Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
 								<a
 									onclick="{noIssue}"
 									class="btn btn-default fa fa-trash"
-									style="position: absolute; right: 10px; bottom: 5px;">
-									
+									style="position: absolute; right: 10px; bottom: 5px;">					
 								</a>
 								<!-- // Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
-								
+									
 							</div>
-
-							<!-- Datum der Ausgabe -->
+	
+								<!-- Datum der Ausgabe -->
 							<div class="col-xs-5">
 								<div class="form-group {page.dateValid ? '' : 'has-error'}">
 									<input type="text" value={page.dateStr} onkeyup={changeDate} placeholder="Datum" class="form-control"></input>
 									<span if={!page.dateValid} class="help-block">Wrong date format</span>
 								</div>
 							</div>
-
+	
+							<!-- Seems not in use. -->
 							<!-- Button für Datumsgenerierung -->
 							<div class="col-xs-1" style="padding: 0px">
 								<a onclick={generateDates(1)} class="btn btn-default">
 									1<i class="btn-icon-right fa fa-play"></i>
 								</a>
 							</div>
-							
+								
 							<!-- Nummer der Ausgabe -->
 							<div class="col-xs-5 ">
 								<div class="form-group">
-								<div class="input-group">
-									<input type="text" value={page.prefix} onkeyup={changePrefix} placeholder="{msg('prefix')}" class="form-control" style="width:33%"></input>
-									<input type="text" value={page.number} onkeyup={changeNumber} placeholder="Nr." class="form-control" style="width:34%"></input>
-									<input type="text" value={page.suffix} onkeyup={changeSuffix} placeholder="{msg('suffix')}" class="form-control" style="width:33%"></input>
-								</div>
+									<div class="input-group">
+										<input type="text" value={page.prefix} onkeyup={changePrefix} placeholder="{msg('prefix')}" class="form-control" style="width:33%"></input>
+										<input type="text" value={page.number} onkeyup={changeNumber} placeholder="Nr." class="form-control" style="width:34%"></input>
+										<input type="text" value={page.suffix} onkeyup={changeSuffix} placeholder="{msg('suffix')}" class="form-control" style="width:33%"></input>
+									</div>
 								</div>
 							</div>
+								
+							<!-- Seems not in use. -->
 							<div class="col-xs-1" style="padding: 0px;">
-								 <a onclick={generateDates(2)} class="btn btn-default ">
-                                    2<i class="btn-icon-right fa fa-play"></i>
-                                </a>
+								<a onclick={generateDates(2)} class="btn btn-default ">
+	                            	2<i class="btn-icon-right fa fa-play"></i>
+	                            </a>
 							</div>
-							
+								
 							<!-- "Typ" der Ausgabe -->
 							<div class="col-xs-5">
 								<div class="form-group">
@@ -127,21 +131,23 @@
 									</select>
 								</div>
 							</div>
-                            <div class="col-xs-1" style="padding: 0px;">
-                                 <a onclick={generateDates(3)} class="btn btn-default">
-                                    3<i class="btn-icon-right fa fa-play"></i>
-                                </a>
-                            </div>
-							
+								
+							<!-- Seems not in use. -->
+							<div class="col-xs-1" style="padding: 0px;">
+								<a onclick={generateDates(3)} class="btn btn-default">
+									3<i class="btn-icon-right fa fa-play"></i>
+								</a>
+							</div>
+								
 							<!-- Details über zugehörige Seiten -->
 							<div class="col-xs-6">
 								{msg('otherPages')}: {page.otherPages.length}
 							</div>
-<!-- 							<div class="col-xs-2"></div> -->
-							
-							
+	<!-- 							<div class="col-xs-2"></div> -->
+								
+								
 						</div>
-						
+							
 						<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
 						<div class="other-pages">
 							<div class="col-sm-8" if={page.showOtherImages}>
@@ -166,20 +172,20 @@
 										</div>
 									</div>
 								</div>
-                            </div>
-                       </div>
-                             	
-                        </div>
-                        <hr style="border-top:1px #bbb solid">
-                     </my_row>
-                 </div>
-             </div>             
-         </div>
+							</div>
+						</div>
+	                             	
+						</div>
+							<hr style="border-top:1px #bbb solid">
+							</my_row>
+					</div>
+				</div>             
+		</div>
          
-         <hr />
+		<hr />
          
-         <div class="row">
-              <div class="col-sm-12">
+		<div class="row">
+			<div class="col-sm-12">
                	
 				<div class="pull-right">
 					<!-- Speicher-Button -->
@@ -191,7 +197,7 @@
 				</div>
 			</div>
 		</div>
-    </div>
+	</div>
 	<script>
 		this.suppl_colors = ["#146abf", "#e00404", "#6300b5", "#ba5d06", "#467021"];
 		this.biWeekly = false;
@@ -204,38 +210,27 @@
 		this.sent = {};
 		this.msg_queue = [];
 		this.ws_ready = false;
+		
 		if(window.location.protocol == "http:") {
 			this.msg_ws = new WebSocket("ws://" + location.host + "/" + location.pathname.split("/")[1] + "/messagesws");
 		} else {
 		    this.msg_ws = new WebSocket("wss://" + location.host + "/" + location.pathname.split("/")[1] + "/messagesws");
 		}
+		
 		this.msg_ws.onopen = (evt) => {
 		    console.log("onopen", this.msg_queue)
 		    for(var i=0;i<this.msg_queue.length;i++) {
 		        this.msg_ws.send(JSON.stringify({key: this.msg_queue[i], lang: this.lang}));
 		    }
-		}
+		};
+		
 		this.msg_ws.onmessage = (msg) => {
 		    var message = JSON.parse(msg.data);
 		    console.log(message)
 		    this.msgs[message.key] = message.value;
 		    this.update();
-		}
-		msg(str) {
-		    if(this.msgs[str]) {
-		        return this.msgs[str]
-		    } else {
-		        if(!this.sent[str]) {
-		        	this.sent[str] = true;
-		            if(this.ws_ready) {
-			            this.msg_ws.send(JSON.stringify({key: str, lang: this.lang}));
-		            } else {
-		                this.msg_queue.push(str);
-		            }
-		        }
-		    }
-		    return str;
-		}
+		};
+		
 		this.data_el = opts.data_el;
 		this.restartAnalysisButton = opts.restartAnalysisButton;
 		this.save_button = opts.saveButton;
@@ -247,6 +242,7 @@
 		console.log(opts, this.thumb_height)
 		console.log(this.data_el.value);
 		this.data = JSON.parse(this.data_el.value);
+		
 		for(var i=0;i < this.data.length; i++) {
 		    var page = this.data[i];
 		    if(page.dateValid === undefined) {
@@ -273,6 +269,7 @@
 		        }
 		    }
 		}
+		
 		console.log(this.data);
 		this.monday = true;
 		this.tuesday = true;
@@ -284,7 +281,7 @@
 		
 		this.on("unmount", function() {
 		    this.msg_ws.close();
-		})
+		});
 		
 		this.on("mount", function() {
 		    console.log("mount bla", this.thumb_height)
@@ -294,18 +291,39 @@
 		    setInterval(() => {
 		        this.save_no_mets();
 		    }, 15000);
-		})
+		});
 		
+		// ================= functions ================= //
+		/* mostly used by placeholders */
+		msg(str) {
+		    if(this.msgs[str]) {
+		        return this.msgs[str]
+		    } else {
+		        if(!this.sent[str]) {
+		        	this.sent[str] = true;
+		            if(this.ws_ready) {
+			            this.msg_ws.send(JSON.stringify({key: str, lang: this.lang}));
+		            } else {
+		                this.msg_queue.push(str);
+		            }
+		        }
+		    }
+		    return str;
+		}
+
+		/* triggered when the button `Plugin verlassen` is clicked */
 		exit() {
 		    this.finish_button.click();
 		}
 		
+		/* triggered when the button `METS schreiben` is clicked */
 		save() {
 		    this.data_el.value = this.createSaveData();
 		    this.save_button.click();
 		    this.dataDirty = false;
 		}
 		
+		/* triggered when the button `Neu berechnen` is clicked */
 		restartAnalysis() {
 			var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse und startet eine neue automatische Analyse. Wirklich fortfahren?")
 			if(confirmed) {
@@ -313,6 +331,7 @@
 			}
 		}
 		
+		/* triggered when the button `Speichern` is clicked */
 		save_no_mets() {
 		    var saved = false;
 		    if(this.dataDirty) {
@@ -334,6 +353,7 @@
 		    }
 		}
 		
+		/* used by the functions save and save_no_mets */
 		createSaveData() {
 			var saveData = [];
 	        for(var i=0;i<this.data.length;i++) {
@@ -354,21 +374,25 @@
 	        return JSON.stringify(saveData);
 		}
 		
+		/* triggered when the checkbox option `Zweiwöchentlich` is clicked */
 		toggleBiWeekly() {
 		    this.biWeekly = !this.biWeekly;
 		    console.log(this.biWeekly);
 		}
 		
+		/* triggered when any checkbox option for days is clicked */
 		toggleDay(day) {
 		    this.optsDirty = true;
 		    console.log(day);
 		    this[day] = !this[day];
 		}
 		
+		/* NOT IN USE */
 		toggleShowOtherImages(e) {
 		    e.item.page.showOtherImages = !e.item.page.showOtherImages;
 		}
 		
+		/* triggered when the button `Alle Ausgaben entfernen` is clicked */
 		delete_all_issues(e) {
 		    this.dataDirty = true;
 		    this.data[0].issue = true;
@@ -382,6 +406,7 @@
 		    }
 		}
 		
+		/* triggered when the small delete button is clicked, which will move this wrongly classified 'title' page along with its 'other' pages to the end of the previous line */
 		noIssue(e) {
 		    this.dataDirty = true;
 		    console.log(e.item.page.pos)
@@ -409,6 +434,7 @@
 		    delete currPage.number;
 		}
 		
+		/* triggered when an 'other' page is clicked, which should make it a 'title' page and move it to a new line along with its followers */
 		otherOnclick(e) {
 		    this.dataDirty = true;
 		    var idx = e.item.idx;
@@ -501,36 +527,43 @@
 		    }
 		}
 		
+		/* triggered when the text input `Datum` gets an input */
 		changeDate(e) {
 		    this.dataDirty = true;
 		    e.item.page.dateStr = e.target.value;
 		    e.item.page.dateValid = this.validateDate(e.target.value);
 		}
 		
+		/* triggered when the selector `Ausgabe` gets an input */
 		changeIssueType(e) {
 		    this.dataDirty = true;
 		    e.item.page.issueType = e.target.selectedOptions[0].text;
 		}
 		
+		/* triggered when the text input `Nr.` gets an input */
 		changeNumber(e) {
 		    this.dataDirty = true;
 		    e.item.page.number = e.target.value;
 		}
 		
+		/* triggered when the text input `Präfix` gets an input */
 		changePrefix(e) {
 		    this.dataDirty = true;
 		    e.item.page.prefix = e.target.value;
 		}
 		
+		/* triggered when the text input `Suffix` gets an input */
 		changeSuffix(e) {
 		    this.dataDirty = true;
 		    e.item.page.suffix = e.target.value;
 		}
 		
+		/* triggered when the button `Datumgenerierung`(?) is clicked */
 		generateDates(skip) {
 			return (e) => this.doGenerateDates(e, skip);
 		},
 		
+		/* used by the function generateDates to generate dates */
 		doGenerateDates(e, skip) {
 			console.log("skip:", skip)
 			var dateRegex = /^\d{2}\.\d{2}\.\d{4}$/
@@ -566,6 +599,7 @@
 	        }
 	    }
 
+		/* used by the function doGenerateDates to get the next date */
 	    getNextDate(currentDate) {
 	        var newDate = null;
 	        console.log(this.biWeekly);
@@ -622,6 +656,7 @@
 	        }
 	    }
 	    
+	    /* triggered when the text input `Datum` gets a new input, used to validate the new date */
 	    validateDate(date) {
 			if(date.length == 0) {
 			    return true;
@@ -674,6 +709,7 @@
 	        return false;
 	    }
 	    
+	    /* used by the function validateDate to get the validity of the input date */
 	    checkDate(day, month, year) {
 	        if(day < 1 || month < 1 || month > 12) {
 	            return false;

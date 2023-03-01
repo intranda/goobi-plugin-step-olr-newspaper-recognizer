@@ -28,8 +28,30 @@
 		    	this.createObserver()
 		    }
 	    }
-	})
+	});
 	
+	this.on("update", () => {
+	    if(this.render_text != this.opts.render_text) {
+		    this.render_text = this.opts.render_text;
+		    this.render_pos = this.opts.render_pos;
+		    this.render_size = parseInt(this.opts.render_size);
+		    this.render_bg_color = this.opts.render_bg_color;
+		    if(this.opts.preload_large) {
+		        var img = new Image();
+		        img.onload = function() {
+		            this.image_large = img;
+		        }.bind(this);
+		        img.src = this.image_large_url;
+		    }
+		    if(this.intersected) {
+		        console.log("onUpdate: drawOnCanvas")
+		    	this.drawOnCanvas();
+		    }
+	    }
+	});
+	
+	// ================= functions ================= //
+	/* called while mounting */
 	createObserver() {
    		var observer;
    		var options = {
@@ -42,6 +64,7 @@
    		observer.observe(this.refs.observable);
    	}
 	
+	/* used as callback by an observer */
 	drawFirst(entries, observer) {
 	    entries.forEach(entry => {
 		    if(entry.isIntersecting && !this.intersected) {
@@ -59,6 +82,7 @@
 	    })
 	}
 	
+	/* used to draw the canvas or update it */
 	drawOnCanvas() {
         if ( this.canvas == null ) {
             return;
@@ -93,31 +117,13 @@
         img.src = this.image_small_url;
 	}
 	
-	this.on("update", () => {
-	    if(this.render_text != this.opts.render_text) {
-		    this.render_text = this.opts.render_text;
-		    this.render_pos = this.opts.render_pos;
-		    this.render_size = parseInt(this.opts.render_size);
-		    this.render_bg_color = this.opts.render_bg_color;
-		    if(this.opts.preload_large) {
-		        var img = new Image();
-		        img.onload = function() {
-		            this.image_large = img;
-		        }.bind(this);
-		        img.src = this.image_large_url;
-		    }
-		    if(this.intersected) {
-		        console.log("onUpdate: drawOnCanvas")
-		    	this.drawOnCanvas();
-		    }
-	    }
-	})
-
+	/* triggered by an onmouseout event */
 	mouseout( event ) {
 	    this.mouseover = false;
 	    this.drawOnCanvas( event.currentTarget );
 	}
 
+	/* used by the function drawLarge to get the position of the cursor */
 	getMousePos( canvas, event ) {
 	    var rect = canvas.getBoundingClientRect();
 	    return {
@@ -126,6 +132,7 @@
 	    };
 	}
 
+	/* triggered by an onmousemove event */
 	mousemove( event ) {
 	    if(!event.shiftKey && !event.getModifierState('CapsLock')) {
 	        //console.log("no shift");
@@ -150,6 +157,7 @@
 	    }
 	}
 	
+	/* used by the function mousemove, triggered by an onmousemove event */
 	drawLarge(event) {
 	   	var img = this.image_large;
 	    var canvas = event.currentTarget;
