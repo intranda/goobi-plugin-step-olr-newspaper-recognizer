@@ -175,7 +175,10 @@
 			
 							<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
 							<div class="other-pages">
+								<!-- If control over this component is needed, uncomment the following and three other marked lines in the functions 'onBeforeMount', 'noIssue' and 'otherOnClick'.
 								<div class="col-sm-8" if={page.showOtherImages}>
+								-->							
+								<div class="col-sm-8" >							
 									<div class="newspaper-thumbnails">
 										<!-- THUMBNAIL -->
 										<div each={(otherPage, idx) in page.otherPages} class="newspaper-thumbnail">
@@ -276,6 +279,7 @@
 			    
 			    // for issue pages, append all 'other' pages following it
 			    if(page.issue) {
+			        //page.showOtherImages = true; // <- 1. uncomment this to initialize the field 'showOtherImages' for all 'title' pages
 			        if(!page.issueType) {
 			            console.log("issueType not set")
 			            page.issueType = "Ausgabe";
@@ -513,8 +517,10 @@
 		    // find previous and add this and it's other images to it
 		    for(var i=currPage.pos-1; i>=0; i--) {
 		        if(this.data[i].issue) {
+		        	console.log("this.data[i].otherPages = ");
+		        	console.log(this.data[i].otherPages);
 		            this.data[i].otherPages.push(currPage);
-		            console.log(currPage.otherPages.length)
+		            console.log("currPage.otherPages.length = " + currPage.otherPages.length);
 		            currPage.parent= i;
 		            var length = currPage.otherPages.length
 		            var k = 0;
@@ -528,6 +534,7 @@
 		    console.log("done")
 		    currPage.otherPages = [];
 		    currPage.issue = false;
+		    //currPage.showOtherImages = false; // <- 2. uncomment this to set its field 'showOtherImages' back if the page is manually set as 'other', just in case
 		    delete currPage.dateStr;
 		    delete currPage.prefix;
 		    delete currPage.number;
@@ -611,7 +618,7 @@
 		    	console.log(origPage)
 		    	console.log(page)
 			    origPage.issue = true;
-		    	origPage.showOtherImages = true;
+		    	//origPage.showOtherImages = true; // <- 3. uncomment this to set the field 'showOtherImages' to true for pages that are manually set as 'title'
 			    page.issue = true;
 			    if(!origPage.otherPages) {
 			    	origPage.otherPages = [];
