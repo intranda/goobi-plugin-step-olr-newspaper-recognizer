@@ -429,28 +429,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 return "";
             }
             page.setImageName(newspaperPage.getFilename());
-            if (bbChildren != null) {
-                Optional<DocStruct> oldPage = bbChildren.stream().filter(p -> newspaperPage.getFilename().equals(p.getImageName())).findAny();
-                List<Metadata> oldPhysPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(physPageNoType)).orElse(Collections.emptyList());
-                if (oldPhysPage.isEmpty()) {
-                    createMetadata(physPageNoType, "" + (i + 1), page);
-                } else {
-                    createMetadata(physPageNoType, oldPhysPage.get(0).getValue(), page);
-                }
-
-                List<Metadata> oldLogPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(logPageNoType)).orElse(Collections.emptyList());
-                if (!createNewPagination) {
-                    if (oldLogPage.isEmpty()) {
-                        createMetadata(logPageNoType, "uncounted", page);
-                    } else {
-                        createMetadata(logPageNoType, oldLogPage.get(0).getValue(), page);
-                    }
-                }
-
-            } else {
-                createMetadata(physPageNoType, "" + (i + 1), page);
-                createMetadata(logPageNoType, "uncounted", page);
-            }
+            
+            // process bound book children
+            processBoundBookChildren(bbChildren, page, i, newspaperPage);
 
             if (newspaperPage.isIssue()) {
                 currentSupplement = null;
@@ -460,21 +441,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             if (currentIssue == null || newspaperPage.isIssue()) {
                 currentPageNo = 1;
                 try {
-                    currentIssue = dd.createDocStruct(issueType);
-
+                    currentIssue = createNewIssue(dd, newspaperPage);
                     volume.addChild(currentIssue);
                 } catch (TypeNotAllowedAsChildException | TypeNotAllowedForParentException e) {
                     log.error(e);
                     return "";
                 }
-                createMetadata(partNumberType, newspaperPage.generateTitle(), currentIssue);
-
-                createMetadata(numberType, newspaperPage.getNumber(), currentIssue);
-                createMetadata(numberSortType, newspaperPage.getNumber(), currentIssue);
-
-                createMetadata(dateIssuedType, w3cdtf.print(newspaperPage.getDate()), currentIssue);
-
-                createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);
             }
 
             if (newspaperPage.isSupplementTitle()) {
@@ -487,12 +459,15 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                     return "";
                 }
             }
+
             if (currentSupplement != null) {
                 currentSupplement.addReferenceTo(page, "logical_physical");
             }
+
             if (createNewPagination) {
                 createMetadata(logPageNoType, Integer.toString(currentPageNo), page);
             }
+
             // link pages to issue and volume
             currentIssue.addReferenceTo(page, "logical_physical");
             volume.addReferenceTo(page, "logical_physical");
@@ -613,6 +588,51 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         if (dateIssuedType == null) {
             dateIssuedType = alternative;
         }
+    }
+
+    private void processBoundBookChildren(List<DocStruct> bbChildren, DocStruct page, int currentNumber, NewspaperPage newspaperPage) {
+        if (bbChildren == null) {
+            createMetadata(physPageNoType, "" + (currentNumber + 1), page);
+            createMetadata(logPageNoType, "uncounted", page);
+            return;
+        }
+
+        // bbChildren != null, process them
+        Optional<DocStruct> oldPage = bbChildren.stream().filter(p -> newspaperPage.getFilename().equals(p.getImageName())).findAny();
+
+        // process old physical pages
+        List<Metadata> oldPhysPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(physPageNoType)).orElse(Collections.emptyList());
+        if (oldPhysPage.isEmpty()) {
+            createMetadata(physPageNoType, "" + (currentNumber + 1), page);
+        } else {
+            createMetadata(physPageNoType, oldPhysPage.get(0).getValue(), page);
+        }
+
+        if (createNewPagination) {
+            // no need to process old logical page
+            return;
+        }
+
+        // process old logical pages
+        List<Metadata> oldLogPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(logPageNoType)).orElse(Collections.emptyList());
+
+        if (oldLogPage.isEmpty()) {
+            createMetadata(logPageNoType, "uncounted", page);
+        } else {
+            createMetadata(logPageNoType, oldLogPage.get(0).getValue(), page);
+        }
+    }
+
+    private DocStruct createNewIssue(DigitalDocument dd, NewspaperPage newspaperPage) throws TypeNotAllowedForParentException {
+        DocStruct currentIssue = dd.createDocStruct(issueType);
+
+        createMetadata(partNumberType, newspaperPage.generateTitle(), currentIssue);
+        createMetadata(numberType, newspaperPage.getNumber(), currentIssue);
+        createMetadata(numberSortType, newspaperPage.getNumber(), currentIssue);
+        createMetadata(dateIssuedType, w3cdtf.print(newspaperPage.getDate()), currentIssue);
+        createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);
+
+        return currentIssue;
     }
 
     private void createMetadata(MetadataType metadataType, String value, DocStruct docstruct) {
