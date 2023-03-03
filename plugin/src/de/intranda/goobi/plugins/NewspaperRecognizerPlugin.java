@@ -10,8 +10,10 @@ import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,6 +75,31 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private boolean loadAllImages;
     private boolean showWriteMetsButton = true;
     private boolean createNewPagination;
+
+    private DocStructType pageType;
+    private DocStructType issueType;
+    private DocStructType supplementType;
+
+    private MetadataType partNumberType;
+    private MetadataType numberType;
+    private MetadataType numberSortType;
+    private MetadataType dateIssuedType;
+    private MetadataType titleType;
+    private MetadataType logPageNoType;
+    private MetadataType physPageNoType;
+
+    private static final String PAGE_TYPE_NAME = "page";
+    private static final String ISSUE_TYPE_NAME = "NewspaperIssue";
+    private static final String SUPPLEMENT_TYPE_NAME = "NewspaperSupplement";
+
+    private static final String PART_NUMBER_TYPE_NAME = "PartNumber";
+    private static final String NUMBER_TYPE_NAME = "CurrentNo";
+    private static final String NUMBER_SORT_TYPE_NAME = "CurrentNoSorting";
+    private static final String DATE_ISSUED_TYPE_NAME = "DateIssued";
+    private static final String DATE_ISSUED_TYPE_NAME_ALTERNATIVE = "PublicationYear";
+    private static final String TITLE_TYPE_NAME = "TitleDocMain";
+    private static final String LOG_PAGE_NO_TYPE_NAME = "logicalPageNumber";
+    private static final String PHYS_PAGE_NO_TYPE_NAME = "physPageNumber";
 
     private transient Gson gson = new Gson();
     transient Type listType = new TypeToken<ArrayList<NewspaperPage>>() {
@@ -348,20 +375,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
         Prefs prefs = process.getRegelsatz().getPreferences();
 
-        DocStructType pageType = prefs.getDocStrctTypeByName("page");
-        DocStructType issueType = prefs.getDocStrctTypeByName("NewspaperIssue");
-        DocStructType supplementType = prefs.getDocStrctTypeByName("NewspaperSupplement");
-        MetadataType partNumberType = prefs.getMetadataTypeByName("PartNumber");
-        MetadataType dateIssuedType = prefs.getMetadataTypeByName("DateIssued");
-        if (dateIssuedType == null) {
-            dateIssuedType = prefs.getMetadataTypeByName("PublicationYear");
-        }
-        MetadataType numberType = prefs.getMetadataTypeByName("CurrentNo");
-        MetadataType numberSortType = prefs.getMetadataTypeByName("CurrentNoSorting");
-        MetadataType titleType = prefs.getMetadataTypeByName("TitleDocMain");
-
-        MetadataType logPageNoType = prefs.getMetadataTypeByName("logicalPageNumber");
-        MetadataType physPageNoType = prefs.getMetadataTypeByName("physPageNumber");
+        // initialize the private type fields
+        initializeTypes(prefs);
 
         DocStruct anchor = dd.getLogicalDocStruct();
         DocStruct volume;
@@ -379,6 +394,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 volume.removeReferenceTo(child);
             }
         }
+
         FileSet fs = dd.getFileSet();
         if (fs.getAllFiles() != null) {
             List<ContentFile> files = new ArrayList<>(fs.getAllFiles());
@@ -386,6 +402,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 fs.removeFile(inImage);
             }
         }
+
         DocStruct boundBook = dd.getPhysicalDocStruct();
         List<DocStruct> bbChildren = null;
         if (boundBook.getAllChildren() != null) {
@@ -429,13 +446,16 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                         createMetadata(logPageNoType, oldLogPage.get(0).getValue(), page);
                     }
                 }
+
             } else {
                 createMetadata(physPageNoType, "" + (i + 1), page);
                 createMetadata(logPageNoType, "uncounted", page);
             }
+
             if (newspaperPage.isIssue()) {
                 currentSupplement = null;
             }
+
             // create new issue if needed
             if (currentIssue == null || newspaperPage.isIssue()) {
                 currentPageNo = 1;
@@ -456,6 +476,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
                 createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);
             }
+
             if (newspaperPage.isSupplementTitle()) {
                 currentPageNo = 1;
                 try {
@@ -487,6 +508,110 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
         return "";
 
+    }
+
+    private void initializeTypes(Prefs prefs) {
+        // initialize all DocStructType objects
+        List<DocStructType> dsTypes = prefs.getAllDocStructTypes();
+        HashSet<String> dsTypesNames = new HashSet<>(Arrays.asList(PAGE_TYPE_NAME, ISSUE_TYPE_NAME, SUPPLEMENT_TYPE_NAME));
+        initializeDocStructTypes(dsTypes, dsTypesNames);
+
+        // initialize all MetadataType objects
+        List<MetadataType> mdTypes = prefs.getAllMetadataTypes();
+        HashSet<String> mdTypesNames = new HashSet<>(Arrays.asList(PART_NUMBER_TYPE_NAME, DATE_ISSUED_TYPE_NAME, NUMBER_TYPE_NAME,
+                NUMBER_SORT_TYPE_NAME, TITLE_TYPE_NAME, LOG_PAGE_NO_TYPE_NAME, PHYS_PAGE_NO_TYPE_NAME));
+        initializeMetadataTypes(mdTypes, mdTypesNames);
+    }
+
+    private void initializeDocStructTypes(List<DocStructType> dsTypes, HashSet<String> dsTypesNames) {
+        // set null first
+        pageType = null;
+        issueType = null;
+        supplementType = null;
+
+        // update all fields
+        for (DocStructType dsType : dsTypes) {
+            if (dsTypesNames.isEmpty()) {
+                break;
+            }
+            String typeName = dsType.getName();
+            if (dsTypesNames.contains(typeName)) {
+                switch (typeName) {
+                    case PAGE_TYPE_NAME:
+                        pageType = dsType;
+                        break;
+                    case ISSUE_TYPE_NAME:
+                        issueType = dsType;
+                        break;
+                    case SUPPLEMENT_TYPE_NAME:
+                        supplementType = dsType;
+                        break;
+                    default:
+                        // no need                
+                }
+                dsTypesNames.remove(typeName);
+            }
+        }
+    }
+
+    private void initializeMetadataTypes(List<MetadataType> mdTypes, HashSet<String> mdTypesNames) {
+        // set null first
+        partNumberType = null;
+        numberType = null;
+        numberSortType = null;
+        dateIssuedType = null;
+        titleType = null;
+        logPageNoType = null;
+        physPageNoType = null;
+        
+        MetadataType alternative = null; // used to hold the MetadataType named after DATE_ISSUED_TYPE_NAME_ALTERNATIVE, just in case
+        boolean noDateFound = true; // true if there is no candidate for dateIssuedType found yet
+
+        // update all fields
+        for (MetadataType mdType : mdTypes) {
+            if (mdTypesNames.isEmpty()) {
+                break;
+            }
+
+            String typeName = mdType.getName();
+            if (mdTypesNames.contains(typeName)) {
+                switch (typeName) {
+                    case PART_NUMBER_TYPE_NAME:
+                        partNumberType = mdType;
+                        break;
+                    case NUMBER_TYPE_NAME:
+                        numberType = mdType;
+                        break;
+                    case NUMBER_SORT_TYPE_NAME:
+                        numberSortType = mdType;
+                        break;
+                    case DATE_ISSUED_TYPE_NAME:
+                        dateIssuedType = mdType;
+                        noDateFound = false;
+                        break;
+                    case TITLE_TYPE_NAME:
+                        titleType = mdType;
+                        break;
+                    case LOG_PAGE_NO_TYPE_NAME:
+                        logPageNoType = mdType;
+                        break;
+                    case PHYS_PAGE_NO_TYPE_NAME:
+                        physPageNoType = mdType;
+                        break;
+                    default:
+                        // no need
+                }
+                mdTypesNames.remove(typeName);
+            }
+            
+            if (noDateFound && alternative == null && typeName.equals(DATE_ISSUED_TYPE_NAME_ALTERNATIVE)) {
+                alternative = mdType;
+            }
+        }
+        // if by the end dateIssuedType is still null, use alternative instead
+        if (dateIssuedType == null) {
+            dateIssuedType = alternative;
+        }
     }
 
     private void createMetadata(MetadataType metadataType, String value, DocStruct docstruct) {
