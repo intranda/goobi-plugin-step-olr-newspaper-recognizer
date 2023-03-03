@@ -373,11 +373,11 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             log.error(e);
             return "";
         }
-        Prefs prefs = process.getRegelsatz().getPreferences();
 
         // initialize the private type fields
-        initializeTypes(prefs);
+        initializeTypes(process);
 
+        // get a copy of bound book children if it is not null
         DocStruct boundBook = dd.getPhysicalDocStruct();
         List<DocStruct> bbChildren = null;
         if (boundBook.getAllChildren() != null) {
@@ -385,16 +385,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
 
         // prepare volume
-        DocStruct volume = prepareVolume(dd, boundBook, bbChildren);
-
-        // remove all files from FileSet
-        FileSet fs = dd.getFileSet();
-        if (fs.getAllFiles() != null) {
-            List<ContentFile> files = new ArrayList<>(fs.getAllFiles());
-            for (ContentFile inImage : files) {
-                fs.removeFile(inImage);
-            }
-        }
+        DocStruct volume = purifyDigitalDocument(dd, boundBook, bbChildren);
 
         DocStruct currentIssue = null;
         DocStruct currentSupplement = null;
@@ -458,17 +449,19 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             currentPageNo++;
         }
 
+        // save the METS file
         try {
             process.writeMetadataFile(fileformat);
         } catch (Exception e) {
             log.error(e);
             return "";
         }
-        return "";
 
+        return "";
     }
 
-    private void initializeTypes(Prefs prefs) {
+    private void initializeTypes(Process process) {
+        Prefs prefs = process.getRegelsatz().getPreferences();
         // initialize all DocStructType objects
         List<DocStructType> dsTypes = prefs.getAllDocStructTypes();
         HashSet<String> dsTypesNames = new HashSet<>(Arrays.asList(PAGE_TYPE_NAME, ISSUE_TYPE_NAME, SUPPLEMENT_TYPE_NAME));
@@ -573,7 +566,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
     }
 
-    private DocStruct prepareVolume(DigitalDocument dd, DocStruct boundBook, List<DocStruct> bbChildren) {
+    private DocStruct purifyDigitalDocument(DigitalDocument dd, DocStruct boundBook, List<DocStruct> bbChildren) {
         DocStruct anchor = dd.getLogicalDocStruct();
         DocStruct volume;
         if (anchor.getType().isAnchor() && anchor.getAllChildren() != null && !anchor.getAllChildren().isEmpty()) {
@@ -587,6 +580,15 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             for (DocStruct child : children) {
                 volume.removeChild(child);
                 volume.removeReferenceTo(child);
+            }
+        }
+
+        // remove all files from FileSet
+        FileSet fs = dd.getFileSet();
+        if (fs.getAllFiles() != null) {
+            List<ContentFile> files = new ArrayList<>(fs.getAllFiles());
+            for (ContentFile inImage : files) {
+                fs.removeFile(inImage);
             }
         }
 
