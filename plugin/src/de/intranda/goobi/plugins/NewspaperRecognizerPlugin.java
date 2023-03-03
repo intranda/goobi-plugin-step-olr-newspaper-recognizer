@@ -378,38 +378,21 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         // initialize the private type fields
         initializeTypes(prefs);
 
-        DocStruct anchor = dd.getLogicalDocStruct();
-        DocStruct volume;
-        if(anchor.getType().isAnchor() && anchor.getAllChildren() != null && !anchor.getAllChildren().isEmpty()) {
-            volume = anchor.getAllChildren().get(0);
-        } else {
-            volume = anchor;
-            anchor = null;
-        }
-        
-        if (volume.getAllChildren() != null) {
-            List<DocStruct> children = new ArrayList<>(volume.getAllChildren());
-            for (DocStruct child : children) {
-                volume.removeChild(child);
-                volume.removeReferenceTo(child);
-            }
+        DocStruct boundBook = dd.getPhysicalDocStruct();
+        List<DocStruct> bbChildren = null;
+        if (boundBook.getAllChildren() != null) {
+            bbChildren = new ArrayList<>(boundBook.getAllChildren());
         }
 
+        // prepare volume
+        DocStruct volume = prepareVolume(dd, boundBook, bbChildren);
+
+        // remove all files from FileSet
         FileSet fs = dd.getFileSet();
         if (fs.getAllFiles() != null) {
             List<ContentFile> files = new ArrayList<>(fs.getAllFiles());
             for (ContentFile inImage : files) {
                 fs.removeFile(inImage);
-            }
-        }
-
-        DocStruct boundBook = dd.getPhysicalDocStruct();
-        List<DocStruct> bbChildren = null;
-        if (boundBook.getAllChildren() != null) {
-            bbChildren = new ArrayList<>(boundBook.getAllChildren());
-            for (DocStruct child : bbChildren) {
-                boundBook.removeChild(child);
-                volume.removeReferenceTo(child);
             }
         }
 
@@ -588,6 +571,33 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         if (dateIssuedType == null) {
             dateIssuedType = alternative;
         }
+    }
+
+    private DocStruct prepareVolume(DigitalDocument dd, DocStruct boundBook, List<DocStruct> bbChildren) {
+        DocStruct anchor = dd.getLogicalDocStruct();
+        DocStruct volume;
+        if (anchor.getType().isAnchor() && anchor.getAllChildren() != null && !anchor.getAllChildren().isEmpty()) {
+            volume = anchor.getAllChildren().get(0);
+        } else {
+            volume = anchor;
+        }
+
+        if (volume.getAllChildren() != null) {
+            List<DocStruct> children = new ArrayList<>(volume.getAllChildren());
+            for (DocStruct child : children) {
+                volume.removeChild(child);
+                volume.removeReferenceTo(child);
+            }
+        }
+
+        if (bbChildren != null) {
+            for (DocStruct child : bbChildren) {
+                boundBook.removeChild(child);
+                volume.removeReferenceTo(child);
+            }
+        }
+
+        return volume;
     }
 
     private void processBoundBookChildren(List<DocStruct> bbChildren, DocStruct page, int currentNumber, NewspaperPage newspaperPage) {
