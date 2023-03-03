@@ -5,181 +5,192 @@
 	</div>
 	<script>
 	export default {
-	onBeforeMount() {
-		this.small_image = null;
-		this.state = {
-			mouseover: false,
-			imageUrl: null
-		}
-	},
-	onMounted(props, state) {
-		this.mouseover = false;
-	    this.image_small_url = props.image_small;
-	    this.image_large_url = props.image_large;
-	    if(window.npImages && window.npImages[props.image_small]) {
-	    	this.small_image = window.npImages[props.image_small];
-    	}
-	    this.image_large = null;
-	    this.height = props.height;
-	    this.width = props.width;
-	    this.render_text = props.render_text;
-	    this.render_pos = props.render_pos;
-	    this.render_size = parseInt(props.render_size);
-	    this.render_bg_color = props.render_bg_color;
-	    this.page_id = props.page_id;
-	    this.canvas = this.$('canvas');
-	    this.update();
-	    
-	    //console.log(props.loadallimages)
-	    if(typeof props.loadallimages != 'undefined') {
-		    if(props.loadallimages) {
-		    } else {
+		
+		/* preparations before mounting the components, used to initialize some fields */
+		onBeforeMount() {
+			this.small_image = null;
+			this.state = {
+				mouseover: false,
+				imageUrl: null
+			}
+		},
+		
+		/* triggered at mounting */
+		onMounted(props, state) {
+			this.mouseover = false;
+		    this.image_small_url = props.image_small;
+		    this.image_large_url = props.image_large;
+		    if(window.npImages && window.npImages[props.image_small]) {
+		    	this.small_image = window.npImages[props.image_small];
+	    	}
+		    this.image_large = null;
+		    this.height = props.height;
+		    this.width = props.width;
+		    this.render_text = props.render_text;
+		    this.render_pos = props.render_pos;
+		    this.render_size = parseInt(props.render_size);
+		    this.render_bg_color = props.render_bg_color;
+		    this.page_id = props.page_id;
+		    this.canvas = this.$('canvas');
+		    this.update();
+		    
+		    //console.log(props.loadallimages)
+		    if(typeof props.loadallimages != 'undefined') {
+			    if(props.loadallimages) { // WTH??? - Zehong
+			    } else {
+			    }
 		    }
-	    }
-    	this.drawOnCanvas();
-    	 if(this.props.preload_large) {
-	        var img = new Image();
-	        img.onload = function() {
-	            this.image_large = img;
-	        }.bind(this);
-	        img.src = this.image_large_url;
-	    }
-    	//this.createObserver()
-	},
-	
-	drawOnCanvas() {
-        if ( this.canvas == null ) {
-            return;
-        }
-        if(!this.small_image) {
-	        var img = new Image();
-	        img.onload = () => {
-	        	//console.log("download done...", this.props.preload_large)
-		        this.small_image = img;
-		        this.update();
-	            this.drawSmall();
-	        };
-	        // console.log(image);
-	        img.src = this.image_small_url;
-        } else {
-        	this.drawSmall()
-    	}
-	},
-	
-	drawSmall() {
-		var ctx = this.canvas.getContext( '2d' );
-		var scale = this.width / this.small_image.width;
-        if(scale*this.small_image.height > this.height) {
-            scale = this.height / this.small_image.height;
-        }
-        this.canvas.width = this.small_image.width*scale;
-        this.canvas.height = this.small_image.height*scale;
-        ctx.drawImage( this.small_image, 0, 0, this.small_image.width*scale, this.small_image.height*scale );
-        if(!this.drawn) {
-        	this.drawn = true;
-        	this.update();
-    	}
-        if(this.render_text) {
-            var centerX = this.canvas.width - (this.render_size/1.5)-2;
-            var centerY = this.canvas.height - ((this.render_size)/1.5)-2
-            var radius = this.render_size /2 + 4;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, 2*Math.PI, false);
-            ctx.fillStyle= this.render_bg_color;
-            ctx.fill();
-            ctx.fillStyle= 'white';
-            var x = this.canvas.width - (this.render_size);
-            var y = this.canvas.height - (this.render_size-13);
-            ctx.font = "bold " + this.render_size + "px arial";
-            ctx.fillText(this.render_text, x, y, this.render_size/2);
-        }
-	},
-	
-	onUpdated() {
-	    if(this.render_text != this.props.render_text) {
-		    this.render_text = this.props.render_text;
-		    this.render_pos = this.props.render_pos;
-		    this.render_size = parseInt(this.props.render_size);
-		    this.render_bg_color = this.props.render_bg_color;
-		    if(this.props.preload_large) {
+	    	this.drawOnCanvas();
+	    	 if(this.props.preload_large) {
 		        var img = new Image();
 		        img.onload = function() {
 		            this.image_large = img;
 		        }.bind(this);
 		        img.src = this.image_large_url;
 		    }
-		    if(this.intersected) {
-		        console.log("onUpdate: drawOnCanvas")
-		    	this.drawOnCanvas();
-		    }
-	    }
-	},
-
-	mouseout( event ) {
-	    this.mouseover = false;
-	    this.drawOnCanvas( event.currentTarget );
-	},
-
-	getMousePos( canvas, event ) {
-	    var rect = canvas.getBoundingClientRect();
-	    return {
-	        x: event.clientX - rect.left,
-	        y: event.clientY - rect.top
-	    };
-	},
-
-	mousemove( event ) {
-	    if(!event.shiftKey && !event.getModifierState('CapsLock')) {
-	        //console.log("no shift");
-	        if(this.mouseover) {
-	        	this.mouseover = false;
-	        	this.drawOnCanvas()
+	    	//this.createObserver()
+		},
+		
+		/* used to draw the canvas */
+		drawOnCanvas() {
+	        if ( this.canvas == null ) {
+	            return;
 	        }
-	        return;
-	    } else {
-	        //console.log("shift");
-	    }
-	    this.mouseover = true;
-    	console.log(this.image_large)
-	    if(this.image_large != null) {
-	        this.drawLarge(event);
-	    } else {
-	    	console.log("drawing large");
-		    var img = new Image();
-		    img.onload = () => {
-		        this.image_large = img;
-		        this.drawLarge(event);
+	        if(!this.small_image) {
+		        var img = new Image();
+		        img.onload = () => {
+		        	//console.log("download done...", this.props.preload_large)
+			        this.small_image = img;
+			        this.update();
+		            this.drawSmall();
+		        };
+		        // console.log(image);
+		        img.src = this.image_small_url;
+	        } else {
+	        	this.drawSmall()
+	    	}
+		},
+		
+		/* used by the function 'drawOnCanvas' to draw small pictures */
+		drawSmall() {
+			var ctx = this.canvas.getContext( '2d' );
+			var scale = this.width / this.small_image.width;
+	        if(scale*this.small_image.height > this.height) {
+	            scale = this.height / this.small_image.height;
+	        }
+	        this.canvas.width = this.small_image.width*scale;
+	        this.canvas.height = this.small_image.height*scale;
+	        ctx.drawImage( this.small_image, 0, 0, this.small_image.width*scale, this.small_image.height*scale );
+	        if(!this.drawn) {
+	        	this.drawn = true;
+	        	this.update();
+	    	}
+	        if(this.render_text) {
+	            var centerX = this.canvas.width - (this.render_size/1.5)-2;
+	            var centerY = this.canvas.height - ((this.render_size)/1.5)-2
+	            var radius = this.render_size /2 + 4;
+	            ctx.beginPath();
+	            ctx.arc(centerX, centerY, radius, 0, 2*Math.PI, false);
+	            ctx.fillStyle= this.render_bg_color;
+	            ctx.fill();
+	            ctx.fillStyle= 'white';
+	            var x = this.canvas.width - (this.render_size);
+	            var y = this.canvas.height - (this.render_size-13);
+	            ctx.font = "bold " + this.render_size + "px arial";
+	            ctx.fillText(this.render_text, x, y, this.render_size/2);
+	        }
+		},
+		
+		/* triggered when this.update() is called */
+		onUpdated() {
+		    if(this.render_text != this.props.render_text) {
+			    this.render_text = this.props.render_text;
+			    this.render_pos = this.props.render_pos;
+			    this.render_size = parseInt(this.props.render_size);
+			    this.render_bg_color = this.props.render_bg_color;
+			    if(this.props.preload_large) {
+			        var img = new Image();
+			        img.onload = function() {
+			            this.image_large = img;
+			        }.bind(this);
+			        img.src = this.image_large_url;
+			    }
+			    if(this.intersected) {
+			        console.log("onUpdate: drawOnCanvas")
+			    	this.drawOnCanvas();
+			    }
 		    }
-	        img.src = this.image_large_url;
-	    }
-	},
+		},
 	
-	drawLarge(event) {
-	   	var img = this.image_large;
-		console.log(img.width, img.height);
-	    var canvas = event.target;
-	    var absPos = this.getMousePos( canvas, event );
-        var relPos = {x:absPos.x/canvas.offsetWidth, y:absPos.y/canvas.offsetHeight};
-        var sourceWidth = this.small_image.naturalWidth;
-        var sourceHeight = this.small_image.naturalHeight;
-        var sourceX = img.naturalWidth*relPos.x - sourceWidth/2;
-        var sourceY = img.naturalHeight*relPos.y - sourceHeight/2;
-        if(sourceWidth > img.naturalWidth || sourceX < 0) {
-            sourceX = 0;
-        } else if(sourceX+sourceWidth > img.naturalWidth) {
-            sourceX = img.naturalWidth-sourceWidth;
-        }
-        if(sourceHeight > img.naturalHeight || sourceY < 0) {
-            sourceY = 0;
-        } else if(sourceY+sourceHeight > img.naturalHeight) {
-            sourceY = img.naturalHeight-sourceHeight;
-        }
-        if(!this.mouseover) {
-            return;
-        }
-        var ctx = canvas.getContext( '2d' );
-        ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
-	}
+		/* triggered by the onmouseout event */
+		mouseout( event ) {
+		    this.mouseover = false;
+		    this.drawOnCanvas( event.currentTarget );
+		},
+	
+		/* used by the function 'drawLarge' to get the position of the cursor */
+		getMousePos( canvas, event ) {
+		    var rect = canvas.getBoundingClientRect();
+		    return {
+		        x: event.clientX - rect.left,
+		        y: event.clientY - rect.top
+		    };
+		},
+	
+		/* triggered by the onmousemove event */
+		mousemove( event ) {
+		    if(!event.shiftKey && !event.getModifierState('CapsLock')) {
+		        //console.log("no shift");
+		        if(this.mouseover) {
+		        	this.mouseover = false;
+		        	this.drawOnCanvas()
+		        }
+		        return;
+		    } else {
+		        //console.log("shift");
+		    }
+		    this.mouseover = true;
+	    	console.log(this.image_large)
+		    if(this.image_large != null) {
+		        this.drawLarge(event);
+		    } else {
+		    	console.log("drawing large");
+			    var img = new Image();
+			    img.onload = () => {
+			        this.image_large = img;
+			        this.drawLarge(event);
+			    }
+		        img.src = this.image_large_url;
+		    }
+		},
+		
+		/* used by the function 'mousemove', triggered by an onmousemove event */
+		drawLarge(event) {
+		   	var img = this.image_large;
+			console.log(img.width, img.height);
+		    var canvas = event.target;
+		    var absPos = this.getMousePos( canvas, event );
+	        var relPos = {x:absPos.x/canvas.offsetWidth, y:absPos.y/canvas.offsetHeight};
+	        var sourceWidth = this.small_image.naturalWidth;
+	        var sourceHeight = this.small_image.naturalHeight;
+	        var sourceX = img.naturalWidth*relPos.x - sourceWidth/2;
+	        var sourceY = img.naturalHeight*relPos.y - sourceHeight/2;
+	        if(sourceWidth > img.naturalWidth || sourceX < 0) {
+	            sourceX = 0;
+	        } else if(sourceX+sourceWidth > img.naturalWidth) {
+	            sourceX = img.naturalWidth-sourceWidth;
+	        }
+	        if(sourceHeight > img.naturalHeight || sourceY < 0) {
+	            sourceY = 0;
+	        } else if(sourceY+sourceHeight > img.naturalHeight) {
+	            sourceY = img.naturalHeight-sourceHeight;
+	        }
+	        if(!this.mouseover) {
+	            return;
+	        }
+	        var ctx = canvas.getContext( '2d' );
+	        ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+		}
 	}
 	</script>
 </thumbcanvas>
