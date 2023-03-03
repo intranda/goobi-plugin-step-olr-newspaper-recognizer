@@ -604,8 +604,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 mdTypesNames.remove(typeName);
             }
             
-            if (noDateFound && alternative == null && typeName.equals(DATE_ISSUED_TYPE_NAME_ALTERNATIVE)) {
+            if (noDateFound && typeName.equals(DATE_ISSUED_TYPE_NAME_ALTERNATIVE)) {
                 alternative = mdType;
+                noDateFound = false;
             }
         }
         // if by the end dateIssuedType is still null, use alternative instead
