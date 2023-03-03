@@ -333,9 +333,11 @@
 	    onMounted(props, state) {
 	      this.addAjaxEvent();
 	      console.log("mounted");
+	      /*
 	      setInterval(() => {
 		        this.save_no_mets();
 		    }, 15000);
+		  */  
 	      if(this.loadallimages && props.pagenumCorrect) {
 	    	  this.loadedImages = 0; // used in the frontend to show the progress of loading
 	    	  window.npImages = {};
