@@ -68,6 +68,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private static final long serialVersionUID = -4130813487217128097L;
     private static final String PLUGIN_NAME = "intranda_step_newspaperRecognizer";
     private static final String GUI = "/uii/plugin_newspaperRecognizer.xhtml";
+    private static final String LOGICAL_PHYSICAL_TYPE = "logical_physical";
+    private static final String ISSUE_RESULT_LOCATION = "/taskmanager/issues_result.json";
+    private static final String ISSUE_RESULT_MANUAL_LOCATION = "/taskmanager/issues_result_manual.json";
     private static final DateTimeFormatter w3cdtf = DateTimeFormat.forPattern("yyyy-MM-dd");
 
     private int tocDepth = 0;
@@ -195,7 +198,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     public void deleteManualData() throws IOException, InterruptedException, SwapException, DAOException {
         Process pr = this.myStep.getProzess();
-        Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
+        Path manualF = Paths.get(pr.getProcessDataDirectory() + ISSUE_RESULT_MANUAL_LOCATION);
 
         log.info("Deleting {}", manualF);
         StorageProvider.getInstance().deleteFile(manualF);
@@ -244,7 +247,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             log.info(String.format("Counted %d issues", count));
         }
         
-        this.pages.forEach(p -> p.initializeProperties());
+        this.pages.forEach(NewspaperPage::initializeProperties);
         
         return gson.toJson(this.pages);
     }
@@ -267,7 +270,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         this.pages = gson.fromJson(json, listType);
         Process pr = this.myStep.getProzess();
         try {
-            String manualF = pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json";
+            String manualF = pr.getProcessDataDirectory() + ISSUE_RESULT_MANUAL_LOCATION;
             OutputStream out = StorageProvider.getInstance().newOutputStream(Paths.get(manualF));
             try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out))) {
                 bw.write(json);
@@ -279,8 +282,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     private void readExportedFile() throws Exception {
         Process pr = this.myStep.getProzess();
-        Path manualF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result_manual.json");
-        Path automaticF = Paths.get(pr.getProcessDataDirectory() + "/taskmanager/issues_result.json");
+        Path manualF = Paths.get(pr.getProcessDataDirectory() + ISSUE_RESULT_MANUAL_LOCATION);
+        Path automaticF = Paths.get(pr.getProcessDataDirectory() + ISSUE_RESULT_LOCATION);
         if (StorageProvider.getInstance().isFileExists(manualF)) {
 
             try (BufferedReader br = new BufferedReader(new InputStreamReader(StorageProvider.getInstance().newInputStream(manualF)))) {
@@ -436,7 +439,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             }
 
             if (currentSupplement != null) {
-                currentSupplement.addReferenceTo(page, "logical_physical");
+                currentSupplement.addReferenceTo(page, LOGICAL_PHYSICAL_TYPE);
             }
 
             if (createNewPagination) {
@@ -444,8 +447,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             }
 
             // link pages to issue and volume
-            currentIssue.addReferenceTo(page, "logical_physical");
-            volume.addReferenceTo(page, "logical_physical");
+            currentIssue.addReferenceTo(page, LOGICAL_PHYSICAL_TYPE);
+            volume.addReferenceTo(page, LOGICAL_PHYSICAL_TYPE);
 
             currentPageNo++;
         }
@@ -507,10 +510,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 dsTypesNames.remove(typeName);
             }
         }
-
-        log.debug("pageType = " + pageType);
-        log.debug("issueType = " + issueType);
-        log.debug("supplementType = " + supplementType);
     }
 
     private void initializeMetadataTypes(List<MetadataType> mdTypes, HashSet<String> mdTypesNames) {
@@ -572,14 +571,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         if (dateIssuedType == null) {
             dateIssuedType = alternative;
         }
-
-        log.debug("partNumberType = " + partNumberType.getName());
-        log.debug("numberType = " + numberType.getName());
-        log.debug("numberSortType = " + numberSortType.getName());
-        log.debug("dateIssuedType = " + dateIssuedType.getName());
-        log.debug("titleType = " + titleType.getName());
-        log.debug("logPageNoType = " + logPageNoType.getName());
-        log.debug("physPageNoType = " + physPageNoType.getName());
     }
 
     private DocStruct purifyDigitalDocument(DigitalDocument dd, DocStruct boundBook, List<DocStruct> bbChildren) {
