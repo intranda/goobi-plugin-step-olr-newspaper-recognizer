@@ -79,6 +79,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private boolean showWriteMetsButton = true;
     private boolean createNewPagination;
 
+    private String fileNameToDelete = null;
+    private int fileIdToDelete;
+
     private DocStructType pageType;
     private DocStructType issueType;
     private DocStructType supplementType;
@@ -161,6 +164,56 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     @Override
     public String finish() {
         return "/uii/" + returnPath;
+    }
+
+    public void deleteFile() {
+        log.debug("deleteFile is called");
+        //        Map<String, String> params = FacesContext.getCurrentInstance().getExternalContext().getRequestParameterMap();
+        //        log.debug("param = " + params.get("filename"));
+        //        log.debug("filename = " + filename);
+        log.debug("deleting file: " + fileNameToDelete);
+        Process pr = this.myStep.getProzess();
+        String imageDir = getImageDirectory(pr);
+        Path filePathToDelete = Path.of(imageDir, fileNameToDelete);
+        log.debug("file path = " + filePathToDelete);
+        try {
+            log.debug("number of files on the disk before deletion = " + StorageProvider.getInstance().list(imageDir).size());
+            log.debug("number of files in the list before deletion = " + pages.size());
+            // delete file from disk
+            StorageProvider.getInstance().deleteFile(filePathToDelete);
+            // delete the NewspaperPage object from pages
+            pages.remove(fileIdToDelete);
+
+            log.debug("number of files on the disk after deletion = " + StorageProvider.getInstance().list(imageDir).size());
+            log.debug("number of files in the list after deletion = " + pages.size());
+
+            log.debug("pageNumberCountEqual = " + pageNumberCountEqual());
+
+        } catch (IOException e) {
+            log.error("IOException happened trying to delete file: " + filePathToDelete);
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    public void setFileNameToDelete(String name) {
+        log.debug("setFileNameToDelete is called with " + name);
+        fileNameToDelete = name;
+    }
+
+    public String getFileNameToDelete() {
+        log.debug("getFileNameToDelete is called");
+        return fileNameToDelete;
+    }
+
+    public void setFileIdToDelete(int id) {
+        log.debug("setFileIdToDelete is called with " + id);
+        fileIdToDelete = id;
+    }
+
+    public int getFileIdToDelete() {
+        log.debug("getFileIdToDelete is called");
+        return fileIdToDelete;
     }
 
     public String deleteManualDataAndStartAutoAnalysis() throws IOException, InterruptedException, SwapException, DAOException {

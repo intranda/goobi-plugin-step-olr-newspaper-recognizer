@@ -95,21 +95,31 @@
 									<div class="goobi-thumbnail font-light">
 										<div class="goobi-thumbnail-image">
 											<div class="thumb" style="min-height: {thumb_height}px;">
-												<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl} 
-														image_large={page.image.largeThumbnailUrl} 
-														title={page.image.tooltip}
-														page_id={page.pos}
-														loadallimages={loadallimages}
-														preload_large={true}>
-												</thumbcanvas>
+											
+												<a onclick="{() => noIssue(page)}">
+													<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl} 
+															image_large={page.image.largeThumbnailUrl} 
+															title={page.image.tooltip}
+															page_id={page.pos}
+															loadallimages={loadallimages}
+															preload_large={true}>
+													</thumbcanvas>
+												</a>
+												
 											</div>
 										</div>
 									</div>
 									<!-- // Bild der Ausgabe -->
 	
 									<!-- Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
+									<!--
 									<a
 										onclick="{() => noIssue(page)}"
+										class="btn btn-default fa fa-trash"
+										style="position: absolute; right: 10px; bottom: 5px;">
+									-->
+									<a
+										onclick="{(e) => deletePage(e, page)}"
 										class="btn btn-default fa fa-trash"
 										style="position: absolute; right: 10px; bottom: 5px;">
 									</a>
@@ -266,6 +276,7 @@
 			this.finish_button = props.finishButton; // used only in the function "exit"
 			this.thumb_height = props.thumbHeight; // used in the frontend
 			this.loadallimages = props.loadallimages; // used in the function onMounted and in the frontend to communicate with the component defined by thumbcanvas.riot
+			this.delete_file_button = props.deleteFileButton;
 			console.log(props, this.thumb_height)
 			console.log(this.data_el.value);
 			this.data = JSON.parse(this.data_el.value);
@@ -422,10 +433,39 @@
 		
 		/* triggered when some button under the `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met. */
 		deleteManualResults() {
-			var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse. Wirklich fortfahren?")
+			var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse. Wirklich fortfahren?");
 			if(confirmed) {
 				this.deleteManualResultsButton.click();
 			}
+		},
+		
+		/* triggered when the `delete` buttonis clicked, which will remove the picture */
+		deletePage(e, page){
+			var confirmed = confirm("Dies löscht dieses Bild. Wirklich fortfahren?");
+			if (confirmed){
+				//alert("deletePage is called");
+				this.dataDirty = true;
+				// remove this page from data
+				
+				if (page.otherPages.length > 0){
+					alert("page has other pages " + page.otherPages.length);
+					this.otherOnclick(e, page.otherPages[0], 0);
+				}
+
+				
+				//document.getElementById('delete_form:file_name_to_delete').value = "hello_world";
+				this.setFileNameToDelete(page.filename, page.pos);
+				this.delete_file_button.click();
+						
+				this.data.splice(page.pos, 1);
+				
+				this.update();
+			}
+		},
+		
+		setFileNameToDelete(fileName, fileId){
+			document.getElementById('delete_form:file_name_to_delete').value = fileName;
+			document.getElementById('delete_form:file_id_to_delete').value = fileId;
 		},
 		
 		/* triggered when the button `Speichern` is clicked */
