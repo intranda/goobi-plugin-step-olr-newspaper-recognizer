@@ -96,7 +96,7 @@
 										<div class="goobi-thumbnail-image">
 											<div class="thumb" style="min-height: {thumb_height}px;">
 											
-												<a onclick="{() => noIssue(page)}">
+												<a onclick="{(e) => noIssue(e, page)}">
 													<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl} 
 															image_large={page.image.largeThumbnailUrl} 
 															title={page.image.tooltip}
@@ -245,7 +245,7 @@
       
 	<script>
 	import Thumbcanvas from './thumbcanvas.riot'
-	  
+	
 	export default {
 		components: {
 			Thumbcanvas
@@ -443,27 +443,33 @@
 		deletePage(e, page){
 			var confirmed = confirm("Dies löscht dieses Bild. Wirklich fortfahren?");
 			if (confirmed){
-				//alert("deletePage is called");
 				this.dataDirty = true;
+				//alert("before deletion: " + window.npImages[page.image.thumbnailUrl].thumbnailUrl);
 				// remove this page from data
-				
 				if (page.otherPages.length > 0){
 					alert("page has other pages " + page.otherPages.length);
 					this.otherOnclick(e, page.otherPages[0], 0);
 				}
 
-				
-				//document.getElementById('delete_form:file_name_to_delete').value = "hello_world";
-				this.setFileNameToDelete(page.filename, page.pos);
+				this.setFileToDelete(page.filename, page.pos);
 				this.delete_file_button.click();
 						
 				this.data.splice(page.pos, 1);
+				//this.save_no_mets_button.click();
 				
+				//alert("after deletion: " + window.npImages[page.image.thumbnailUrl].thumbnailUrl);
+				//delete window.npImages[page.image.thumbnailUrl];
+				
+				//this.tags.thumbcanvas.forEach(tag => tag.update()); // does not work
+				//alert("tags.thumbcanvas.length = " + this.tags.thumbcanvas.length); // does not work
+				//this.components.Thumbcanvas.update(); // does not work
+				//alert("this.components = " + typeof this.components.Thumbcanvas.drawSmall);
 				this.update();
+				
 			}
 		},
 		
-		setFileNameToDelete(fileName, fileId){
+		setFileToDelete(fileName, fileId){
 			document.getElementById('delete_form:file_name_to_delete').value = fileName;
 			document.getElementById('delete_form:file_id_to_delete').value = fileId;
 		},
@@ -551,7 +557,10 @@
 		},
 		
 		/* triggered when the small delete button is clicked, which will move this wrongly classified 'title' page along with its 'other' pages to the end of the previous line */
-		noIssue(page) {
+		noIssue(e, page) {
+			if (e.shiftKey){
+				return;
+			}
 			console.time("noIssue")
 		    this.dataDirty = true;
 		    console.log(page.pos)
@@ -588,6 +597,9 @@
 		
 		/* triggered when an 'other' page is clicked, which should make it a 'title' page and move it to a new line along with its followers */
 		otherOnclick(e, otherPage, idx) {
+			if (e.shiftKey){
+				return;
+			}
 		    this.dataDirty = true;
 		    var page = otherPage;
 		    var origPage = this.data[page.pos];
