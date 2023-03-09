@@ -102,7 +102,19 @@
 		},
 		
 		/* triggered when this.update() is called */
-		onUpdated() {
+		onUpdated(props) {
+			if(this.image_small_url != props.image_small) {
+				console.log("changed canvas " + this.image_small_url + " => " + props.image_small);
+				this.image_small_url = props.image_small;
+			    this.image_large_url = props.image_large;
+			    if(window.npImages && window.npImages[props.image_small]) {
+			    	this.small_image = window.npImages[props.image_small];
+		    	} else {
+		    		this.small_image = null;
+		    	}
+			    this.image_large = null;
+				this.drawOnCanvas();
+			}
 		    if(this.render_text != this.props.render_text) {
 			    this.render_text = this.props.render_text;
 			    this.render_pos = this.props.render_pos;
