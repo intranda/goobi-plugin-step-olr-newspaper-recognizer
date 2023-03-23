@@ -276,9 +276,9 @@
 			this.finish_button = props.finishButton; // used only in the function "exit"
 			this.thumb_height = props.thumbHeight; // used in the frontend
 			this.loadallimages = props.loadallimages; // used in the function onMounted and in the frontend to communicate with the component defined by thumbcanvas.riot
-			this.delete_file_button = props.deleteFileButton;
-			console.log(props, this.thumb_height)
-			console.log(this.data_el.value);
+			this.delete_file_button = props.deleteFileButton; // used to delete an image
+			//console.log(props, this.thumb_height)
+			//console.log(this.data_el.value);
 			this.data = JSON.parse(this.data_el.value);
 			
 			for(var i=0;i < this.data.length; i++) {
@@ -301,8 +301,6 @@
 			        for(var k=0;k<page.otherPages.length;k++) {
 						// append an 'other' page to a 'title' page by assigning the 'other' page's `parent` to the 'title' page's `pos`
 			            page.otherPages[k].parent = page.pos;
-			            // The following statement is actually not needed, since the assignment of 'page.pos' is outside of the the if block, 
-			            // and that would therefore apply to all pages no matter what. - Zehong
 			            page.otherPages[k].pos = i+k+1;
 			            
 			            if(page.otherPages[k].supplementTitle) {
@@ -444,34 +442,59 @@
 			var confirmed = confirm("Dies löscht dieses Bild. Wirklich fortfahren?");
 			if (confirmed){
 				this.dataDirty = true;
-				//alert("before deletion: " + window.npImages[page.image.thumbnailUrl].thumbnailUrl);
 				// remove this page from data
 				if (page.otherPages.length > 0){
-					alert("page has other pages " + page.otherPages.length);
+					//alert("page has other pages " + page.otherPages.length);
 					this.otherOnclick(e, page.otherPages[0], 0);
 				}
+				
+				let position = page.pos;
 
-				this.setFileToDelete(page.filename, page.pos);
+				// delete file from the backend
+				this.setFileToDelete(page.filename, position);
 				this.delete_file_button.click();
-						
-				this.data.splice(page.pos, 1);
-				//this.save_no_mets_button.click();
 				
-				//alert("after deletion: " + window.npImages[page.image.thumbnailUrl].thumbnailUrl);
-				//delete window.npImages[page.image.thumbnailUrl];
+				// update the list data to update the rendering in the frontend		
+				this.data.splice(position, 1);
+				this.save_no_mets_button.click();
 				
-				//this.tags.thumbcanvas.forEach(tag => tag.update()); // does not work
-				//alert("tags.thumbcanvas.length = " + this.tags.thumbcanvas.length); // does not work
-				//this.components.Thumbcanvas.update(); // does not work
-				//alert("this.components = " + typeof this.components.Thumbcanvas.drawSmall);
-				this.update();
+				// update indices of all pages after the deleted page
+				this.updateIndicesOfPages(position);
 				
+				this.update();			
 			}
 		},
 		
+		/* used to transfer the location information of the file to the backend */
 		setFileToDelete(fileName, fileId){
 			document.getElementById('delete_form:file_name_to_delete').value = fileName;
 			document.getElementById('delete_form:file_id_to_delete').value = fileId;
+		},
+		
+		/* used to update the indices of pages starting from the input start */
+		updateIndicesOfPages(start){				
+			for (let i = start; i < this.data.length; i++){
+				let page = this.data[i];
+				page.pos -= 1;
+				if (page.issue) {
+					if(!page.issueType){
+						console.log("Issue type not set.");
+						page.issueType = "Ausgabe";
+					} else {
+						console.log("issueType = " + page.issueType);
+					}
+					
+					//console.log("before updating, page.otherPages[0].parent = " + page.otherPages[0].parent);
+					
+					// update information of otherPages
+					for (let k = 0; k < page.otherPages.length; k++) {
+						page.otherPages[k].parent = page.pos;
+						page.otherPages[k].pos = page.pos + k + 1;
+					}
+					
+					//console.log("after updating, page.otherPages[0].parent = " + page.otherPages[0].parent);
+				}
+			}
 		},
 		
 		/* triggered when the button `Speichern` is clicked */

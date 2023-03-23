@@ -62,7 +62,6 @@
       <script src="template/js/xdate.js" type="text/javascript"></script>
       <script src="newspaperjs/app.js"></script>
        <script>
-       //document.getElementById('delete_form:fileNameToDelete').value = "hello_world";
        
        window.addEventListener("load", function() {
            window.noLoadImages = true;
@@ -70,10 +69,10 @@
            		data_el: document.getElementById('newspaper_form:my_plugin_data'),
            		saveButton: document.getElementById('newspaper_form:save_mets_button'),
            		saveDataButton: document.getElementById('newspaper_form:save_data_button'),
-           		deleteFileButton: document.getElementById('delete_form:delete_file_button'),
            		finishButton: document.getElementById('newspaper_form:finish_button'),
            		restartAnalysisButton: document.getElementById('extra_form:delete_and_start_over_button'),
            		deleteManualResultsButton: document.getElementById('extra_form:delete_manual_results_button'),
+           		deleteFileButton: document.getElementById('delete_form:delete_file_button'),
            		language: '#{SpracheForm.locale.language}',
            		thumbHeight: 400,
            		title: "#{msgs[('plugin_').concat(AktuelleSchritteForm.myPlugin.title)]}",
@@ -85,32 +84,6 @@
            mountNewspaperCorrection(opts);
        });
        
-//       function loadThumbnails() {
-//           console.log("loading thumbnails");
-// //          var height = parseInt('#{Metadaten.thumbnailSize}');
-//            var height = parseInt('#{NavigationForm.workflowPlugin.thumbnailSize}');
-//            if (height) {
-// //                $('.goobi-thumbnail-image').css('height', (height + 25) + 'px');
-//                $('.goobi-thumbnail-image .thumb').css('max-height', height + 'px');
-//                $('.goobi-thumbnail-image .thumb canvas').css('max-height', height + 'px');
-//                $('.goobi-thumbnail-image').css('max-width', (height) + 'px');
-//            }
-//        }
-//    $( document ).ready(function() {
-//         loadThumbnails();
-//    });
-
-//    jsf.ajax.addOnEvent(function(data) {
-//        var ajaxstatus = data.status; // Can be "begin", "complete" and "success"
-         
-//          switch (ajaxstatus) {
-//              case "success": // This is called when ajax response is successfully processed.
-//                  loadImages();
-//                  loadThumbnails();
-//                  break;
-//          }
-       
-//    });
        </script>
     </ui:define>
 
