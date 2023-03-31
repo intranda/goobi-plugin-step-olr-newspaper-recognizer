@@ -565,13 +565,11 @@
 		                    var otherPage = oldArr[idx-i]
 			                if(otherPage.supplementTitle) {
 			                    var supplementPages = otherPage.supplementPages;
-			                    //cut the pages from the old supplement and add them to the new one 
+			                    // cut the pages from the old supplement and add them to the new one 
 			                    var newSupplementPages = supplementPages.splice(i - 1, supplementPages.length - i + 1);
-			                    console.log(newSupplementPages);
-			                    console.log("newSupplementPages.length = " + newSupplementPages.length);
+                                // page is of index 0 among newSupplementPages
 			                    page.supplementPages = newSupplementPages.splice(1);
-			                    console.log(page.supplementPages);
-			                    console.log("page.supplementPages.length = " + page.supplementPages.length);
+
 			                    break;
 			                }
 			                i++;
@@ -580,6 +578,7 @@
 					    origPage.supplement = true;
 					    page.supplement = true;
 					    page.supplementPages = [];
+					    // all pages starting from the next one until an already assigned supplement page, would be added to this page's supplementPages
 					    for(var i=idx+1;i<oldArr.length;i++) {
 					        if(oldArr[i].supplement) {
 					            break;
@@ -595,20 +594,15 @@
 		        	origPage.supplementTitle = false;
 		        	page.supplement = false;
 		        	origPage.supplement = false;
-		        	if(idx > 0 &&  (oldArr[idx-1].supplement || oldArr[idx-1].supplementTitle)) {
-		        		// if there is another supplement preceding this page, it simply becomes part of it.
-		        		page.supplement = true
-		        		origPage.supplement = true;
-		        	} else {
-		        		//this is the first or the only supplement in this issue. Remove the supplement status from all children
-		        		for(var i=idx+1;i<oldArr.length;i++) {
-					        if(oldArr[i].supplementTitle) {
-					            break;
-					        }
-					        oldArr[i].supplement = false;
-					        this.data[oldArr[i].pos].supplement = false;
-					    }
-		        	}
+		        	
+		        	// remove the supplement status from all children
+		            for (var i = idx+1; i < oldArr.length; i++) {
+		                if (oldArr[i].supplementTitle) {
+		                    break;
+		                }
+		                oldArr[i].supplement = false;
+		                this.data[oldArr[i].pos].supplement = false;
+		            }
 		        }
 		    	//re-count all supplement-numbers
 		    	var supplCount = 0;
