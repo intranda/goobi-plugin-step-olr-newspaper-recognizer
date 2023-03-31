@@ -566,8 +566,12 @@
 			                if(otherPage.supplementTitle) {
 			                    var supplementPages = otherPage.supplementPages;
 			                    //cut the pages from the old supplement and add them to the new one 
-			                    var newSupplementPages = supplementPages.splice(supplementPages.length-i, i);
+			                    var newSupplementPages = supplementPages.splice(i - 1, supplementPages.length - i + 1);
+			                    console.log(newSupplementPages);
+			                    console.log("newSupplementPages.length = " + newSupplementPages.length);
 			                    page.supplementPages = newSupplementPages.splice(1);
+			                    console.log(page.supplementPages);
+			                    console.log("page.supplementPages.length = " + page.supplementPages.length);
 			                    break;
 			                }
 			                i++;
