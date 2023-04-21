@@ -127,9 +127,9 @@
 			        }.bind(this);
 			        img.src = this.image_large_url;
 			    }
+		    	this.drawOnCanvas();
 			    if(this.intersected) {
-			        console.log("onUpdate: drawOnCanvas")
-			    	this.drawOnCanvas();
+			        console.log("onUpdate: drawOnCanvas");
 			    }
 		    }
 		},
