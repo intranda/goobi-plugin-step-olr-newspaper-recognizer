@@ -450,10 +450,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         DocStruct currentSupplement = null;
 
         // create entry for each page
-        //        int currentPageNo = 0;
-
-        int mainPageNo = 0;
-        int supplementPageNo = 0;
+        int mainPageNo = 0; // order of current page among the current issue pages
+        int supplementPageNo = 0; // order of current page among the current supplement pages
 
         for (int i = 0; i < pages.size(); i++) {
             NewspaperPage newspaperPage = pages.get(i);
@@ -476,7 +474,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
             // create new issue if needed
             if (currentIssue == null || newspaperPage.isIssue()) {
-                //                currentPageNo = 1;
                 mainPageNo = 1;
                 try {
                     currentIssue = createNewIssue(dd, newspaperPage);
@@ -488,7 +485,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             }
 
             if (newspaperPage.isSupplementTitle()) {
-                //                currentPageNo = 1;
                 supplementPageNo = 1;
                 try {
                     currentSupplement = dd.createDocStruct(supplementType);
@@ -504,7 +500,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             }
 
             if (createNewPagination) {
-                //                createMetadata(logPageNoType, Integer.toString(currentPageNo), page);
                 int pageNo = newspaperPage.isSupplement() ? supplementPageNo : mainPageNo;
                 createMetadata(logPageNoType, Integer.toString(pageNo), page);
             }
@@ -513,11 +508,10 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             currentIssue.addReferenceTo(page, LOGICAL_PHYSICAL_TYPE);
             volume.addReferenceTo(page, LOGICAL_PHYSICAL_TYPE);
 
-            //            currentPageNo++;
+            mainPageNo++;
+
             if (newspaperPage.isSupplement()) {
                 supplementPageNo++;
-            } else {
-                mainPageNo++;
             }
         }
 
@@ -687,13 +681,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         Optional<DocStruct> oldPage = bbChildren.stream().filter(p -> newspaperPage.getFilename().equals(p.getImageName())).findAny();
 
         // process old physical pages
-        List<Metadata> oldPhysPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(physPageNoType)).orElse(Collections.emptyList());
-
-        if (oldPhysPage.isEmpty()) {
-            createMetadata(physPageNoType, "" + (currentNumber + 1), page);
-        } else {
-            createMetadata(physPageNoType, oldPhysPage.get(0).getValue(), page);
-        }
+        createMetadata(physPageNoType, "" + (currentNumber + 1), page);
 
         if (createNewPagination) {
             // no need to process old logical page
