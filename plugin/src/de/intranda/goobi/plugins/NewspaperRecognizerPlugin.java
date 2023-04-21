@@ -383,6 +383,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
         // get a copy of bound book children if it is not null
         DocStruct boundBook = dd.getPhysicalDocStruct();
+        log.debug("boundBook has " + (boundBook.getAllChildren() == null ? "NULL" : "") + " children");
+
         List<DocStruct> bbChildren = null;
         if (boundBook.getAllChildren() != null) {
             bbChildren = new ArrayList<>(boundBook.getAllChildren());
@@ -612,7 +614,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private void processBoundBookChildren(List<DocStruct> bbChildren, DocStruct page, int currentNumber, NewspaperPage newspaperPage) {
         if (bbChildren == null) {
             createMetadata(physPageNoType, "" + (currentNumber + 1), page);
-            createMetadata(logPageNoType, "uncounted", page);
             return;
         }
 
@@ -621,6 +622,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
         // process old physical pages
         List<Metadata> oldPhysPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(physPageNoType)).orElse(Collections.emptyList());
+
         if (oldPhysPage.isEmpty()) {
             createMetadata(physPageNoType, "" + (currentNumber + 1), page);
         } else {
