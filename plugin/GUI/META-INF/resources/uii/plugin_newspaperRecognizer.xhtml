@@ -51,8 +51,7 @@
 		<h:form id="delete_form">
 			<h:inputHidden id = "file_name_to_delete" value="#{AktuelleSchritteForm.myPlugin.fileNameToDelete}"/>
 			<h:inputHidden id = "file_id_to_delete" value="#{AktuelleSchritteForm.myPlugin.fileIdToDelete}" />	   
-			<h:commandButton id="delete_file_button" action="#{AktuelleSchritteForm.myPlugin.deleteFile}" value="submit">
-			
+			<h:commandButton id="delete_file_button" action="#{AktuelleSchritteForm.myPlugin.deleteFile}" value="submit" style="display:none">
 				<f:ajax execute="@form" />
 			</h:commandButton>
 		</h:form>
