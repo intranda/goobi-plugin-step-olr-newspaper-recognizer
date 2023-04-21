@@ -168,30 +168,18 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     public void deleteFile() {
         log.debug("deleteFile is called");
-        //        Map<String, String> params = FacesContext.getCurrentInstance().getExternalContext().getRequestParameterMap();
-        //        log.debug("param = " + params.get("filename"));
-        //        log.debug("filename = " + filename);
         log.debug("deleting file: " + fileNameToDelete);
         Process pr = this.myStep.getProzess();
         String imageDir = getImageDirectory(pr);
         Path filePathToDelete = Path.of(imageDir, fileNameToDelete);
-        log.debug("file path = " + filePathToDelete);
         try {
-            log.debug("number of files on the disk before deletion = " + StorageProvider.getInstance().list(imageDir).size());
-            log.debug("number of files in the list before deletion = " + pages.size());
             // delete file from disk
             StorageProvider.getInstance().deleteFile(filePathToDelete);
             // delete the NewspaperPage object from pages
             pages.remove(fileIdToDelete);
 
-            log.debug("number of files on the disk after deletion = " + StorageProvider.getInstance().list(imageDir).size());
-            log.debug("number of files in the list after deletion = " + pages.size());
-
-            log.debug("pageNumberCountEqual = " + pageNumberCountEqual());
-
         } catch (IOException e) {
             log.error("IOException happened trying to delete file: " + filePathToDelete);
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -712,9 +700,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     private void createMetadata(MetadataType metadataType, String value, DocStruct docstruct) {
         try {
-            Metadata physPageNo = new Metadata(metadataType);
-            physPageNo.setValue(value);
-            docstruct.addMetadata(physPageNo);
+            Metadata md = new Metadata(metadataType);
+            md.setValue(value);
+            docstruct.addMetadata(md);
         } catch (MetadataTypeNotAllowedException e) {
             log.error(e);
         }
