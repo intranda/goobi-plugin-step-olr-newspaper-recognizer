@@ -16,6 +16,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -58,6 +59,7 @@ import ugh.dl.Fileformat;
 import ugh.dl.Metadata;
 import ugh.dl.MetadataType;
 import ugh.dl.Prefs;
+import ugh.dl.RomanNumeral;
 import ugh.exceptions.MetadataTypeNotAllowedException;
 import ugh.exceptions.TypeNotAllowedAsChildException;
 import ugh.exceptions.TypeNotAllowedForParentException;
@@ -735,19 +737,40 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             return "";
         }
 
+        // format the numbers according to the configured paginationType
+        String value = formatPagination(pagination);
         if (!useFakePagination) {
-            // get rid of the fake markers
-            return pagination.replace("[", "").replace("]", "");
+            return value;
         }
 
-        // use fake pagination
-        if (pagination.startsWith("[")) {
-            // already fake
-            return pagination;
+        return "[" + value + "]";
+    }
+
+    private String formatPagination(String pagination) {
+        String value = pagination.replace("[", "").replace("]", "");
+        boolean isArabic = Pattern.matches("\\d+", value);
+        int num;
+        RomanNumeral roman = null;
+        if (isArabic) {
+            num = Integer.valueOf(value);
+            roman = new RomanNumeral(num);
+        } else {
+            // create a Roman Numeral
+            roman = new RomanNumeral(value.toUpperCase());
+            num = roman.intValue();
         }
 
-        // create a new fake
-        return "[" + pagination + "]";
+        switch (paginationType) {
+            case "1":
+                return String.valueOf(num);
+            case "i":
+                return roman.getNumber().toLowerCase();
+            case "I":
+                return roman.getNumber();
+            default:
+                // unknown types
+                return value;
+        }
     }
 
     private static String getTitleFromPage(NewspaperPage page) {
@@ -837,5 +860,4 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         sb.append(dateTime.getYear());
         return sb.toString();
     }
-
 }
