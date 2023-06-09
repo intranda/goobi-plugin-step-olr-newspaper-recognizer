@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.goobi.beans.Process;
 import org.goobi.beans.Step;
 import org.goobi.managedbeans.StepBean;
@@ -47,6 +48,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
+import spark.utils.StringUtils;
 import ugh.dl.ContentFile;
 import ugh.dl.DigitalDocument;
 import ugh.dl.DocStruct;
@@ -77,10 +79,16 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     private boolean loadAllImages;
     private boolean showWriteMetsButton = true;
-    private boolean createNewPagination;
 
     private String fileNameToDelete = null;
     private int fileIdToDelete;
+
+    // whether or not to create new paginations
+    private boolean createNewPagination;
+    // which pagination type should be used, if blank or "-", then create no pagination, otherwise create paginations
+    private String paginationType;
+    // whether or not to use fake pagination, if true then use the form [N] where N is a number, otherwise use the bare N itself
+    private boolean useFakePagination;
 
     private DocStructType pageType;
     private DocStructType issueType;
@@ -119,11 +127,15 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     public void initialize(Step step, String returnPath) {
         this.returnPath = returnPath;
         this.myStep = step;
-        HierarchicalConfiguration config = ConfigPlugins.getPluginConfig(PLUGIN_NAME);
+        XMLConfiguration config = ConfigPlugins.getPluginConfig(PLUGIN_NAME);
         tocDepth = config.getInt("defaultDepth", 1);
         loadAllImages = config.getBoolean("loadAllImages", true);
         showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
-        createNewPagination = config.getBoolean("createNewPagination", true);
+
+        HierarchicalConfiguration paginationConfig = config.configurationAt("pagination");
+        createNewPagination = paginationConfig.getBoolean("createNewPagination", true);
+        paginationType = paginationConfig.getString("type", "-");
+        useFakePagination = paginationConfig.getBoolean("useFakePagination", true);
         try {
             readExportedFile();
         } catch (Exception e) {
@@ -699,6 +711,10 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     private void createMetadata(MetadataType metadataType, String value, DocStruct docstruct) {
+        // check whether the input metadataType is logPageNoType, if so modify value accordingly
+        if (logPageNoType.equals(metadataType)) {
+            value = createFakePagination(value);
+        }
         try {
             Metadata md = new Metadata(metadataType);
             md.setValue(value);
@@ -706,6 +722,32 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         } catch (MetadataTypeNotAllowedException e) {
             log.error(e);
         }
+    }
+
+    private String createFakePagination(String pagination) {
+        if (!createNewPagination) {
+            // just return the old one
+            return pagination;
+        }
+
+        if (StringUtils.isBlank(paginationType) || "-".equals(paginationType)) {
+            // no pagination needed
+            return "";
+        }
+
+        if (!useFakePagination) {
+            // get rid of the fake markers
+            return pagination.replace("[", "").replace("]", "");
+        }
+
+        // use fake pagination
+        if (pagination.startsWith("[")) {
+            // already fake
+            return pagination;
+        }
+
+        // create a new fake
+        return "[" + pagination + "]";
     }
 
     private static String getTitleFromPage(NewspaperPage page) {
