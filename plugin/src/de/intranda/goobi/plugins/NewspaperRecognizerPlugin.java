@@ -136,8 +136,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
         HierarchicalConfiguration paginationConfig = config.configurationAt("pagination");
         createNewPagination = paginationConfig.getBoolean("createNewPagination", true);
-        paginationType = paginationConfig.getString("type", "-");
-        useFakePagination = paginationConfig.getBoolean("useFakePagination", true);
+        paginationType = paginationConfig.getString("type", "1");
+        useFakePagination = paginationConfig.getBoolean("useFakePagination", false);
         try {
             readExportedFile();
         } catch (Exception e) {
