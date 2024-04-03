@@ -3,6 +3,7 @@
 	<defaultDepth>1</defaultDepth>
 	<loadAllImages>true</loadAllImages>
 	<showWriteMetsButton>true</showWriteMetsButton>
+    <showDeletePageButton>true</showDeletePageButton>
     
     <!-- configurations related to pagination settings -->
 	<pagination>

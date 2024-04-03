@@ -81,6 +81,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     private boolean loadAllImages;
     private boolean showWriteMetsButton = true;
+    private boolean showDeletePageButton = false;
 
     private String fileNameToDelete = null;
     private int fileIdToDelete;
@@ -133,6 +134,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         tocDepth = config.getInt("defaultDepth", 1);
         loadAllImages = config.getBoolean("loadAllImages", true);
         showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
+        showDeletePageButton = config.getBoolean("showDeletePageButton", false);
 
         HierarchicalConfiguration paginationConfig = config.configurationAt("pagination");
         createNewPagination = paginationConfig.getBoolean("createNewPagination", true);

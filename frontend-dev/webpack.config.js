@@ -7,7 +7,8 @@ module.exports = {
     entry: './main.js',
     mode: "development",
     output: {
-        path: path.resolve(__dirname, '../GUI/META-INF/resources/uii/newspaperjs/'),
+        path: path.resolve(__dirname, '../module-gui/src/main/webapp/resources/uii/newspaperjs/'),
+        //path: path.resolve(__dirname, '../GUI/META-INF/resources/uii/newspaperjs/'),
         filename: 'app.js'
     },
     module: {
