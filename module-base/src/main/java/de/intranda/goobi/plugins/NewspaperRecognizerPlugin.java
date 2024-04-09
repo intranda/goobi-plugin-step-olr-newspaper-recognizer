@@ -83,7 +83,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private boolean loadAllImages;
     private boolean showWriteMetsButton = true;
     private boolean showDeletePageButton = false;
-    private boolean writeTitle = true;
+    private boolean writePageTitle = true;
 
     private String fileNameToDelete = null;
     private int fileIdToDelete;
@@ -137,7 +137,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         loadAllImages = config.getBoolean("loadAllImages", true);
         showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
         showDeletePageButton = config.getBoolean("showDeletePageButton", false);
-        writeTitle = config.getBoolean("writeTitle", true);
+        writePageTitle = config.getBoolean("writePageTitle", true);
 
         HierarchicalConfiguration paginationConfig = config.configurationAt("pagination");
         createNewPagination = paginationConfig.getBoolean("createNewPagination", true);
@@ -712,7 +712,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         createMetadata(numberType, newspaperPage.getNumber(), currentIssue);
         createMetadata(numberSortType, newspaperPage.getNumber(), currentIssue);
         createMetadata(dateIssuedType, w3cdtf.print(newspaperPage.getDate()), currentIssue);
-        if (writeTitle) {
+        if (writePageTitle) {
             createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);
         }
 

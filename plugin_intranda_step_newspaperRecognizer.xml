@@ -4,6 +4,7 @@
 	<loadAllImages>true</loadAllImages>
 	<showWriteMetsButton>true</showWriteMetsButton>
     <showDeletePageButton>true</showDeletePageButton>
+	<writePageTitle>true</writePageTitle>
     
     <!-- configurations related to pagination settings -->
 	<pagination>
