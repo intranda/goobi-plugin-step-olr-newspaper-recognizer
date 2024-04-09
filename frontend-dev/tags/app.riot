@@ -56,8 +56,8 @@
 					<!-- // Wochentage als Checkboxen -->
 	           	
 					<a class="btn btn-primary margin-sides-10" onclick={delete_all_issues} style="position: relative;">
-						<span style="opacity: {deletingIssues ? '0' : '1'}">{msgs['plugin_newspaperRecognizer_removeAllIssues']}</span>
-						<img if={deletingIssues} style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif"></img>
+						<span if={!deletingIssues}>{msgs['plugin_newspaperRecognizer_removeAllIssues']}</span>
+						<img if={deletingIssues} alt="Loading..." style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif" />
 					</a>
 	
 					<div class="pull-right">
@@ -578,6 +578,7 @@
 		    }
 		    console.timeEnd("forSchleife");
 		    this.deletingIssues = false;
+			this.update();
 		},
 		
 		/* triggered when the small delete button is clicked, which will move this wrongly classified 'title' page along with its 'other' pages to the end of the previous line */
