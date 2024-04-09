@@ -151,7 +151,7 @@
 								<div class="col-xs-5">
 									<div class="form-group">
 										<select class="form-control" onchange={e => changeIssueType(e, page)}>
-											<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}">{type}</option>
+											<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}">{msgs[type]}</option>
 										</select>
 									</div>
 								</div>
@@ -259,7 +259,15 @@
 			this.monthly = false; // NOT IN USE
 			this.dataDirty = false; // will be set to true if any modification of the data is made or any new data is created, used as a flag for `Save`
 			this.propsDirty = false; // NOT IN USE
-			this.issueTypes = ["Ausgabe", "Morgenausgabe", "Abendausgabe", "Beilage", "Inhaltsverzeichnis", "Leading page", "Einband und Profil"]
+			this.issueTypes = [
+				"plugin_newspaperRecognizer_issue-type_Ausgabe",
+				"plugin_newspaperRecognizer_issue-type_Morgenausgabe",
+				"plugin_newspaperRecognizer_issue-type_Abendausgabe",
+				"plugin_newspaperRecognizer_issue-type_Beilage",
+				"plugin_newspaperRecognizer_issue-type_Inhaltsverzeichnis",
+				"plugin_newspaperRecognizer_issue-type_Leading-page",
+				"plugin_newspaperRecognizer_issue-type_Einband-und-Profil"
+			]
 			this.lang = props.lang; // NOT IN USE
 			this.msgs = {}; // object used to maintain the messages that is to be rendered in the frontend
 			this.sent = {}; // NOT IN USE
@@ -294,7 +302,7 @@
 			        //page.showOtherImages = true; // <- 1. uncomment this to initialize the field 'showOtherImages' for all 'title' pages
 			        if(!page.issueType) {
 			            console.log("issueType not set")
-			            page.issueType = "Ausgabe";
+			            page.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
 			        } else {
 			            console.log("issueType:", page.issueType)
 			        }
@@ -480,7 +488,7 @@
 				if (page.issue) {
 					if(!page.issueType){
 						console.log("Issue type not set.");
-						page.issueType = "Ausgabe";
+						page.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
 					} else {
 						console.log("issueType = " + page.issueType);
 					}
@@ -701,8 +709,8 @@
 			    	origPage.otherPages = [];
 			    }
 			    if(!page.issueType) {
-			    	page.issueType = "Ausgabe";
-			    	origPage.issueType = "Ausgabe";
+			    	page.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
+			    	origPage.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
 			    }
 			    page.supplementPages = [];
 			    // delete the elements from idx to the end from oldArr, which is the list of otherPages of this page's former parent page
@@ -786,7 +794,7 @@
 	        var issueCounter = 0;
 	        for (var i = startIdx + 1; i < this.data.length; i++) {
 	            var page = this.data[i];
-	            if (page.issue && (!page.issueType || page.issueType.toLowerCase().indexOf("ausgabe") >= 0)) {
+	            if (page.issue && (!page.issueType || page.issueType.toLowerCase().indexOf("plugin_newspaperRecognizer_issue-type_Ausgabe") >= 0)) {
 	            	issueCounter++
 	                startNumber++;
 	            	if(issueCounter % skip == 0) {

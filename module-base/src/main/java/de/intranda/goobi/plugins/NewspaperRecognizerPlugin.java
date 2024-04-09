@@ -9,10 +9,12 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +29,6 @@ import org.goobi.production.enums.PluginGuiType;
 import org.goobi.production.plugin.interfaces.AbstractStepPlugin;
 import org.goobi.production.plugin.interfaces.IPlugin;
 import org.goobi.production.plugin.interfaces.IStepPlugin;
-import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -82,6 +83,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private boolean loadAllImages;
     private boolean showWriteMetsButton = true;
     private boolean showDeletePageButton = false;
+    private boolean writeTitle = true;
 
     private String fileNameToDelete = null;
     private int fileIdToDelete;
@@ -135,6 +137,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         loadAllImages = config.getBoolean("loadAllImages", true);
         showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
         showDeletePageButton = config.getBoolean("showDeletePageButton", false);
+        writeTitle = config.getBoolean("writeTitle", true);
 
         HierarchicalConfiguration paginationConfig = config.configurationAt("pagination");
         createNewPagination = paginationConfig.getBoolean("createNewPagination", true);
@@ -709,7 +712,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         createMetadata(numberType, newspaperPage.getNumber(), currentIssue);
         createMetadata(numberSortType, newspaperPage.getNumber(), currentIssue);
         createMetadata(dateIssuedType, w3cdtf.print(newspaperPage.getDate()), currentIssue);
-        createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);
+        if (writeTitle) {
+            createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);
+        }
 
         return currentIssue;
     }
@@ -776,90 +781,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     private static String getTitleFromPage(NewspaperPage page) {
-        LocalDateTime dateTime = page.getDate();
-        StringBuilder sb = new StringBuilder();
-        sb.append(page.getIssueType());
-        sb.append(" vom ");
-
-        switch (dateTime.dayOfWeek().get()) {
-            case 1:
-                sb.append("Montag, den ");
-                break;
-            case 2:
-                sb.append("Dienstag, den ");
-                break;
-            case 3:
-                sb.append("Mittwoch, den ");
-                break;
-            case 4:
-                sb.append("Donnerstag, den ");
-                break;
-            case 5:
-                sb.append("Freitag, den ");
-                break;
-            case 6:
-                sb.append("Samstag, den ");
-                break;
-            default:
-                sb.append("Sonntag, den ");
-                break;
-        }
-        switch (dateTime.dayOfMonth().get()) {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-            case 8:
-            case 9:
-                sb.append("0" + dateTime.dayOfMonth().get() + ". ");
-                break;
-            default:
-                sb.append(dateTime.dayOfMonth().get() + ". ");
-                break;
-        }
-
-        switch (dateTime.monthOfYear().get()) {
-            case 1:
-                sb.append("Januar ");
-                break;
-            case 2:
-                sb.append("Februar ");
-                break;
-            case 3:
-                sb.append("März ");
-                break;
-            case 4:
-                sb.append("April ");
-                break;
-            case 5:
-                sb.append("Mai ");
-                break;
-            case 6:
-                sb.append("Juni ");
-                break;
-            case 7:
-                sb.append("Juli ");
-                break;
-            case 8:
-                sb.append("August ");
-                break;
-            case 9:
-                sb.append("September ");
-                break;
-            case 10:
-                sb.append("Oktober ");
-                break;
-            case 11:
-                sb.append("November ");
-                break;
-            default:
-                sb.append("Dezember ");
-                break;
-        }
-        sb.append(dateTime.getYear());
-        return sb.toString();
+        Date date = page.getDate().toLocalDate().toDate();
+        DateFormat df = DateFormat.getDateInstance(DateFormat.FULL, Helper.getSessionLocale());
+        String translateIssueType = Helper.getTranslation(page.getIssueType());
+        return Helper.getTranslation("plugin_newspaperRecognizer_issue-type_from_date", translateIssueType, df.format(date));
     }
 }
