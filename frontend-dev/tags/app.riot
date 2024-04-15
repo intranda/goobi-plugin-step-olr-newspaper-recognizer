@@ -151,7 +151,7 @@
 								<div class="col-xs-5">
 									<div class="form-group">
 										<select class="form-control" onchange={e => changeIssueType(e, page)}>
-											<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}">{msgs[type]}</option>
+											<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}" data-translation-id="{type}">{msgs[type]}</option>
 										</select>
 									</div>
 								</div>
@@ -303,8 +303,10 @@
 			        if(!page.issueType) {
 			            console.log("issueType not set")
 			            page.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
+						page.primaryIssue = true;
 			        } else {
 			            console.log("issueType:", page.issueType)
+						page.primaryIssue = page.issueType === "plugin_newspaperRecognizer_issue-type_Ausgabe";
 			        }
 			        var supplCount = 0;
 			        for(var k=0;k<page.otherPages.length;k++) {
@@ -754,6 +756,8 @@
 		changeIssueType(e, page) {
 		    this.dataDirty = true;
 		    page.issueType = e.target.selectedOptions[0].text;
+			page.primaryIssue = e.target.selectedOptions[0].getAttribute("data-translation-id").toLowerCase().includes("ausgabe");
+			console.log("Issue: " + page.issueType + ", primary: " + page.primaryIssue);
 		},
 		
 		/* triggered when the text input `Nr.` gets an input */
@@ -777,6 +781,7 @@
 		/* triggered when one of the three buttons `Auf ... Ausgabe(n) anwenden` is clicked */
 		doGenerateDates(e, page, skip) {
 			console.log("skip:", skip)
+			debugger;
 			var dateRegex = /^\d{2}\.\d{2}\.\d{4}$/
 		    var startIdx = page.pos;
 	        var startPage = this.data[startIdx];
@@ -794,7 +799,7 @@
 	        var issueCounter = 0;
 	        for (var i = startIdx + 1; i < this.data.length; i++) {
 	            var page = this.data[i];
-	            if (page.issue && (!page.issueType || page.issueType.toLowerCase().indexOf("plugin_newspaperRecognizer_issue-type_Ausgabe") >= 0)) {
+	            if (page.issue && page.primaryIssue) {
 	            	issueCounter++
 	                startNumber++;
 	            	if(issueCounter % skip == 0) {

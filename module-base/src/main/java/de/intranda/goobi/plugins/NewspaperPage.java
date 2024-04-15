@@ -33,6 +33,7 @@ public class NewspaperPage {
     private List<NewspaperPage> supplementPages = new ArrayList<>();
     private boolean dateValid;
     private String issueType;
+    private boolean primaryIssue;
 
     public NewspaperPage(String filename) {
         super();
