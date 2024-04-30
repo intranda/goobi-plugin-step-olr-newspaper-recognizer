@@ -491,6 +491,7 @@
 					if(!page.issueType){
 						console.log("Issue type not set.");
 						page.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
+						page.primaryIssue = true;
 					} else {
 						console.log("issueType = " + page.issueType);
 					}
@@ -576,11 +577,13 @@
 			this.update();
 		    this.dataDirty = true;
 		    this.data[0].issue = true;
+		    this.data[0].primeryIssue = true;
 		    this.data[0].otherPages.length=0;
 		    console.timeEnd("prepareDelete");
 		    console.time("forSchleife");
 		    for(let i=1;i<this.data.length;i++) {
 		        this.data[i].issue=false;
+		        this.data[i].primaryIssue=false;
 		        this.data[0].otherPages.push(this.data[i]);
 		        this.data[i].parent=0;
 		        this.data[i].supplementTitle = false;
@@ -714,6 +717,9 @@
 			    	page.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
 			    	origPage.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
 			    }
+
+				page.primaryIssue = page.issueType.toLowerCase().includes("ausgabe");
+				origPage.primaryIssue = origPage.issueType.toLowerCase().includes("ausgabe");
 			    page.supplementPages = [];
 			    // delete the elements from idx to the end from oldArr, which is the list of otherPages of this page's former parent page
 			    // the returned list of deleted pages will form a new issue
