@@ -1,0 +1,90 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets" 
+	xmlns:c="http://java.sun.com/jsp/jstl/core" 
+	xmlns:h="http://xmlns.jcp.org/jsf/html" 
+	xmlns:f="http://xmlns.jcp.org/jsf/core" 
+	xmlns:o="http://omnifaces.org/ui" 
+	xmlns:of="http://omnifaces.org/functions" 
+	template="/uii/template/template.html" 
+	xmlns:x="http://myfaces.apache.org/tomahawk" 
+	xmlns:intranda="http://xmlns.jcp.org/jsf/composite/composites"
+	xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+
+    <ui:param name="myPageTitle" value="#{msgs.plugin}: #{msgs[('plugin_').concat(AktuelleSchritteForm.myPlugin.title)]}" />
+
+	<ui:define name="breadcrumb">
+        <intranda:breadcrumb label="#{msgs.startseite}" action="index" navId="a0" />
+        
+        <c:if test="#{LoginForm.hasRole('Workflow_Processes') and NavigationForm.uiStatus.pluginSimulation == true}">
+			<intranda:breadcrumb id="processAll" label="#{ProzessverwaltungForm.modusAnzeige=='aktuell'?msgs.aktuelleProzesse:msgs.prozessvorlagen}" action="process_all" navId="a1" />
+			<intranda:breadcrumb id="processEdit" label="#{ProzessverwaltungForm.modusAnzeige=='aktuell'?msgs.prozessDetails:msgs.process_templateDetails}" action="process_edit" />
+		</c:if>
+        
+        <c:if test="#{NavigationForm.uiStatus.pluginSimulation != true}">
+		    <intranda:breadcrumb label="#{msgs.aktuelleSchritte}" action="#{AktuelleSchritteForm.paginator.returnToPreviousPage}" />
+    	   	<intranda:breadcrumb label="#{AktuelleSchritteForm.mySchritt.prozess.titel}" action="#{AktuelleSchritteForm.myPlugin.cancel}" />
+		</c:if>
+        
+        <intranda:breadcrumb label="#{myPageTitle}" noSeparator="#{true}" />
+    </ui:define>
+
+    <ui:define name="info">
+    </ui:define>
+
+    <ui:define name="content">
+        <h:outputStylesheet library="css" name="newspapergrid.css?v=${buildNumber}" />
+        <h:form id="extra_form">
+            <h:commandLink id="delete_and_start_over_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualDataAndStartAutoAnalysis}"/>
+            <h:commandLink id="delete_manual_results_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualData}"/>
+        </h:form>
+        <h:form id="newspaper_form">
+			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
+			<h:commandLink id="save_mets_button" action="#{AktuelleSchritteForm.myPlugin.saveMetsFile}">
+				<f:ajax execute="@form" />
+			</h:commandLink>
+			<h:commandLink id="save_data_button">
+				<f:ajax execute="@form" />
+			</h:commandLink>
+			<h:commandLink id="finish_button" action="#{AktuelleSchritteForm.myPlugin.finish}"></h:commandLink>			
+		</h:form>
+		
+		<h:form id="delete_form">
+			<h:inputHidden id = "file_name_to_delete" value="#{AktuelleSchritteForm.myPlugin.fileNameToDelete}"/>
+			<h:inputHidden id = "file_id_to_delete" value="#{AktuelleSchritteForm.myPlugin.fileIdToDelete}" />	   
+			<h:commandButton id="delete_file_button" action="#{AktuelleSchritteForm.myPlugin.deleteFile}" value="submit" style="display:none">
+				<f:ajax execute="@form" />
+			</h:commandButton>
+		</h:form>
+		
+        <div id="root"></div>
+      
+      <script src="template/js/xdate.js" type="text/javascript"></script>
+      <script src="newspaperjs/app.js"></script>
+       <script>
+       
+       window.addEventListener("load", function() {
+           window.noLoadImages = true;
+           var opts = {
+           		data_el: document.getElementById('newspaper_form:my_plugin_data'),
+           		saveButton: document.getElementById('newspaper_form:save_mets_button'),
+           		saveDataButton: document.getElementById('newspaper_form:save_data_button'),
+           		finishButton: document.getElementById('newspaper_form:finish_button'),
+           		restartAnalysisButton: document.getElementById('extra_form:delete_and_start_over_button'),
+           		deleteManualResultsButton: document.getElementById('extra_form:delete_manual_results_button'),
+           		deleteFileButton: document.getElementById('delete_form:delete_file_button'),
+           		language: '#{SpracheForm.locale.language}',
+           		thumbHeight: 400,
+           		title: "#{msgs[('plugin_').concat(AktuelleSchritteForm.myPlugin.title)]}",
+           		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages},
+           		showWriteMetsButton: #{AktuelleSchritteForm.myPlugin.showWriteMetsButton},
+           		showDeletePageButton: #{AktuelleSchritteForm.myPlugin.showDeletePageButton},
+           		pagenumCorrect: #{AktuelleSchritteForm.myPlugin.pageNumberCountEqual()},
+           };
+           console.log(opts);
+           mountNewspaperCorrection(opts);
+       });
+       
+       </script>
+    </ui:define>
+
+</ui:composition>

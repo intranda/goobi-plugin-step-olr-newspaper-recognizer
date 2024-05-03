@@ -1,0 +1,25 @@
+<config_plugin>
+	<!-- which depth shall be used for the document analysis -->
+	<defaultDepth>1</defaultDepth>
+	<loadAllImages>true</loadAllImages>
+	<showWriteMetsButton>true</showWriteMetsButton>
+    <showDeletePageButton>true</showDeletePageButton>
+	<writePageTitle>true</writePageTitle>
+    
+    <!-- configurations related to pagination settings -->
+	<pagination>
+		<!-- whether or not to create a new pagination, if false then the old pagination will be used. DEFAULT true. -->
+		<createNewPagination>true</createNewPagination>
+		<!-- type of the fake paginations, acceptable values are -, 1, i, I. DEFAULT 1. -->
+		<!--
+		 (1) - means no paginations are wanted
+		 (2) 1 means all paginations should be formated as Arabic numbers 1, 2, 3, ... 
+		 (3) i means all paginations should be formated as Roman numerals i, ii, iii, ...
+		 (4) I means all paginations should be formated as capitalized Roman numerals I, II, III, ... 
+		 (5) Any other settings will just result in Arabic numbers
+		--> 
+		<type>1</type>
+		<!-- whether or not to use the fake pagination, if true then use [N] where N is a properly formatted number, otherwise use the bare N itself. DEFAULT false. -->
+		<useFakePagination>false</useFakePagination>
+	</pagination>
+</config_plugin>
