@@ -286,6 +286,7 @@
 			this.thumb_height = props.thumbHeight; // used in the frontend
 			this.loadallimages = props.loadallimages; // used in the function onMounted and in the frontend to communicate with the component defined by thumbcanvas.riot
 			this.delete_file_button = props.deleteFileButton; // used to delete an image
+			this.dateFormatDelimiter = props.dateFormatDelimiter; // used to customize date parsing
 			//console.log(props, this.thumb_height)
 			//console.log(this.data_el.value);
 			this.data = JSON.parse(this.data_el.value);
@@ -788,11 +789,15 @@
 		doGenerateDates(e, page, skip) {
 			console.log("skip:", skip)
 			debugger;
-			var dateRegex = /^\d{2}\.\d{2}\.\d{4}$/
+			var regexDelimiter = this.dateFormatDelimiter;
+			if (regexDelimiter === '.' || regexDelimiter === '-') {
+				regexDelimiter = '\\' + regexDelimiter;
+			}
+			var dateRegex = new RegExp("^\\d{2}" + regexDelimiter + "\\d{2}" + regexDelimiter + "\\d{4}$");
 		    var startIdx = page.pos;
 	        var startPage = this.data[startIdx];
 			if(!startPage.dateStr || !startPage.dateStr.match(dateRegex)) {
-				alert("Valid date format is: dd.mm.yyyy");
+				alert("Valid date format is: dd" + this.dateFormatDelimiter + "mm" + this.dateFormatDelimiter + "yyyy");
 				return;
 			}
 		    this.dataDirty = true;
@@ -800,8 +805,8 @@
 		    var prefix = startPage.prefix;
 		    var suffix = startPage.suffix;
 	        var startNumber = parseInt(startPage.number);
-	        var dateArr = startPage.dateStr.split(".");
-	        var startDate = new XDate(parseInt(dateArr[2]), parseInt(dateArr[1]-1), parseInt(dateArr[0]));
+	        var dateArr = startPage.dateStr.split(this.dateFormatDelimiter);
+	        var startDate = new XDate(parseInt(dateArr[2]), parseInt(dateArr[1])-1, parseInt(dateArr[0]));
 	        var issueCounter = 0;
 	        for (var i = startIdx + 1; i < this.data.length; i++) {
 	            var page = this.data[i];
@@ -814,7 +819,7 @@
 		                page.prefix = prefix;
 		                page.suffix = suffix;
 		                page.number = "" + startNumber;
-		                page.dateStr = startDate.toString("dd.MM.yyyy");
+						page.dateStr = startDate.toString("dd" + this.dateFormatDelimiter + "MM" + this.dateFormatDelimiter + "yyyy");
 		                page.dateValid = true;
 	            	}
 	            }
@@ -884,49 +889,53 @@
 			if(date.length == 0) {
 			    return true;
 			}
+			var regexDelimiter = this.dateFormatDelimiter;
+			if (regexDelimiter === '.' || regexDelimiter === '-') {
+				regexDelimiter = '\\' + regexDelimiter;
+			}
 	        // check for standard format
-	        if(/^\d{2}\.\d{2}\.\d{4}$/.test(date)) {
-	            var dateArr = date.split(".");
+	        if(new RegExp("^\\d{2}" + regexDelimiter + "\\d{2}" + regexDelimiter + "\\d{4}$").test(date)) {
+	            var dateArr = date.split(this.dateFormatDelimiter);
 	            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
 	                return false;
 	            }
 	            return true;
 	        }
 	     	// check for month format, e.g.: 01.1870
-	        if(/^\d{2}\.\d{4}$/.test(date)) {
+	        if(new RegExp("^\\d{2}" + regexDelimiter + "\\d{4}$").test(date)) {
 	            // check for sanity of month
-	            var month = parseInt(date.split(".")[0]);
+	            var month = parseInt(date.split(this.dateFormatDelimiter)[0]);
 	        	if(month > 0 && month < 13) {
 	        	    return true;
 	        	}
 	        }
 	        // check for issue for two days, e.g.: 14.06.2011/15.06.2011
-	        if(/^\d{2}\.\d{2}\.\d{4}\/\d{2}\.\d{2}\.\d{4}$/.test(date)) {
+	        if(new RegExp("^\\d{2}" + regexDelimiter + "\\d{2}" + regexDelimiter + "\\d{4}\/\\d{2}" + regexDelimiter + "\\d{2}" + regexDelimiter + "\\d{4}$").test(date)) {
 	            // check for sanity of day/month
 	            var dates = date.split("/");
 	            //check first date
-	            var dateArr = dates[0].split(".");
+	            var dateArr = dates[0].split(this.dateFormatDelimiter);
 	            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
 	                return false;
 	            }
-	            dateArr = dates[1].split(".");
+	            dateArr = dates[1].split(this.dateFormatDelimiter);
 	            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
 	                return false;
 	            }
 	            return true;
 	        }
 	     // check for multi-month issues, e.g.: 01.1870/03.1870
-	        if(/^\d{2}\.\d{4}\/\d{2}\.\d{4}$/.test(date)) {
+	        if(new RegExp("^\\d{2}" + regexDelimiter + "\\d{4}\/\\d{2}" + regexDelimiter + "\\d{4}$").test(date)) {
 	        	// check for sanity of months
 	            var dates = date.split("/");
-	        	var month0 = dates[0].split(".")[0];
-	        	var month1 = dates[1].split(".")[0];
+	        	var month0 = dates[0].split(this.dateFormatDelimiter)[0];
+	        	var month1 = dates[1].split(this.dateFormatDelimiter)[0];
 	        	if(month0>0 && month0<13 && month1>0 && month1<13) {
 	        	    return true;
 	        	}
 	        }
 	        // check for two-year issues, e.g.: 1915/1916
-	        if(/^\d{4}\/\d{4}$/.test(date)) {
+	        if(/^\\d{4}\/\\d{4}$/.test(date)) {
 	            return true;
 	        }
 	        return false;
