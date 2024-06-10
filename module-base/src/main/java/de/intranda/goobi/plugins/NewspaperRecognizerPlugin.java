@@ -83,6 +83,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private boolean loadAllImages;
     private boolean showWriteMetsButton = true;
     private boolean showDeletePageButton = false;
+    private String dateFormatDelimiter = ".";
+    private DateTimeFormatter dateFormat = DateTimeFormat.forPattern("dd.MM.yyyy");
     private boolean writePageTitle = true;
 
     private String fileNameToDelete = null;
@@ -137,6 +139,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         loadAllImages = config.getBoolean("loadAllImages", true);
         showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
         showDeletePageButton = config.getBoolean("showDeletePageButton", false);
+        dateFormatDelimiter = config.getString("dateFormatDelimiter", ".");
+        dateFormat = DateTimeFormat.forPattern("dd" + dateFormatDelimiter + "MM" + dateFormatDelimiter + "yyyy");
         writePageTitle = config.getBoolean("writePageTitle", true);
 
         HierarchicalConfiguration paginationConfig = config.configurationAt("pagination");
@@ -362,7 +366,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             List<Path> files = StorageProvider.getInstance().listFiles(imageDir);
             pages = new ArrayList<>();
             for (Path p : files) {
-                pages.add(new NewspaperPage(p.getFileName().toString()));
+                pages.add(new NewspaperPage(p.getFileName().toString(), this.dateFormat));
             }
 
             for (NewspaperPage page : pages) {
@@ -408,7 +412,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 //            page.setIssue(page.guessIssue());
 //        }
         
-        NewspaperPage page = new NewspaperPage("test.jpg");
+        NewspaperPage page = new NewspaperPage("test.jpg", DateTimeFormat.forPattern("dd.MM.yyyy"));
         String json = gson.toJson(page);
         System.out.println(json);
         NewspaperPage copy = gson.fromJson(json, NewspaperPage.class);
@@ -711,6 +715,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         createMetadata(partNumberType, newspaperPage.generateTitle(), currentIssue);
         createMetadata(numberType, newspaperPage.getNumber(), currentIssue);
         createMetadata(numberSortType, newspaperPage.getNumber(), currentIssue);
+        // Sometimes the NewspaperPage ctr is not called, therefore the formatter is not initialized
+        newspaperPage.setDateFormatter(this.dateFormat);
         createMetadata(dateIssuedType, w3cdtf.print(newspaperPage.getDate()), currentIssue);
         if (writePageTitle) {
             createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);

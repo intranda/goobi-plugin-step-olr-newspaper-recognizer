@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
-import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 import de.sub.goobi.metadaten.Image;
@@ -13,7 +12,7 @@ import lombok.Data;
 
 @Data
 public class NewspaperPage {
-    private static final DateTimeFormatter formatter = DateTimeFormat.forPattern("dd.MM.yyyy");
+    private DateTimeFormatter dateFormatter;
 
     //from json
     private String filename;
@@ -35,8 +34,9 @@ public class NewspaperPage {
     private String issueType;
     private boolean primaryIssue;
 
-    public NewspaperPage(String filename) {
+    public NewspaperPage(String filename, DateTimeFormatter format) {
         super();
+        this.dateFormatter = format;
         this.filename = filename;
     }
 
@@ -55,13 +55,13 @@ public class NewspaperPage {
 
     public LocalDateTime getDate() {
         if (dateStr != null && !dateStr.isEmpty()) {
-            return formatter.parseLocalDateTime(dateStr);
+            return dateFormatter.parseLocalDateTime(dateStr);
         }
         return new LocalDateTime();
     }
 
     public void setDate(DateTime date) {
-        this.dateStr = date.toString(formatter);
+        this.dateStr = date.toString(dateFormatter);
     }
 
     public void addPage(NewspaperPage page) {
