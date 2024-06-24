@@ -2,11 +2,11 @@ const path = require("path")
 const webpack = require("webpack")
 
 module.exports = {
-    watch: true,
+    watch: false,
     entry: './main.js',
     mode: "development",
     output: {
-        path: path.resolve(__dirname, '../module-gui/src/main/webapp/resources/uii/newspaperjs/'),
+        path: path.resolve(__dirname, 'dist/js/'),
         //path: path.resolve(__dirname, '../GUI/META-INF/resources/uii/newspaperjs/'),
         filename: 'app.js'
     },
