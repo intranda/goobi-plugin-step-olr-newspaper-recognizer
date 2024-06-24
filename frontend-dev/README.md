@@ -14,5 +14,5 @@ Then, to start developing, run (in this directory):
 
 ```
 npm install
-webpack-cli
+npm run build
 ```

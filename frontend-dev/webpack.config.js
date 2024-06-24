@@ -1,5 +1,4 @@
 const path = require("path")
-const FileManagerPlugin = require('filemanager-webpack-plugin');
 const webpack = require("webpack")
 
 module.exports = {
