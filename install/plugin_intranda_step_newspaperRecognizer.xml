@@ -3,7 +3,7 @@
 	<defaultDepth>1</defaultDepth>
 	<loadAllImages>true</loadAllImages>
 	<showWriteMetsButton>true</showWriteMetsButton>
-    <showDeletePageButton>true</showDeletePageButton>
+    <showDeletePageButton>false</showDeletePageButton>
 	<dateFormatDelimiter>.</dateFormatDelimiter>
 	<writePageTitle>true</writePageTitle>
     
