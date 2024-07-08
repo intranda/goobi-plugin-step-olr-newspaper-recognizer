@@ -6,7 +6,7 @@ module.exports = {
     entry: './main.js',
     mode: "development",
     output: {
-        path: path.resolve(__dirname, 'dist/js/'),
+        path: path.resolve(__dirname, 'resources/dist/intranda_step_newspaperRecognizer/js/'),
         //path: path.resolve(__dirname, '../GUI/META-INF/resources/uii/newspaperjs/'),
         filename: 'app.js'
     },
