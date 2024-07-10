@@ -1,13 +1,12 @@
 const path = require("path")
-const FileManagerPlugin = require('filemanager-webpack-plugin');
 const webpack = require("webpack")
 
 module.exports = {
-    watch: true,
+    watch: false,
     entry: './main.js',
     mode: "development",
     output: {
-        path: path.resolve(__dirname, '../module-gui/src/main/webapp/resources/uii/newspaperjs/'),
+        path: path.resolve(__dirname, 'resources/dist/intranda_step_newspaperRecognizer/js/'),
         //path: path.resolve(__dirname, '../GUI/META-INF/resources/uii/newspaperjs/'),
         filename: 'app.js'
     },
