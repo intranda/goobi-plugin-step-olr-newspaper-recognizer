@@ -1,257 +1,261 @@
 <app>
-	<div if={!msgsLoaded} class="box box-color lightgrey box-bordered">
-		<div class="box-title">
-			<h3>
-				<i class="fa fa-puzzle-piece"></i>
-				{props.title}
-			</h3>
-		</div>
-		<div class="box-content" style="background-color:#eee;" >
-			<div class="text-center">
-				<img src="template/img/goobi/ajaxloader2.gif" style="max-height: 140px;"></img>
+	<div if={!msgsLoaded} class="box box--neutral">
+		<div class="box__content">
+			<div class="box__title">
+				<h2>
+					<span aria-hidden="true" class="fa fa-puzzle-piece" />
+					{props.title}
+				</h2>
 			</div>
-		</div>
-	</div>
-	
-	<div if={!!msgsLoaded} class="box box-color lightgrey box-bordered">
-		<div class="box-title">
-			<h3>
-				<i class="fa fa-puzzle-piece"></i>
-				{props.title}
-			</h3>
-			<div class="actions">
-				<a id="id10" onclick={reload} class="btn btn-mini" style="color:white;">
-					<i class="fa fa-refresh" ></i>
-				</a>
-			</div>
-		</div>
-	
-		<div class="box-content" style="background-color:#eee">
-			<div if={!props.pagenumCorrect} class="row">
-				<div class="col-sm-12">
-					<div class="alert alert-danger">{msgs['plugin_newspaperRecognizer_pagenumWarning']}</div>
-	        
-					<a class="btn btn-danger " onclick={restartAnalysis}>{msgs['plugin_newspaperRecognizer_recompute']}</a>
-					<a class="btn btn-danger margin-sides-10" onclick={deleteManualResults}>{msgs['plugin_newspaperRecognizer_deleteManualResults']}</a>
-				</div>
-			</div>
-			<!-- Formular für Wochentage -->
-			<div if={!imagesLoaded && props.pagenumCorrect}>
+			<div class="box__body" style="background-color:#eee;" >
 				<div class="text-center">
-					<h4>{msgs['plugin_newspaperRecognizer_loadingImages']}...</h4>
-					<progress max={data.length} value={loadedImages}></progress>
+					<img src="template/img/goobi/ajaxloader2.gif" style="max-height: 140px;"></img>
 				</div>
 			</div>
-			<template if={imagesLoaded && props.pagenumCorrect}>
-			<div class="row">
-				<div class="col-sm-12">
-					<!-- Wochentage als Checkboxen -->
-					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={monday} onclick={() => this.toggleDay('monday')}></input>{msgs['plugin_newspaperRecognizer_monday']}</label>
-					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>{msgs['plugin_newspaperRecognizer_tuesday']}</label>
-					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>{msgs['plugin_newspaperRecognizer_wednesday']}</label>
-					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>{msgs['plugin_newspaperRecognizer_thursday']}</label>
-					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={friday} onclick={() => this.toggleDay('friday')}></input>{msgs['plugin_newspaperRecognizer_friday']}</label>
-					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>{msgs['plugin_newspaperRecognizer_saturday']}</label>
-					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>{msgs['plugin_newspaperRecognizer_sunday']}</label>
-					<!-- // Wochentage als Checkboxen -->
-	           	
-					<a class="btn btn-primary margin-sides-10" onclick={delete_all_issues} style="position: relative;">
-						<span if={!deletingIssues}>{msgs['plugin_newspaperRecognizer_removeAllIssues']}</span>
-						<img if={deletingIssues} alt="Loading..." style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif" />
-					</a>
-	
-					<div class="pull-right">
-						<!-- Speicher-Button -->
-						<a class="btn btn-primary " disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
-						<!-- // Speicher-Button -->
-						<a if={props.showWriteMetsButton} class="btn btn-primary margin-sides-10" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
-						<!-- // verlassen-Button -->
-						<a class="btn btn-primary" onclick={exit}>{msgs['pluginLeave']}</a>
-					</div>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col-sm-12">
-					<label class="check-week"><input type="checkbox" class="checkbox-week" checked={biWeekly} onclick={toggleBiWeekly}></input>{msgs['plugin_newspaperRecognizer_biWeekly']}</label>
-					<!-- <label class="check-week"><input type="checkbox" class="checkbox-week" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
-				</div>
-			</div>
-			<hr />
-			<!-- // Formular für Wochentage -->
-	
-	
-			<!-- Bereich für Ausgaben -->
-			<div layout="block" class="col-sm-12">
-				<div class="row margin-top-most margin-bottom-most">
-		
-					<!-- Auflistung aller Ausgaben -->
-					<my_row each={page in data} if={page.issue}>
-						<div  class="row thumbnail-row">
-							<div class="col-sm-4">
-				
-								<div class="col-xs-6 thumbnail-image" style="position: relative;">
-	
-									<!-- Bild der Ausgabe -->
-									<div class="goobi-thumbnail font-light">
-										<div class="goobi-thumbnail-image">
-											<div class="thumb" style="min-height: {thumb_height}px;">
-											
-												<a onclick="{(e) => noIssue(e, page)}">
-													<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl} 
-															image_large={page.image.largeThumbnailUrl} 
-															title={page.image.tooltip}
-															page_id={page.pos}
-															loadallimages={loadallimages}
-															preload_large={true}>
-													</thumbcanvas>
-												</a>
-												
-											</div>
-										</div>
-									</div>
-									<!-- // Bild der Ausgabe -->
-	
-									<!-- Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
-									<!--
-									<a
-										onclick="{() => noIssue(page)}"
-										class="btn btn-default fa fa-trash"
-										style="position: absolute; right: 10px; bottom: 5px;">
-									-->
-									<a
-										if={props.showDeletePageButton} 
-										onclick="{(e) => deletePage(e, page)}"
-										class="btn btn-default fa fa-trash"
-										style="position: absolute; right: 10px; bottom: 5px;">
-									</a>
-									<!-- // Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
-					
-								</div>
-	
-								<!-- Datum der Ausgabe -->
-								<div class="col-xs-5">
-									<div class="form-group {page.dateValid ? '' : 'has-error'}">
-										<input type="text" value={page.dateStr} onkeyup={e => changeDate(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_date']}" class="form-control"></input>
-										<span if={!page.dateValid} class="help-block">{msgs['plugin_newspaperRecognizer_wrongDateFormat']}</span>
-									</div>
-								</div>
-	
-								<!-- Nummer der Ausgabe -->
-								<div class="col-xs-5 ">
-									<div class="form-group">
-										<div class="input-group">
-											<input type="text" value={page.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{msgs['prefix']}" class="form-control" style="width:33%"></input>
-											<input type="text" value={page.number} onkeyup={e => changeNumber(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_nro']}" class="form-control" style="width:34%"></input>
-											<input type="text" value={page.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{msgs['suffix']}" class="form-control" style="width:33%"></input>
-										</div>
-									</div>
-								</div>
-				
-								<!-- "Typ" der Ausgabe -->
-								<div class="col-xs-5">
-									<div class="form-group">
-										<select class="form-control" onchange={e => changeIssueType(e, page)}>
-											<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}" data-translation-id="{type}">{msgs[type]}</option>
-										</select>
-									</div>
-								</div>
-				
-								<!-- Details über zugehörige Seiten -->
-								<div class="col-xs-6">
-									
-									{msgs['otherPages']}: {page.otherPages.length}
-									
-								</div>
-	
-								<!-- Button für Datumsgenerierung -->
-								<div class="col-xs-6" style="margin-top: 5px;">
-									<a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-sm btn-primary">
-										{msgs['plugin_newspaperRecognizer_applyEveryIssue']}
-									</a>
-								</div>
-	                        
-								<div class="col-xs-6" style="margin: 5px 0;">
-									<a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-sm btn-primary ">
-										{msgs['plugin_newspaperRecognizer_applyEverySecondIssue']}
-									</a>
-								</div>
-	                        
-								<div class="col-xs-6" style="">
-									<a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-sm btn-primary">
-										{msgs['plugin_newspaperRecognizer_applyEveryThirdIssue']}
-									</a>
-								</div>
-				
-							</div>
-			
-							<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
-							<div class="other-pages">
-								<!-- If control over this component is needed, uncomment the following and three other marked lines in the functions 'onBeforeMount', 'noIssue' and 'otherOnClick'.
-								<div class="col-sm-8" if={page.showOtherImages}>
-								-->							
-								<div class="col-sm-8" >							
-									<div class="newspaper-thumbnails">
-										<!-- THUMBNAIL -->
-										<div each={(otherPage, idx) in page.otherPages} class="newspaper-thumbnail">
-											<div class="newspaper-thumbnail__image" style="min-height: {thumb_height/2}px;">
-												<a onclick={(e) => otherOnclick(e, otherPage, idx)}>
-													<thumbcanvas
-															width={thumb_height/2} 
-															height={thumb_height/2}
-															render_text={otherPage.supplement ? otherPage.supplementNo : null}
-															render_size="24"
-															render_bg_color={otherPage.supplement ? suppl_colors[(otherPage.supplementNo-1)%5] : null}
-															image_small={otherPage.image.thumbnailUrl}
-															image_large={otherPage.image.largeThumbnailUrl}
-															title={otherPage.image.tooltip} page_id={otherPage.pos}
-															loadallimages={loadallimages}
-															preload_large={false}>
-													</thumbcanvas>
-												</a>
-											</div>
-										</div>
-										
-									</div>
-								</div>
-							</div>
-	                         	
-							</div>
-							<hr style="border-top:1px #bbb solid">
-						</my_row>
-					</div>
-				</div>      
-			</template>       
 		</div>
-	     
-		<template if={imagesLoaded}>
-			<hr />
-	         
-			<div class="row">
-				<div class="col-sm-12">
-					<div class="pull-right">
-						<span id="ajaxloaderbottom" style="margin-right: 15px; display:none;">
-							<img src="template/img/goobi/ajaxloader2.gif" />
-						</span>
-						<!-- Speicher-Button -->
-						<a class="btn btn-primary" style="margin: 20px 0;" disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
-						<!-- // Speicher-Button -->
-						<a if={props.showWriteMetsButton} class="btn btn-primary margin-sides-10" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
-						<!-- // verlassen-Button -->
-						<a class="btn btn-primary" onclick={exit}>{msgs['pluginLeave']}</a>
-					</div>
+	</div>
+
+	<div if={!!msgsLoaded} class="box box-color lightgrey box-bordered">
+		<div class="box__content">
+			<div class="box__title">
+				<h2>
+					<span aria-hidden="true" class="fa fa-puzzle-piece" />
+					{props.title}
+				</h2>
+				<div class="actions d-flex">
+					<a id="id10" onclick={reload} class="btn d-flex align-items-center btn--title-action">
+						<span aria-hidden="true" class="fa fa-refresh"  />
+					</a>
 				</div>
 			</div>
-		</template>
+
+			<div class="box__body">
+				<div if={!props.pagenumCorrect} class="row">
+					<div class="col-12">
+						<div class="alert alert-danger">{msgs['plugin_newspaperRecognizer_pagenumWarning']}</div>
+
+						<a class="btn btn-hot " onclick={restartAnalysis}>{msgs['plugin_newspaperRecognizer_recompute']}</a>
+						<a class="btn btn-hot" onclick={deleteManualResults}>{msgs['plugin_newspaperRecognizer_deleteManualResults']}</a>
+					</div>
+				</div>
+				<!-- Formular für Wochentage -->
+				<div if={!imagesLoaded && props.pagenumCorrect}>
+					<div class="text-center">
+						<h3>{msgs['plugin_newspaperRecognizer_loadingImages']}...</h3>
+						<progress max={data.length} value={loadedImages}></progress>
+					</div>
+				</div>
+				<template if={imagesLoaded && props.pagenumCorrect}>
+				<div class="row">
+					<div class="col-12">
+						<!-- Wochentage als Checkboxen -->
+						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={monday} onclick={() => this.toggleDay('monday')}></input>{msgs['plugin_newspaperRecognizer_monday']}</label>
+						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>{msgs['plugin_newspaperRecognizer_tuesday']}</label>
+						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>{msgs['plugin_newspaperRecognizer_wednesday']}</label>
+						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>{msgs['plugin_newspaperRecognizer_thursday']}</label>
+						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={friday} onclick={() => this.toggleDay('friday')}></input>{msgs['plugin_newspaperRecognizer_friday']}</label>
+						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>{msgs['plugin_newspaperRecognizer_saturday']}</label>
+						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>{msgs['plugin_newspaperRecognizer_sunday']}</label>
+						<!-- // Wochentage als Checkboxen -->
+
+						<a class="btn btn-primary" onclick={delete_all_issues} style="position: relative;">
+							<span if={!deletingIssues}>{msgs['plugin_newspaperRecognizer_removeAllIssues']}</span>
+							<img if={deletingIssues} alt="Loading..." style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif" />
+						</a>
+
+						<div class="pull-right">
+							<!-- // verlassen-Button -->
+							<a class="btn btn-blank" onclick={exit}>{msgs['pluginLeave']}</a>
+							<!-- Speicher-Button -->
+							<a class="btn btn-blank " disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
+							<!-- // Speicher-Button -->
+							<a if={props.showWriteMetsButton} class="btn btn-success" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-12">
+						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={biWeekly} onclick={toggleBiWeekly}></input>{msgs['plugin_newspaperRecognizer_biWeekly']}</label>
+						<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
+					</div>
+				</div>
+				<hr />
+				<!-- // Formular für Wochentage -->
+
+
+				<!-- Bereich für Ausgaben -->
+				<div layout="block" class="col-12">
+					<div class="row">
+
+						<!-- Auflistung aller Ausgaben -->
+						<my_row each={page in data} if={page.issue}>
+							<div class="row thumbnail-row">
+								<div class="col-12 col-sm-4 row">
+
+									<div class="col-12 col-xs-6 thumbnail-image" style="position: relative;">
+
+										<!-- Bild der Ausgabe -->
+										<div class="goobi-thumbnail font-light">
+											<div class="goobi-thumbnail-image">
+												<div class="thumb" style="min-height: {thumb_height}px;">
+
+													<a onclick="{(e) => noIssue(e, page)}">
+														<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl}
+																image_large={page.image.largeThumbnailUrl}
+																title={page.image.tooltip}
+																page_id={page.pos}
+																loadallimages={loadallimages}
+																preload_large={true}>
+														</thumbcanvas>
+													</a>
+
+												</div>
+											</div>
+										</div>
+										<!-- // Bild der Ausgabe -->
+
+										<!-- Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
+										<!--
+										<a
+											onclick="{() => noIssue(page)}"
+											class="btn btn-blank fa fa-trash"
+											style="position: absolute; right: 10px; bottom: 5px;">
+										-->
+										<a
+											if={props.showDeletePageButton}
+											onclick="{(e) => deletePage(e, page)}"
+											style="position: absolute; right: 10px; bottom: 5px;">
+											<span aria-hidden="true" class="fa fa-trash" />
+										</a>
+										<!-- // Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
+
+									</div>
+
+									<!-- Datum der Ausgabe -->
+									<div class="col-12 col-xs-5">
+										<div class="form-group {page.dateValid ? '' : 'has-error'}">
+											<input type="text" value={page.dateStr} onkeyup={e => changeDate(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_date']}" class="form-control"></input>
+											<span if={!page.dateValid} class="help-block">{msgs['plugin_newspaperRecognizer_wrongDateFormat']}</span>
+										</div>
+									</div>
+
+									<!-- Nummer der Ausgabe -->
+									<div class="col-xs-5 ">
+										<div class="form-group">
+											<div class="input-group">
+												<input type="text" value={page.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{msgs['prefix']}" class="form-control" style="width:33%"></input>
+												<input type="text" value={page.number} onkeyup={e => changeNumber(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_nro']}" class="form-control" style="width:34%"></input>
+												<input type="text" value={page.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{msgs['suffix']}" class="form-control" style="width:33%"></input>
+											</div>
+										</div>
+									</div>
+
+									<!-- "Typ" der Ausgabe -->
+									<div class="col-xs-5">
+										<div class="form-group">
+											<select class="form-control" onchange={e => changeIssueType(e, page)}>
+												<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}" data-translation-id="{type}">{msgs[type]}</option>
+											</select>
+										</div>
+									</div>
+
+									<!-- Details über zugehörige Seiten -->
+									<div class="col-xs-6">
+
+										{msgs['otherPages']}: {page.otherPages.length}
+
+									</div>
+
+									<!-- Button für Datumsgenerierung -->
+									<div class="col-xs-6" style="margin-top: 5px;">
+										<a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-sm btn-primary">
+											{msgs['plugin_newspaperRecognizer_applyEveryIssue']}
+										</a>
+									</div>
+
+									<div class="col-xs-6" style="margin: 5px 0;">
+										<a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-sm btn-primary ">
+											{msgs['plugin_newspaperRecognizer_applyEverySecondIssue']}
+										</a>
+									</div>
+
+									<div class="col-xs-6" style="">
+										<a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-sm btn-primary">
+											{msgs['plugin_newspaperRecognizer_applyEveryThirdIssue']}
+										</a>
+									</div>
+
+								</div>
+
+								<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
+								<div class="other-pages">
+									<!-- If control over this component is needed, uncomment the following and three other marked lines in the functions 'onBeforeMount', 'noIssue' and 'otherOnClick'.
+									<div class="col-sm-8" if={page.showOtherImages}>
+									-->
+									<div class="col-sm-8" >
+										<div class="newspaper-thumbnails">
+											<!-- THUMBNAIL -->
+											<div each={(otherPage, idx) in page.otherPages} class="newspaper-thumbnail">
+												<div class="newspaper-thumbnail__image" style="min-height: {thumb_height/2}px;">
+													<a onclick={(e) => otherOnclick(e, otherPage, idx)}>
+														<thumbcanvas
+																width={thumb_height/2}
+																height={thumb_height/2}
+																render_text={otherPage.supplement ? otherPage.supplementNo : null}
+																render_size="24"
+																render_bg_color={otherPage.supplement ? suppl_colors[(otherPage.supplementNo-1)%5] : null}
+																image_small={otherPage.image.thumbnailUrl}
+																image_large={otherPage.image.largeThumbnailUrl}
+																title={otherPage.image.tooltip} page_id={otherPage.pos}
+																loadallimages={loadallimages}
+																preload_large={false}>
+														</thumbcanvas>
+													</a>
+												</div>
+											</div>
+
+										</div>
+									</div>
+								</div>
+
+								</div>
+								<hr style="border-top:1px #bbb solid">
+							</my_row>
+						</div>
+					</div>
+				</template>
+			</div>
+
+			<template if={imagesLoaded}>
+				<hr />
+
+				<div class="row">
+					<div class="col-12">
+						<div class="pull-right">
+							<span id="ajaxloaderbottom" style="margin-right: 15px; display:none;">
+								<img src="template/img/goobi/ajaxloader2.gif" />
+							</span>
+							<!-- Speicher-Button -->
+							<a class="btn btn-primary" style="margin: 20px 0;" disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
+							<!-- // Speicher-Button -->
+							<a if={props.showWriteMetsButton} class="btn btn-primary" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
+							<!-- // verlassen-Button -->
+							<a class="btn btn-primary" onclick={exit}>{msgs['pluginLeave']}</a>
+						</div>
+					</div>
+				</div>
+			</template>
+		</div>
 	</div>
-      
+
 	<script>
 	import Thumbcanvas from './thumbcanvas.riot'
-	
+
 	export default {
 		components: {
 			Thumbcanvas
 		},
-		
+
 		/* preparations before mounting the components, used to initialize some fields */
 	    onBeforeMount(props, state) {
 			this.suppl_colors = ["#146abf", "#e00404", "#6300b5", "#ba5d06", "#467021"];
@@ -274,7 +278,7 @@
 			this.msg_queue = []; // NOT IN USE
 			this.ws_ready = false; // NOT IN USE
 			this.deletingIssues = false; // used only in the function "delete_all_issues"
-			
+
 			// fields of props are defined in plugin_newspaperRecognizer.xhtml
 			this.data_el = props.data_el; // used in both save functions, and it has one key `value` which contains the data contents in the JSON format
 			this.restartAnalysisButton = props.restartAnalysisButton; // used only in the function "restartAnalysis"
@@ -290,14 +294,14 @@
 			//console.log(props, this.thumb_height)
 			//console.log(this.data_el.value);
 			this.data = JSON.parse(this.data_el.value);
-			
+
 			for(var i=0;i < this.data.length; i++) {
 			    var page = this.data[i];
 			    if(typeof page.dateValid === "undefined" || page.dateValid === undefined) {
 				    page.dateValid = true;
 			    }
 			    page.pos = i; // every page has a property `pos` valued as its order among all pages
-			    
+
 			    // for issue pages, append all 'other' pages following it
 			    if(page.issue) {
 			        //page.showOtherImages = true; // <- 1. uncomment this to initialize the field 'showOtherImages' for all 'title' pages
@@ -314,7 +318,7 @@
 						// append an 'other' page to a 'title' page by assigning the 'other' page's `parent` to the 'title' page's `pos`
 			            page.otherPages[k].parent = page.pos;
 			            page.otherPages[k].pos = i+k+1;
-			            
+
 			            if(page.otherPages[k].supplementTitle) {
 			                supplCount++;
 			            }
@@ -324,7 +328,7 @@
 			        }
 			    }
 			}
-			
+
 			console.log(this.data);
 			this.monday = true;
 			this.tuesday = true;
@@ -335,7 +339,7 @@
 			this.sunday = true;
 			var path = window.location.pathname;
 			path = path.substring(0, path.indexOf("/uii/"));
-			
+
 			fetch(`${path}/api/messages/${props.language}`, {
 		          method: 'GET',
 		          credentials: 'same-origin'
@@ -349,7 +353,7 @@
 		        })
 		      });
 	    },
-	    
+
 	    /* triggered at mounting */
 	    onMounted(props, state) {
 	      this.addAjaxEvent();
@@ -358,7 +362,7 @@
 	      setInterval(() => {
 		        this.save_no_mets();
 		    }, 15000);
-		  */  
+		  */
 	      if(this.loadallimages && props.pagenumCorrect) {
 	    	  this.loadedImages = 0; // used in the frontend to show the progress of loading
 	    	  window.npImages = {};
@@ -371,11 +375,11 @@
 	    		  image.src = dataImage.image.thumbnailUrl;
 	    	  }
 	    	  this.downloadChecker = setInterval(() => {
-	    		  this.loadedImages = Object.keys(window.npImages).length; 
+	    		  this.loadedImages = Object.keys(window.npImages).length;
 	    		  if(this.loadedImages == this.data.length) {
 	    			  this.update();
 	    			  setTimeout(() => {
-	        			  this.imagesLoaded = true; // used as control condition in the frontend 
+	        			  this.imagesLoaded = true; // used as control condition in the frontend
 	        			  clearInterval(this.downloadChecker);
 	        			  this.update();
 	    			  },100)
@@ -387,19 +391,19 @@
 	    	  this.update();
 	      }
 	    },
-	    
+
 	    onBeforeUpdate(props, state) {
 	    },
-	    
+
 	    onUpdated(props, state) {
 	    },
-	    
+
 	    /* used at mounting by the function onMounted */
 	    addAjaxEvent() {
 	    	jsf.ajax.addOnEvent((data) => {
 	            var ajaxstatus = data.status; // Can be "begin", "complete" and "success"
 	            var ajaxloader = this.$("#ajaxloaderbottom");
-	
+
 	            switch (ajaxstatus) {
 	                case "begin": // This is called right before ajax request is been sent.
 	                	console.log("ajaxloader:", ajaxloader)
@@ -407,32 +411,32 @@
 	                    	ajaxloader.style.display = 'inline';
 	                	}
 	                    break;
-	
+
 	                case "complete": // This is called right after ajax response is received.
 	                	if(ajaxloader) {
 	                    	ajaxloader.style.display = 'none';
 	                	}
 	                    break;
-	
+
 	                case "success": // This is called when ajax response is successfully processed.
 	                    // NOOP.
 	                    break;
 	            }
 	        });
 	    },
-	    
+
 	    /* triggered when the button `Plugin verlassen` is clicked */
 		exit() {
 		    this.finish_button.click();
 		},
-		
+
 		/* triggered when the button `METS schreiben` is clicked */
 		save() {
 		    this.data_el.value = this.createSaveData();
 		    this.save_button.click();
 		    this.dataDirty = false;
 		},
-		
+
 		/* triggered when the button `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met */
 		restartAnalysis() {
 			var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse und startet eine neue automatische Analyse. Wirklich fortfahren?")
@@ -440,7 +444,7 @@
 				this.restartAnalysisButton.click();
 			}
 		},
-		
+
 		/* triggered when some button under the `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met. */
 		deleteManualResults() {
 			var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse. Wirklich fortfahren?");
@@ -448,7 +452,7 @@
 				this.deleteManualResultsButton.click();
 			}
 		},
-		
+
 		/* triggered when the `delete` buttonis clicked, which will remove the picture */
 		deletePage(e, page){
 			var confirmed = confirm("Dies löscht dieses Bild. Wirklich fortfahren?");
@@ -459,32 +463,32 @@
 					//alert("page has other pages " + page.otherPages.length);
 					this.otherOnclick(e, page.otherPages[0], 0);
 				}
-				
+
 				let position = page.pos;
 
 				// delete file from the backend
 				this.setFileToDelete(page.filename, position);
 				this.delete_file_button.click();
-				
-				// update the list data to update the rendering in the frontend		
+
+				// update the list data to update the rendering in the frontend
 				this.data.splice(position, 1);
 				this.save_no_mets_button.click();
-				
+
 				// update indices of all pages after the deleted page
 				this.updateIndicesOfPages(position);
-				
-				this.update();			
+
+				this.update();
 			}
 		},
-		
+
 		/* used to transfer the location information of the file to the backend */
 		setFileToDelete(fileName, fileId){
 			document.getElementById('delete_form:file_name_to_delete').value = fileName;
 			document.getElementById('delete_form:file_id_to_delete').value = fileId;
 		},
-		
+
 		/* used to update the indices of pages starting from the input start */
-		updateIndicesOfPages(start){				
+		updateIndicesOfPages(start){
 			for (let i = start; i < this.data.length; i++){
 				let page = this.data[i];
 				page.pos -= 1;
@@ -496,20 +500,20 @@
 					} else {
 						console.log("issueType = " + page.issueType);
 					}
-					
+
 					//console.log("before updating, page.otherPages[0].parent = " + page.otherPages[0].parent);
-					
+
 					// update information of otherPages
 					for (let k = 0; k < page.otherPages.length; k++) {
 						page.otherPages[k].parent = page.pos;
 						page.otherPages[k].pos = page.pos + k + 1;
 					}
-					
+
 					//console.log("after updating, page.otherPages[0].parent = " + page.otherPages[0].parent);
 				}
 			}
 		},
-		
+
 		/* triggered when the button `Speichern` is clicked */
 		save_no_mets() {
 		    var saved = false;
@@ -531,7 +535,7 @@
 		        this.update();
 		    }
 		},
-		
+
 		/* used by the functions save and save_no_mets */
 		createSaveData() {
 			var saveData = [];
@@ -552,25 +556,25 @@
 	        }
 	        return JSON.stringify(saveData);
 		},
-		
+
 		/* triggered when the checkbox option `Zweiwöchentlich` is clicked */
 		toggleBiWeekly() {
 		    this.biWeekly = !this.biWeekly;
 		    console.log(this.biWeekly);
 		},
-		
+
 		/* triggered when any checkbox option for days is clicked */
 		toggleDay(day) {
 		    this.optsDirty = true;
 		    console.log(day);
 		    this[day] = !this[day];
 		},
-		
+
 		/* NOT IN USE */
 		toggleShowOtherImages(page) {
 		    page.showOtherImages = !page.showOtherImages;
 		},
-		
+
 		/* triggered when the button `Alle Ausgaben entfernen` is clicked */
 		delete_all_issues(e) {
 			console.time("prepareDelete");
@@ -594,7 +598,7 @@
 		    this.deletingIssues = false;
 			this.update();
 		},
-		
+
 		/* triggered when the small delete button is clicked, which will move this wrongly classified 'title' page along with its 'other' pages to the end of the previous line */
 		noIssue(e, page) {
 			if (e.shiftKey){
@@ -619,7 +623,7 @@
 		                this.data[i].otherPages.push(currPage.otherPages[k]);
 		            }
 		            break;
-		        } 
+		        }
 		    }
 		    console.log("done")
 		    currPage.otherPages = [];
@@ -633,7 +637,7 @@
 		    this.update();
 		    console.timeEnd("repaint")
 		},
-		
+
 		/* triggered when an 'other' page is clicked, which should make it a 'title' page and move it to a new line along with its followers */
 		otherOnclick(e, otherPage, idx) {
 			if (e.shiftKey){
@@ -656,7 +660,7 @@
 		                    var otherPage = oldArr[idx-i]
 			                if(otherPage.supplementTitle) {
 			                    var supplementPages = otherPage.supplementPages;
-			                    // cut the pages from the old supplement and add them to the new one 
+			                    // cut the pages from the old supplement and add them to the new one
 			                    var newSupplementPages = supplementPages.splice(i - 1, supplementPages.length - i + 1);
                                 // page is of index 0 among newSupplementPages
 			                    page.supplementPages = newSupplementPages.splice(1);
@@ -685,7 +689,7 @@
 		        	origPage.supplementTitle = false;
 		        	page.supplement = false;
 		        	origPage.supplement = false;
-		        	
+
 		        	// remove the supplement status from all children
 		            for (var i = idx+1; i < oldArr.length; i++) {
 		                if (oldArr[i].supplementTitle) {
@@ -730,18 +734,18 @@
 			    for(var i=1;i<newIssuePages.length;i++) {
 					// set the following pages' parent to this new issue page's id
 			        newIssuePages[i].parent = origPage.pos;
-			        
+
 			        // The following statement is actually not needed, since that wouldn't change anything, the value of `pos` is nothing but the page's order among all pages. - Zehong
 			        newIssuePages[i].pos = origPage.pos+i;
-			        
+
 			        newIssuePages[i].supplementPages = [];
-			        
+
 			        // add this page to the new issue page's array 'otherPages'
 			    	origPage.otherPages.push(newIssuePages[i]);
-			    	
+
 			    	if(newIssuePages[i].supplementTitle) {
 			    	    supplCount++;
-			    	} 
+			    	}
 			    	if(supplCount > 0) {
 			    	    newIssuePages[i].supplementNo = supplCount;
 			    	}
@@ -751,14 +755,14 @@
 		    }
 		    this.update();
 		},
-		
+
 		/* triggered when the text input `Datum` gets an input */
 		changeDate(e, page) {
 		    this.dataDirty = true;
 		    page.dateStr = e.target.value;
 		    page.dateValid = this.validateDate(e.target.value);
 		},
-		
+
 		/* triggered when the selector `Ausgabe` gets an input */
 		changeIssueType(e, page) {
 		    this.dataDirty = true;
@@ -766,25 +770,25 @@
 			page.primaryIssue = e.target.selectedOptions[0].getAttribute("data-translation-id").toLowerCase().includes("ausgabe");
 			console.log("Issue: " + page.issueType + ", primary: " + page.primaryIssue);
 		},
-		
+
 		/* triggered when the text input `Nr.` gets an input */
 		changeNumber(e, page) {
 		    this.dataDirty = true;
 		    page.number = e.target.value;
 		},
-		
+
 		/* triggered when the text input `Präfix` gets an input */
 		changePrefix(e, page) {
 		    this.dataDirty = true;
 		    page.prefix = e.target.value;
 		},
-		
+
 		/* triggered when the text input `Suffix` gets an input */
 		changeSuffix(e, page) {
 		    this.dataDirty = true;
 		    page.suffix = e.target.value;
 		},
-		
+
 		/* triggered when one of the three buttons `Auf ... Ausgabe(n) anwenden` is clicked */
 		doGenerateDates(e, page, skip) {
 			console.log("skip:", skip)
@@ -826,7 +830,7 @@
 	        }
 	        this.update();
 	    },
-	
+
 		/* used by the function doGenerateDates to get the next date */
 	    getNextDate(currentDate) {
 	        var newDate = null;
@@ -878,12 +882,12 @@
 	                    break;
 	                default:
 	                    break;
-	
+
 	            }
 	            newDate.addDays(1);
 	        }
 	    },
-	    
+
 	    /* triggered when the text input `Datum` gets a new input, used to validate the new date */
 	    validateDate(date) {
 			if(date.length == 0) {
@@ -940,7 +944,7 @@
 	        }
 	        return false;
 	    },
-	    
+
 	    /* used by the function validateDate to get the validity of the input date */
 	    checkDate(day, month, year) {
 	        if(day < 1 || month < 1 || month > 12) {
