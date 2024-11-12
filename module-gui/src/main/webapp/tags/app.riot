@@ -39,8 +39,8 @@
 					</div>
 				</div>
 				<!-- Formular für Wochentage -->
-				<div if={!imagesLoaded && props.pagenumCorrect}>
-					<div class="text-center">
+				<div if={!imagesLoaded && props.pagenumCorrect} class="row">
+					<div class="col-12 mx-auto">
 						<h3>{msgs['plugin_newspaperRecognizer_loadingImages']}...</h3>
 						<progress max={data.length} value={loadedImages}></progress>
 					</div>
@@ -58,12 +58,12 @@
 						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>{msgs['plugin_newspaperRecognizer_sunday']}</label>
 						<!-- // Wochentage als Checkboxen -->
 
-						<a class="btn btn-primary" onclick={delete_all_issues} style="position: relative;">
+						<a class="btn btn-hot" onclick={delete_all_issues} style="position: relative;">
 							<span if={!deletingIssues}>{msgs['plugin_newspaperRecognizer_removeAllIssues']}</span>
 							<img if={deletingIssues} alt="Loading..." style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif" />
 						</a>
 
-						<div class="pull-right">
+						<div class="ms-auto">
 							<!-- // verlassen-Button -->
 							<a class="btn btn-blank" onclick={exit}>{msgs['pluginLeave']}</a>
 							<!-- Speicher-Button -->
@@ -89,7 +89,7 @@
 
 						<!-- Auflistung aller Ausgaben -->
 						<my_row each={page in data} if={page.issue}>
-							<div class="row thumbnail-row">
+							<div class="row thumbnail-row border-bottom">
 								<div class="col-12 col-sm-4 row">
 
 									<div class="col-12 col-xs-6 thumbnail-image" style="position: relative;">
@@ -167,20 +167,20 @@
 									</div>
 
 									<!-- Button für Datumsgenerierung -->
-									<div class="col-xs-6" style="margin-top: 5px;">
-										<a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-sm btn-primary">
+									<div class="col-xs-6">
+										<a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-blank">
 											{msgs['plugin_newspaperRecognizer_applyEveryIssue']}
 										</a>
 									</div>
 
-									<div class="col-xs-6" style="margin: 5px 0;">
-										<a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-sm btn-primary ">
+									<div class="col-xs-6 px-1">
+										<a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-blank ">
 											{msgs['plugin_newspaperRecognizer_applyEverySecondIssue']}
 										</a>
 									</div>
 
 									<div class="col-xs-6" style="">
-										<a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-sm btn-primary">
+										<a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-blank">
 											{msgs['plugin_newspaperRecognizer_applyEveryThirdIssue']}
 										</a>
 									</div>
@@ -219,7 +219,6 @@
 								</div>
 
 								</div>
-								<hr style="border-top:1px #bbb solid">
 							</my_row>
 						</div>
 					</div>
@@ -235,12 +234,12 @@
 							<span id="ajaxloaderbottom" style="margin-right: 15px; display:none;">
 								<img src="template/img/goobi/ajaxloader2.gif" />
 							</span>
-							<!-- Speicher-Button -->
-							<a class="btn btn-primary" style="margin: 20px 0;" disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
-							<!-- // Speicher-Button -->
-							<a if={props.showWriteMetsButton} class="btn btn-primary" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
 							<!-- // verlassen-Button -->
-							<a class="btn btn-primary" onclick={exit}>{msgs['pluginLeave']}</a>
+							<a class="btn btn-blank" onclick={exit}>{msgs['pluginLeave']}</a>
+							<!-- Speicher-Button -->
+							<a class="btn btn-blank" style="margin: 20px 0;" disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
+							<!-- // Speicher-Button -->
+							<a if={props.showWriteMetsButton} class="btn btn-success" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
 						</div>
 					</div>
 				</div>
