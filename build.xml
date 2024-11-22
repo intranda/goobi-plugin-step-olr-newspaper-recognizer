@@ -3,7 +3,7 @@
 		<exec executable="mvn">
 			<arg value="package"/>
 		</exec>
-		<copy file="module-gui/target/plugin_intranda_step_olr-newspaper-recognizer-GUI.jar" todir="/opt/digiverso/goobi/plugins/GUI/"/>
-		<copy file="module-main/target/plugin_intranda_step_olr-newspaper-recognizer.jar" todir="/opt/digiverso/goobi/plugins/step/"/>
+		<copy file="module-gui/target/plugin-step-olr-newspaper-recognizer-gui.jar" todir="/opt/digiverso/goobi/plugins/GUI/"/>
+		<copy file="module-base/target/plugin-step-olr-newspaper-recognizer-base.jar" todir="/opt/digiverso/goobi/plugins/step/"/>
 	</target>
 </project>
