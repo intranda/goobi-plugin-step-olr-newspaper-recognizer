@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.goobi.beans.Process;
 import org.goobi.beans.Step;
 import org.goobi.managedbeans.StepBean;
@@ -50,7 +51,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
-import spark.utils.StringUtils;
 import ugh.dl.ContentFile;
 import ugh.dl.DigitalDocument;
 import ugh.dl.DocStruct;
@@ -289,17 +289,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 if (page.isIssue()) {
                     currentIssue = page;
                     count++;
-                } else {
-                    if (currentIssue != null) {
-                        currentIssue.addPage(page);
-                    }
+                } else if (currentIssue != null) {
+                    currentIssue.addPage(page);
                 }
-                //                try {
-                //                    Image image = new Image(pr, imageDirName, page.getFilename(), order++, 400);
-                //                    page.setImage(image);
-                //                } catch (IOException | SwapException | DAOException e) {
-                //                    log.error(e);
-                //                }
 
                 Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
                 String thumbUrl = createImageUrl(image, 400, "jpeg", contextPath, getStep().getProcessId(), imageDirName);
@@ -310,9 +302,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             }
             log.info(String.format("Counted %d issues", count));
         }
-        
+
         this.pages.forEach(NewspaperPage::initializeProperties);
-        
+
         return gson.toJson(this.pages);
     }
 
@@ -402,24 +394,25 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     public static void main(String[] args) throws Exception {
 
         Gson gson = new Gson();
-//        Type nt = new TypeToken<Collection<NewspaperPage>>() {
-//        }.getType();
-//        Collection<NewspaperPage> pages = gson.fromJson(new JsonReader(new FileReader(
-//                "/Users/steffen/git/goobi-plugin-step-olr-newspaper-recognizer/goobi-plugin-step-olr-newspaper-recognizer/doc/demmta_1911.json")),
-//                nt);
-//
-//        for (NewspaperPage page : pages) {
-//            page.setIssue(page.guessIssue());
-//        }
-        
+        //        Type nt = new TypeToken<Collection<NewspaperPage>>() {
+        //        }.getType();
+        //        Collection<NewspaperPage> pages = gson.fromJson(new JsonReader(new FileReader(
+        //                "/Users/steffen/git/goobi-plugin-step-olr-newspaper-recognizer/goobi-plugin-step-olr-newspaper-recognizer/doc/demmta_1911.json")),
+        //                nt);
+        //
+        //        for (NewspaperPage page : pages) {
+        //            page.setIssue(page.guessIssue());
+        //        }
+
         NewspaperPage page = new NewspaperPage("test.jpg", DateTimeFormat.forPattern("dd.MM.yyyy"));
         String json = gson.toJson(page);
         System.out.println(json);
         NewspaperPage copy = gson.fromJson(json, NewspaperPage.class);
         String json2 = gson.toJson(copy);
         System.out.println(json2);
-        
-        String page3String = "{\"filename\":\"test.jpg\",\"result\":0.0,\"issue\":false,\"supplement\":false,\"supplementTitle\":false,\"showOtherImages\":true,\"supplementPages\":[],\"dateValid\":false}";
+
+        String page3String =
+                "{\"filename\":\"test.jpg\",\"result\":0.0,\"issue\":false,\"supplement\":false,\"supplementTitle\":false,\"showOtherImages\":true,\"supplementPages\":[],\"dateValid\":false}";
         NewspaperPage copy3 = gson.fromJson(page3String, NewspaperPage.class);
         copy3.initializeProperties();
         System.out.println("copy3 otherpages = " + copy3.getOtherPages());
@@ -475,7 +468,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 return "";
             }
             page.setImageName(newspaperPage.getFilename());
-            
+
             // process bound book children
             processBoundBookChildren(bbChildren, page, i, newspaperPage);
 
@@ -578,7 +571,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                         supplementType = dsType;
                         break;
                     default:
-                        // no need                
+                        // no need
                 }
                 dsTypesNames.remove(typeName);
             }
@@ -594,7 +587,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         titleType = null;
         logPageNoType = null;
         physPageNoType = null;
-        
+
         MetadataType alternative = null; // used to hold the MetadataType named after DATE_ISSUED_TYPE_NAME_ALTERNATIVE, just in case
         boolean noDateFound = true; // true if there is no candidate for dateIssuedType found yet
 
@@ -634,8 +627,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 }
                 mdTypesNames.remove(typeName);
             }
-            
-            if (noDateFound && typeName.equals(DATE_ISSUED_TYPE_NAME_ALTERNATIVE)) {
+
+            if (noDateFound && DATE_ISSUED_TYPE_NAME_ALTERNATIVE.equals(typeName)) {
                 alternative = mdType;
                 noDateFound = false;
             }
@@ -765,7 +758,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         int num;
         RomanNumeral roman = null;
         if (isArabic) {
-            num = Integer.valueOf(value);
+            num = Integer.parseInt(value);
             roman = new RomanNumeral(num);
         } else {
             // create a Roman Numeral
