@@ -41,6 +41,7 @@
 .newspaper-thumbnails {
 	display: flex;
 	flex-wrap: wrap;
+	justify-content: flex-end;
 }
 
 .newspaper-thumbnail {
@@ -55,7 +56,7 @@
 }
 
 .newspaper-thumbnail__image a {
-	
+
 }
 
 .btn-icon-right {

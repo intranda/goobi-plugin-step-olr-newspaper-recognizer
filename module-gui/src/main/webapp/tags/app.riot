@@ -1,5 +1,5 @@
 <app>
-	<div if={!msgsLoaded} class="box box--neutral">
+	<div if={!msgsLoaded} class="box box--neutral section">
 		<div class="box__content">
 			<div class="box__title">
 				<h2>
@@ -7,7 +7,7 @@
 					{props.title}
 				</h2>
 			</div>
-			<div class="box__body" style="background-color:#eee;" >
+			<div class="section-body-padded" style="background-color:#eee;" >
 				<div class="text-center">
 					<img src="template/img/goobi/ajaxloader2.gif" style="max-height: 140px;"></img>
 				</div>
@@ -15,7 +15,7 @@
 		</div>
 	</div>
 
-	<div if={!!msgsLoaded} class="box box-color lightgrey box-bordered">
+	<div if={!!msgsLoaded} class="box box--neutral section">
 		<div class="box__content">
 			<div class="box__title">
 				<h2>
@@ -23,74 +23,112 @@
 					{props.title}
 				</h2>
 				<div class="actions d-flex">
-					<a id="id10" onclick={reload} class="btn d-flex align-items-center btn--title-action">
+					<a
+						id="id10"
+						onclick={reload}
+						class="btn d-flex align-items-center btn--title-action"
+						title={msgs['reload']}
+						data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="fa fa-refresh"  />
+					</a>
+					<!-- // verlassen-Button -->
+					<a
+						class="btn d-flex align-items-center btn--title-action"
+						onclick={exit}
+						title={msgs['pluginLeave']}
+						data-bs-toggle="tooltip">
+						<span aria-hidden="true" class="fa fa-times" />
+					</a>
+					<!-- Speicher-Button -->
+					<a
+						class="btn d-flex align-items-center btn--title-action "
+						disabled={!dataDirty}
+						onclick={save_no_mets}
+						title={msgs['save']}
+						data-bs-toggle="tooltip">
+						<span aria-hidden="true" class="fa fa-save" />
+					</a>
+					<!-- // Speicher-Button -->
+					<a
+						if={props.showWriteMetsButton}
+						class="btn d-flex align-items-center btn--title-action"
+						onclick={save}
+						title={msgs['plugin_newspaperRecognizer_writeMets']}
+						data-bs-toggle="tooltip">
+						<span aria-hidden="true" class="fa fa-check" />
 					</a>
 				</div>
 			</div>
 
-			<div class="box__body">
-				<div if={!props.pagenumCorrect} class="row">
-					<div class="col-12">
+			<div>
+				<div if={!props.pagenumCorrect}>
+					<div>
 						<div class="alert alert-danger">{msgs['plugin_newspaperRecognizer_pagenumWarning']}</div>
-
+					</div>
+					<div class="section-footer">
 						<a class="btn btn-hot " onclick={restartAnalysis}>{msgs['plugin_newspaperRecognizer_recompute']}</a>
 						<a class="btn btn-hot" onclick={deleteManualResults}>{msgs['plugin_newspaperRecognizer_deleteManualResults']}</a>
 					</div>
 				</div>
 				<!-- Formular für Wochentage -->
 				<div if={!imagesLoaded && props.pagenumCorrect} class="row">
-					<div class="col-12 mx-auto">
+					<div class="section-body-padded">
 						<h3>{msgs['plugin_newspaperRecognizer_loadingImages']}...</h3>
 						<progress max={data.length} value={loadedImages}></progress>
 					</div>
 				</div>
 				<template if={imagesLoaded && props.pagenumCorrect}>
-				<div class="row">
-					<div class="col-12">
+					<div class="section-footer">
 						<!-- Wochentage als Checkboxen -->
-						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={monday} onclick={() => this.toggleDay('monday')}></input>{msgs['plugin_newspaperRecognizer_monday']}</label>
-						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>{msgs['plugin_newspaperRecognizer_tuesday']}</label>
-						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>{msgs['plugin_newspaperRecognizer_wednesday']}</label>
-						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>{msgs['plugin_newspaperRecognizer_thursday']}</label>
-						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={friday} onclick={() => this.toggleDay('friday')}></input>{msgs['plugin_newspaperRecognizer_friday']}</label>
-						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>{msgs['plugin_newspaperRecognizer_saturday']}</label>
-						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>{msgs['plugin_newspaperRecognizer_sunday']}</label>
+						<label class="check-week btn{monday ? ' active' : ''}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={monday} onclick={() => this.toggleDay('monday')}></input>
+							{msgs['plugin_newspaperRecognizer_monday']}
+						</label>
+						<label class="check-week btn{tuesday ? ' active' : ''}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>
+							{msgs['plugin_newspaperRecognizer_tuesday']}
+						</label>
+						<label class="check-week btn{wednesday ? ' active' : ''}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>
+							{msgs['plugin_newspaperRecognizer_wednesday']}
+						</label>
+						<label class="check-week btn{thursday ? ' active' : ''}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>
+							{msgs['plugin_newspaperRecognizer_thursday']}
+						</label>
+						<label class="check-week btn{friday ? ' active' : ''}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={friday} onclick={() => this.toggleDay('friday')}></input>
+							{msgs['plugin_newspaperRecognizer_friday']}
+						</label>
+						<label class="check-week btn{saturday ? ' active' : ''}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>
+							{msgs['plugin_newspaperRecognizer_saturday']}
+						</label>
+						<label class="check-week btn{sunday ? ' active' : ''}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>
+							{msgs['plugin_newspaperRecognizer_sunday']}
+						</label>
 						<!-- // Wochentage als Checkboxen -->
 
 						<a class="btn btn-hot" onclick={delete_all_issues} style="position: relative;">
 							<span if={!deletingIssues}>{msgs['plugin_newspaperRecognizer_removeAllIssues']}</span>
 							<img if={deletingIssues} alt="Loading..." style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif" />
 						</a>
-
-						<div class="ms-auto">
-							<!-- // verlassen-Button -->
-							<a class="btn btn-blank" onclick={exit}>{msgs['pluginLeave']}</a>
-							<!-- Speicher-Button -->
-							<a class="btn btn-blank " disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
-							<!-- // Speicher-Button -->
-							<a if={props.showWriteMetsButton} class="btn btn-success" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
-						</div>
 					</div>
-				</div>
-				<div class="row">
-					<div class="col-12">
-						<label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={biWeekly} onclick={toggleBiWeekly}></input>{msgs['plugin_newspaperRecognizer_biWeekly']}</label>
+					<div class="section-footer">
+						<label class="check-week btn{biWeekly ? ' active' : ''}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={biWeekly} onclick={toggleBiWeekly}></input>
+							{msgs['plugin_newspaperRecognizer_biWeekly']}
+						</label>
 						<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
 					</div>
-				</div>
-				<hr />
-				<!-- // Formular für Wochentage -->
-
-
-				<!-- Bereich für Ausgaben -->
-				<div layout="block" class="col-12">
-					<div class="row">
-
+					<!-- // Formular für Wochentage -->
+					<!-- Bereich für Ausgaben -->
+					<div class="section-body-padded border-bottom border-top">
 						<!-- Auflistung aller Ausgaben -->
 						<my_row each={page in data} if={page.issue}>
-							<div class="row thumbnail-row border-bottom">
-								<div class="col-12 col-sm-4 row">
+							<div class="row thumbnail-row">
+								<div class="col-12 col-sm-4 row mb-auto pb-2">
 
 									<div class="col-12 col-xs-6 thumbnail-image" style="position: relative;">
 
@@ -130,69 +168,68 @@
 										<!-- // Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
 
 									</div>
-
-									<!-- Datum der Ausgabe -->
-									<div class="col-12 col-xs-5">
-										<div class="form-group {page.dateValid ? '' : 'has-error'}">
-											<input type="text" value={page.dateStr} onkeyup={e => changeDate(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_date']}" class="form-control"></input>
-											<span if={!page.dateValid} class="help-block">{msgs['plugin_newspaperRecognizer_wrongDateFormat']}</span>
-										</div>
-									</div>
-
-									<!-- Nummer der Ausgabe -->
-									<div class="col-xs-5 ">
-										<div class="form-group">
-											<div class="input-group">
-												<input type="text" value={page.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{msgs['prefix']}" class="form-control" style="width:33%"></input>
-												<input type="text" value={page.number} onkeyup={e => changeNumber(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_nro']}" class="form-control" style="width:34%"></input>
-												<input type="text" value={page.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{msgs['suffix']}" class="form-control" style="width:33%"></input>
+									<div class="col-12 col-xs-6 row flex-column gap-2">
+										<!-- Datum der Ausgabe -->
+										<div class="col-12 col-xs-5">
+											<div class="form-group {page.dateValid ? '' : 'has-error'}">
+												<input type="text" value={page.dateStr} onkeyup={e => changeDate(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_date']}" class="form-control"></input>
+												<span if={!page.dateValid} class="help-block">{msgs['plugin_newspaperRecognizer_wrongDateFormat']}</span>
 											</div>
 										</div>
-									</div>
 
-									<!-- "Typ" der Ausgabe -->
-									<div class="col-xs-5">
-										<div class="form-group">
-											<select class="form-control" onchange={e => changeIssueType(e, page)}>
-												<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}" data-translation-id="{type}">{msgs[type]}</option>
-											</select>
+										<!-- Nummer der Ausgabe -->
+										<div class="col-xs-5 ">
+											<div class="form-group">
+												<div class="input-group">
+													<input type="text" value={page.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{msgs['prefix']}" class="form-control" style="width:33%"></input>
+													<input type="text" value={page.number} onkeyup={e => changeNumber(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_nro']}" class="form-control" style="width:34%"></input>
+													<input type="text" value={page.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{msgs['suffix']}" class="form-control" style="width:33%"></input>
+												</div>
+											</div>
+										</div>
+
+										<!-- "Typ" der Ausgabe -->
+										<div class="col-xs-5">
+											<div class="form-group">
+												<select class="form-control" onchange={e => changeIssueType(e, page)}>
+													<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}" data-translation-id="{type}">{msgs[type]}</option>
+												</select>
+											</div>
+										</div>
+
+										<!-- Details über zugehörige Seiten -->
+										<div class="col-xs-6">
+
+											{msgs['otherPages']}: {page.otherPages.length}
+
+										</div>
+
+										<!-- Button für Datumsgenerierung -->
+										<div class="col-xs-6">
+											<a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-blank">
+												{msgs['plugin_newspaperRecognizer_applyEveryIssue']}
+											</a>
+										</div>
+
+										<div class="col-xs-6">
+											<a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-blank ">
+												{msgs['plugin_newspaperRecognizer_applyEverySecondIssue']}
+											</a>
+										</div>
+
+										<div class="col-xs-6" style="">
+											<a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-blank">
+												{msgs['plugin_newspaperRecognizer_applyEveryThirdIssue']}
+											</a>
 										</div>
 									</div>
-
-									<!-- Details über zugehörige Seiten -->
-									<div class="col-xs-6">
-
-										{msgs['otherPages']}: {page.otherPages.length}
-
-									</div>
-
-									<!-- Button für Datumsgenerierung -->
-									<div class="col-xs-6">
-										<a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-blank">
-											{msgs['plugin_newspaperRecognizer_applyEveryIssue']}
-										</a>
-									</div>
-
-									<div class="col-xs-6 px-1">
-										<a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-blank ">
-											{msgs['plugin_newspaperRecognizer_applyEverySecondIssue']}
-										</a>
-									</div>
-
-									<div class="col-xs-6" style="">
-										<a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-blank">
-											{msgs['plugin_newspaperRecognizer_applyEveryThirdIssue']}
-										</a>
-									</div>
-
 								</div>
 
 								<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
-								<div class="other-pages">
+								<div class="other-pages col-12 col-sm-8">
 									<!-- If control over this component is needed, uncomment the following and three other marked lines in the functions 'onBeforeMount', 'noIssue' and 'otherOnClick'.
 									<div class="col-sm-8" if={page.showOtherImages}>
 									-->
-									<div class="col-sm-8" >
 										<div class="newspaper-thumbnails">
 											<!-- THUMBNAIL -->
 											<div each={(otherPage, idx) in page.otherPages} class="newspaper-thumbnail">
@@ -215,33 +252,26 @@
 											</div>
 
 										</div>
-									</div>
 								</div>
 
-								</div>
-							</my_row>
-						</div>
+							</div>
+						</my_row>
 					</div>
 				</template>
 			</div>
 
 			<template if={imagesLoaded}>
-				<hr />
 
-				<div class="row">
-					<div class="col-12">
-						<div class="pull-right">
-							<span id="ajaxloaderbottom" style="margin-right: 15px; display:none;">
-								<img src="template/img/goobi/ajaxloader2.gif" />
-							</span>
-							<!-- // verlassen-Button -->
-							<a class="btn btn-blank" onclick={exit}>{msgs['pluginLeave']}</a>
-							<!-- Speicher-Button -->
-							<a class="btn btn-blank" style="margin: 20px 0;" disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
-							<!-- // Speicher-Button -->
-							<a if={props.showWriteMetsButton} class="btn btn-success" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
-						</div>
-					</div>
+				<div class="section-footer">
+					<span id="ajaxloaderbottom" style="margin-right: 15px; display:none;">
+						<img src="template/img/goobi/ajaxloader2.gif" />
+					</span>
+					<!-- // verlassen-Button -->
+					<a class="btn btn-blank" onclick={exit}>{msgs['pluginLeave']}</a>
+					<!-- Speicher-Button -->
+					<a class="btn btn-blank" disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
+					<!-- // Speicher-Button -->
+					<a if={props.showWriteMetsButton} class="btn btn-success" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
 				</div>
 			</template>
 		</div>
