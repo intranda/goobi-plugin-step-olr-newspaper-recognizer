@@ -399,7 +399,7 @@
 
 	    /* used at mounting by the function onMounted */
 	    addAjaxEvent() {
-	    	jsf.ajax.addOnEvent((data) => {
+	    	faces.ajax.addOnEvent((data) => {
 	            var ajaxstatus = data.status; // Can be "begin", "complete" and "success"
 	            var ajaxloader = this.$("#ajaxloaderbottom");
 
