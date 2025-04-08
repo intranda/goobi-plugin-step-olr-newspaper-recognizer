@@ -24,11 +24,11 @@
 		<useFakePagination>false</useFakePagination>
 	</pagination>
 
-	<issue type="NewspaperIssue" label="Ausgabe" title="Ausgabe vom {date:dd.mm.yyyy}" />
-	<issue type="NewspaperIssue" label="Morgenausgabe" title="Morgenausgabe vom {date:dd.mm.yyyy}" />
-	<issue type="NewspaperIssue" label="Abendausgabe" title="Abendausgabe vom {date:dd.mm.yyyy}" />
+	<issue type="NewspaperIssue" label="Ausgabe" title="Ausgabe vom {date:dd.MM.yyyy}" />
+	<issue type="NewspaperIssue" label="Morgenausgabe" title="Morgenausgabe vom {date:dd.MM.yyyy}" />
+	<issue type="NewspaperIssue" label="Abendausgabe" title="Abendausgabe vom {date:dd.MM.yyyy}" />
 
-	<supplement type="NewspaperSupplement" label="Allgemeine Beilage" title="Beilage zur Ausgabe vom {date::dd.mm.yyyy}" />
-	<supplement type="NewspaperSupplement" label="Kultur" title="Kulturteil zur Ausgabe vom {date::dd.mm.yyyy}" />
-	<supplement type="NewspaperSupplement" label="Sport" title="Sportteil zur Ausgabe vom {date::dd.mm.yyyy}" />
+	<supplement type="NewspaperSupplement" label="Allgemeine Beilage" title="Beilage zur Ausgabe vom {date::dd.MM.yyyy}" />
+	<supplement type="NewspaperSupplement" label="Kultur" title="Kulturteil zur Ausgabe vom {date::dd.MM.yyyy}" />
+	<supplement type="NewspaperSupplement" label="Sport" title="Sportteil zur Ausgabe vom {date::dd.MM.yyyy}" />
 </config_plugin>
