@@ -9,9 +9,7 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -110,7 +108,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private MetadataType numberType;
     private MetadataType numberSortType;
     private MetadataType dateIssuedType;
-    private MetadataType titleType;
+    private MetadataType issueTitleType;
+    private MetadataType supplementTitleType;
     private MetadataType logPageNoType;
     private MetadataType physPageNoType;
 
@@ -121,7 +120,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private static final String NUMBER_SORT_TYPE_NAME = "CurrentNoSorting";
     private static final String DATE_ISSUED_TYPE_NAME = "DateIssued";
     private static final String DATE_ISSUED_TYPE_NAME_ALTERNATIVE = "PublicationYear";
-    private static final String TITLE_TYPE_NAME = "TitleDocMain";
+    private static final String ISSUE_TITLE_TYPE_NAME = "TitleDocMain";
+    private static final String SUPPLEMENT_TITLE_TYPE_NAME = "MainTitle";
     private static final String LOG_PAGE_NO_TYPE_NAME = "logicalPageNumber";
     private static final String PHYS_PAGE_NO_TYPE_NAME = "physPageNumber";
 
@@ -617,7 +617,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         // initialize all MetadataType objects
         List<MetadataType> mdTypes = prefs.getAllMetadataTypes();
         HashSet<String> mdTypesNames = new HashSet<>(Arrays.asList(PART_NUMBER_TYPE_NAME, DATE_ISSUED_TYPE_NAME, NUMBER_TYPE_NAME,
-                NUMBER_SORT_TYPE_NAME, TITLE_TYPE_NAME, LOG_PAGE_NO_TYPE_NAME, PHYS_PAGE_NO_TYPE_NAME));
+                NUMBER_SORT_TYPE_NAME, ISSUE_TITLE_TYPE_NAME, SUPPLEMENT_TITLE_TYPE_NAME, LOG_PAGE_NO_TYPE_NAME, PHYS_PAGE_NO_TYPE_NAME));
         initializeMetadataTypes(mdTypes, mdTypesNames);
     }
 
@@ -652,7 +652,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         numberType = null;
         numberSortType = null;
         dateIssuedType = null;
-        titleType = null;
+        issueTitleType = null;
+        supplementTitleType = null;
         logPageNoType = null;
         physPageNoType = null;
 
@@ -681,8 +682,11 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                         dateIssuedType = mdType;
                         noDateFound = false;
                         break;
-                    case TITLE_TYPE_NAME:
-                        titleType = mdType;
+                    case ISSUE_TITLE_TYPE_NAME:
+                        issueTitleType = mdType;
+                        break;
+                    case SUPPLEMENT_TITLE_TYPE_NAME:
+                        supplementTitleType = mdType;
                         break;
                     case LOG_PAGE_NO_TYPE_NAME:
                         logPageNoType = mdType;
@@ -781,7 +785,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         newspaperPage.setDateFormatter(this.dateFormat);
         createMetadata(dateIssuedType, w3cdtf.format(newspaperPage.getDate()), result);
         if (writePageTitle) {
-            createMetadata(titleType, getTitleFromPage(newspaperPage, newspaperPage.getDate(), NewspaperPageType.ISSUE), result);
+            createMetadata(issueTitleType, getTitleFromPage(newspaperPage, newspaperPage.getDate(), NewspaperPageType.ISSUE), result);
         }
 
         return result;
@@ -792,7 +796,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         var result = dd.createDocStruct(rulesetTypeMapping.get(supplementType.rulesetType()));
 
         if (writePageTitle) {
-            createMetadata(titleType, getTitleFromPage(newspaperPage, parentIssue.getDate(), NewspaperPageType.SUPPLEMENT), result);
+            createMetadata(supplementTitleType, getTitleFromPage(newspaperPage, parentIssue.getDate(), NewspaperPageType.SUPPLEMENT), result);
         }
 
         return result;
