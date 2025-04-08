@@ -10,16 +10,17 @@ import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import de.intranda.goobi.plugins.newspaper.NewspaperIssueType;
 import de.intranda.goobi.plugins.newspaper.NewspaperPage;
@@ -34,8 +35,6 @@ import org.goobi.production.enums.PluginGuiType;
 import org.goobi.production.plugin.interfaces.AbstractStepPlugin;
 import org.goobi.production.plugin.interfaces.IPlugin;
 import org.goobi.production.plugin.interfaces.IStepPlugin;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -80,7 +79,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private static final String LOGICAL_PHYSICAL_TYPE = "logical_physical";
     private static final String ISSUE_RESULT_LOCATION = "/taskmanager/issues_result.json";
     private static final String ISSUE_RESULT_MANUAL_LOCATION = "/taskmanager/issues_result_manual.json";
-    private static final DateTimeFormatter w3cdtf = DateTimeFormat.forPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter w3cdtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    private static final Pattern TITLE_GENERATOR_DATE_PATTERN = Pattern.compile("\\{date:(.*)\\}");
 
     private int tocDepth = 0;
 
@@ -88,7 +89,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private boolean showWriteMetsButton = true;
     private boolean showDeletePageButton = false;
     private String dateFormatDelimiter = ".";
-    private DateTimeFormatter dateFormat = DateTimeFormat.forPattern("dd.MM.yyyy");
+    private transient DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private boolean writePageTitle = true;
 
     private String fileNameToDelete = null;
@@ -148,7 +149,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
         showDeletePageButton = config.getBoolean("showDeletePageButton", false);
         dateFormatDelimiter = config.getString("dateFormatDelimiter", ".");
-        dateFormat = DateTimeFormat.forPattern("dd" + dateFormatDelimiter + "MM" + dateFormatDelimiter + "yyyy");
+        dateFormat = DateTimeFormatter.ofPattern("dd" + dateFormatDelimiter + "MM" + dateFormatDelimiter + "yyyy");
         writePageTitle = config.getBoolean("writePageTitle", true);
 
         HierarchicalConfiguration paginationConfig = config.configurationAt("pagination");
@@ -781,7 +782,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         createMetadata(numberSortType, newspaperPage.getNumber(), currentIssue);
         // Sometimes the NewspaperPage ctr is not called, therefore the formatter is not initialized
         newspaperPage.setDateFormatter(this.dateFormat);
-        createMetadata(dateIssuedType, w3cdtf.print(newspaperPage.getDate()), currentIssue);
+        createMetadata(dateIssuedType, w3cdtf.format(newspaperPage.getDate()), currentIssue);
         if (writePageTitle) {
             createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);
         }
@@ -850,10 +851,23 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
     }
 
-    private static String getTitleFromPage(NewspaperPage page) {
-        Date date = page.getDate().toLocalDate().toDate();
-        DateFormat df = DateFormat.getDateInstance(DateFormat.FULL, Helper.getSessionLocale());
-        String translateIssueType = Helper.getTranslation(page.getIssueType());
-        return Helper.getTranslation("plugin_newspaperRecognizer_issue-type_from_date", translateIssueType, df.format(date));
+    private String getTitleFromPage(NewspaperPage page) {
+        LocalDate date = page.getDate();
+        var issueType = getIssueTypeForPage(page);
+        var title = issueType.titlePattern();
+        var matcher = TITLE_GENERATOR_DATE_PATTERN.matcher(title);
+        if (matcher.find()) {
+            var datePattern = matcher.group(1);
+            var dateFormat = DateTimeFormatter.ofPattern(datePattern);
+            title = matcher.replaceAll(dateFormat.format(date));
+        }
+        return title;
+    }
+
+    private NewspaperIssueType getIssueTypeForPage(NewspaperPage page) {
+        return this.issueTypes.stream()
+                .filter(t -> t.label().equals(page.getIssueType()))
+                .findFirst()
+                .orElseThrow();
     }
 }

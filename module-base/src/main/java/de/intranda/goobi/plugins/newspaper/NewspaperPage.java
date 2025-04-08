@@ -1,18 +1,17 @@
 package de.intranda.goobi.plugins.newspaper;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.joda.time.DateTime;
-import org.joda.time.LocalDateTime;
-import org.joda.time.format.DateTimeFormatter;
 
 import de.sub.goobi.metadaten.Image;
 import lombok.Data;
 
 @Data
 public class NewspaperPage {
-    private DateTimeFormatter dateFormatter;
+    private transient DateTimeFormatter dateFormatter;
 
     //from json
     private String filename;
@@ -32,6 +31,7 @@ public class NewspaperPage {
     private List<NewspaperPage> supplementPages = new ArrayList<>();
     private boolean dateValid;
     private String issueType;
+    private String supplementType;
 
     public NewspaperPage(String filename, DateTimeFormatter format) {
         super();
@@ -52,15 +52,15 @@ public class NewspaperPage {
         return result < level;
     }
 
-    public LocalDateTime getDate() {
+    public LocalDate getDate() {
         if (dateStr != null && !dateStr.isEmpty()) {
-            return dateFormatter.parseLocalDateTime(dateStr);
+            return LocalDate.parse(dateStr, dateFormatter);
         }
-        return new LocalDateTime();
+        return LocalDate.now();
     }
 
-    public void setDate(DateTime date) {
-        this.dateStr = date.toString(dateFormatter);
+    public void setDate(LocalDate date) {
+        this.dateStr = dateFormatter.format(date);
     }
 
     public void addPage(NewspaperPage page) {

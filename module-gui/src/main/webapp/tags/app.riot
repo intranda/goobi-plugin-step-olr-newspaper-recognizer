@@ -197,6 +197,24 @@
 											</div>
 										</div>
 
+										<!-- "Typ" der Beilage -->
+										<div each={(otherPage, idx) in page.otherPages}>
+                                            <div if={otherPage.supplementTitle} class="row">
+                                                <div class="col">
+                                                    <svg height="30" width="30" xmlns="http://www.w3.org/2000/svg">
+                                                        <circle r="15" cx="15" cy="15" fill="{suppl_colors[(otherPage.supplementNo-1)%5]}" />
+                                                    </svg>
+                                                </div>
+                                                <div class="col-11">
+                                                    <div class="form-group">
+                                                        <select class="form-control" onchange={e => changeSupplementType(e, otherPage)}>
+                                                            <option each={type in supplementTypes} selected="{type == otherPage.supplementType ? 'selected' : ''}">{type}</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
 										<!-- Details über zugehörige Seiten -->
 										<div class="col-xs-6">
 
@@ -304,6 +322,7 @@
 			this.issueTypes = props.issueTypes;
 			this.supplementTypes = props.supplementTypes;
 			this.defaultIssueType = this.issueTypes[0];
+			this.defaultSupplementType = this.supplementTypes[0];
 			this.restartAnalysisButton = props.restartAnalysisButton; // used only in the function "restartAnalysis"
 			this.deleteManualResultsButton = props.deleteManualResultsButton; // used only in the function "deleteManualResults"
 			this.save_button = props.saveButton; // used only in the function "save"
@@ -561,6 +580,7 @@
 			var saveData = [];
 	        for(var i=0;i<this.data.length;i++) {
 	            var page = this.data[i];
+	            console.log(page); // TODO: Remove
 	            saveData.push({
 	                issue: page.issue,
 	                supplementTitle: page.supplementTitle,
@@ -571,7 +591,8 @@
 	                suffix: page.suffix,
 	                filename: page.filename,
 	                dateValid: page.dateValid,
-	                issueType: page.issueType
+	                issueType: page.issueType,
+	                supplementType: page.supplementType
 	            });
 	        }
 	        return JSON.stringify(saveData);
@@ -691,6 +712,8 @@
 			        } else { // !origPage.supplement
 					    origPage.supplement = true;
 					    page.supplement = true;
+					    origPage.supplementType = this.defaultSupplementType;
+					    page.supplementType = this.defaultSupplementType;
 					    page.supplementPages = [];
 					    // all pages starting from the next one until an already assigned supplement page, would be added to this page's supplementPages
 					    for(var i=idx+1;i<oldArr.length;i++) {
@@ -708,6 +731,8 @@
 		        	origPage.supplementTitle = false;
 		        	page.supplement = false;
 		        	origPage.supplement = false;
+		        	page.supplementType = null;
+		        	origPage.supplementType = null;
 
 		        	// remove the supplement status from all children
 		            for (var i = idx+1; i < oldArr.length; i++) {
@@ -767,9 +792,9 @@
 			    	    newIssuePages[i].supplementNo = supplCount;
 			    	}
 			    }
-			    console.log(page)
-			    console.log(origPage)
 		    }
+            console.log(page);
+            console.log(origPage);
 		    this.update();
 		},
 
@@ -785,7 +810,24 @@
 		    this.dataDirty = true;
 		    page.issueType = e.target.selectedOptions[0].text;
 			console.log("Issue: " + page.issueType);
+			console.log(page);
 		},
+
+		/* triggered when the selector `Beilage` gets an input */
+		changeSupplementType(e, otherPage) {
+            this.dataDirty = true;
+            var page = null;
+            for(var i=0;i<this.data.length;i++) {
+                if (this.data[i].filename == otherPage.filename) {
+                    page = this.data[i];
+                    break;
+                }
+            }
+            page.supplementType = e.target.selectedOptions[0].text;
+            console.log("Supplement: " + page.supplementType);
+            console.log(page);
+            console.log(this.createSaveData());
+        },
 
 		/* triggered when the text input `Nr.` gets an input */
 		changeNumber(e, page) {
