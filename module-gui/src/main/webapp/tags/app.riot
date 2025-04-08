@@ -192,7 +192,7 @@
 										<div class="col-xs-5">
 											<div class="form-group">
 												<select class="form-control" onchange={e => changeIssueType(e, page)}>
-													<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}" data-translation-id="{type}">{msgs[type]}</option>
+													<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}">{type}</option>
 												</select>
 											</div>
 										</div>
@@ -292,15 +292,6 @@
 			this.monthly = false; // NOT IN USE
 			this.dataDirty = false; // will be set to true if any modification of the data is made or any new data is created, used as a flag for `Save`
 			this.propsDirty = false; // NOT IN USE
-			this.issueTypes = [
-				"plugin_newspaperRecognizer_issue-type_Ausgabe",
-				"plugin_newspaperRecognizer_issue-type_Morgenausgabe",
-				"plugin_newspaperRecognizer_issue-type_Abendausgabe",
-				"plugin_newspaperRecognizer_issue-type_Beilage",
-				"plugin_newspaperRecognizer_issue-type_Inhaltsverzeichnis",
-				"plugin_newspaperRecognizer_issue-type_Leading-page",
-				"plugin_newspaperRecognizer_issue-type_Einband-und-Profil"
-			]
 			this.lang = props.lang; // NOT IN USE
 			this.msgs = {}; // object used to maintain the messages that is to be rendered in the frontend
 			this.sent = {}; // NOT IN USE
@@ -310,6 +301,9 @@
 
 			// fields of props are defined in plugin_newspaperRecognizer.xhtml
 			this.data_el = props.data_el; // used in both save functions, and it has one key `value` which contains the data contents in the JSON format
+			this.issueTypes = props.issueTypes;
+			this.supplementTypes = props.supplementTypes;
+			this.defaultIssueType = this.issueTypes[0];
 			this.restartAnalysisButton = props.restartAnalysisButton; // used only in the function "restartAnalysis"
 			this.deleteManualResultsButton = props.deleteManualResultsButton; // used only in the function "deleteManualResults"
 			this.save_button = props.saveButton; // used only in the function "save"
@@ -336,11 +330,9 @@
 			        //page.showOtherImages = true; // <- 1. uncomment this to initialize the field 'showOtherImages' for all 'title' pages
 			        if(!page.issueType) {
 			            console.log("issueType not set")
-			            page.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
-						page.primaryIssue = true;
+			            page.issueType = this.defaultIssueType;
 			        } else {
 			            console.log("issueType:", page.issueType)
-						page.primaryIssue = page.issueType === "plugin_newspaperRecognizer_issue-type_Ausgabe";
 			        }
 			        var supplCount = 0;
 			        for(var k=0;k<page.otherPages.length;k++) {
@@ -524,8 +516,7 @@
 				if (page.issue) {
 					if(!page.issueType){
 						console.log("Issue type not set.");
-						page.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
-						page.primaryIssue = true;
+						page.issueType = this.defaultIssueType;
 					} else {
 						console.log("issueType = " + page.issueType);
 					}
@@ -617,7 +608,6 @@
 		    console.time("forSchleife");
 		    for(let i=1;i<this.data.length;i++) {
 		        this.data[i].issue=false;
-		        this.data[i].primaryIssue=false;
 		        this.data[0].otherPages.push(this.data[i]);
 		        this.data[i].parent=0;
 		        this.data[i].supplementTitle = false;
@@ -748,12 +738,10 @@
 			    	origPage.otherPages = [];
 			    }
 			    if(!page.issueType) {
-			    	page.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
-			    	origPage.issueType = "plugin_newspaperRecognizer_issue-type_Ausgabe";
+			    	page.issueType = this.defaultIssueType;
+			    	origPage.issueType = this.defaultIssueType;
 			    }
 
-				page.primaryIssue = page.issueType.toLowerCase().includes("ausgabe");
-				origPage.primaryIssue = origPage.issueType.toLowerCase().includes("ausgabe");
 			    page.supplementPages = [];
 			    // delete the elements from idx to the end from oldArr, which is the list of otherPages of this page's former parent page
 			    // the returned list of deleted pages will form a new issue
@@ -796,8 +784,7 @@
 		changeIssueType(e, page) {
 		    this.dataDirty = true;
 		    page.issueType = e.target.selectedOptions[0].text;
-			page.primaryIssue = e.target.selectedOptions[0].getAttribute("data-translation-id").toLowerCase().includes("ausgabe");
-			console.log("Issue: " + page.issueType + ", primary: " + page.primaryIssue);
+			console.log("Issue: " + page.issueType);
 		},
 
 		/* triggered when the text input `Nr.` gets an input */
@@ -843,7 +830,7 @@
 	        var issueCounter = 0;
 	        for (var i = startIdx + 1; i < this.data.length; i++) {
 	            var page = this.data[i];
-	            if (page.issue && page.primaryIssue) {
+	            if (page.issue) {
 	            	issueCounter++
 	                startNumber++;
 	            	if(issueCounter % skip == 0) {

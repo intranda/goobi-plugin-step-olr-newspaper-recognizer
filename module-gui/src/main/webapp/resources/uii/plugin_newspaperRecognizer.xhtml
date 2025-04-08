@@ -79,6 +79,8 @@
 			    showDeletePageButton: #{AktuelleSchritteForm.myPlugin.showDeletePageButton},
 			    dateFormatDelimiter: '#{AktuelleSchritteForm.myPlugin.dateFormatDelimiter}',
            		pagenumCorrect: #{AktuelleSchritteForm.myPlugin.pageNumberCountEqual()},
+		   		issueTypes: #{AktuelleSchritteForm.myPlugin.getIssueTypeLabels()},
+		   		supplementTypes: #{AktuelleSchritteForm.myPlugin.getSupplementTypeLabels()},
            };
            console.log(opts);
            mountNewspaperCorrection(opts);

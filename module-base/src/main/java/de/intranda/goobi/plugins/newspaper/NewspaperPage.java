@@ -1,4 +1,4 @@
-package de.intranda.goobi.plugins;
+package de.intranda.goobi.plugins.newspaper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +32,6 @@ public class NewspaperPage {
     private List<NewspaperPage> supplementPages = new ArrayList<>();
     private boolean dateValid;
     private String issueType;
-    private boolean primaryIssue;
 
     public NewspaperPage(String filename, DateTimeFormatter format) {
         super();

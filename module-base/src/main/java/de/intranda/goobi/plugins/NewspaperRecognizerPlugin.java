@@ -19,7 +19,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import de.intranda.goobi.plugins.newspaper.NewspaperIssueType;
+import de.intranda.goobi.plugins.newspaper.NewspaperPage;
+import de.intranda.goobi.plugins.newspaper.NewspaperSupplementType;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang3.StringUtils;
@@ -97,9 +101,13 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     // whether or not to use fake pagination, if true then use the form [N] where N is a number, otherwise use the bare N itself
     private boolean useFakePagination;
 
+    // TODO: Remove these old fixed types
     private DocStructType pageType;
     private DocStructType issueType;
     private DocStructType supplementType;
+
+    private List<NewspaperIssueType> issueTypes;
+    private List<NewspaperSupplementType> supplementTypes;
 
     private MetadataType partNumberType;
     private MetadataType numberType;
@@ -147,11 +155,54 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         createNewPagination = paginationConfig.getBoolean("createNewPagination", true);
         paginationType = paginationConfig.getString("type", "1");
         useFakePagination = paginationConfig.getBoolean("useFakePagination", false);
+
+        issueTypes = initializeIssueTypes(config.configurationsAt("issue"));
+        supplementTypes = initializeSupplementTypes(config.configurationsAt("supplement"));
+
+        validateConfig();
+
         try {
             readExportedFile();
         } catch (Exception e) {
             log.error(e);
         }
+    }
+
+    private void validateConfig() {
+        if (issueTypes.size() != issueTypes.stream()
+                .map(NewspaperIssueType::label)
+                .distinct()
+                .count()) {
+            // TODO: Localize
+            Helper.setFehlerMeldung("Issue type labels are not unique!");
+        }
+        if (supplementTypes.size() != supplementTypes.stream()
+                .map(NewspaperSupplementType::label)
+                .distinct()
+                .count()) {
+            // TODO: Localize
+            Helper.setFehlerMeldung("Supplement type labels are not unique!");
+        }
+    }
+
+    private List<NewspaperIssueType> initializeIssueTypes(List<HierarchicalConfiguration> config) {
+        return config.stream()
+                .map(c -> new NewspaperIssueType(
+                        c.getString("[@type]"),
+                        c.getString("[@label]"),
+                        c.getString("[@title]")
+                ))
+                .toList();
+    }
+
+    private List<NewspaperSupplementType> initializeSupplementTypes(List<HierarchicalConfiguration> config) {
+        return config.stream()
+                .map(c -> new NewspaperSupplementType(
+                        c.getString("[@type]"),
+                        c.getString("[@label]"),
+                        c.getString("[@title]")
+                ))
+                .toList();
     }
 
     @Override
@@ -273,6 +324,22 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         return this.pages.size() == StorageProvider.getInstance().list(imageDir).size();
     }
 
+    public String getIssueTypeLabels() {
+        return gson.toJson(
+                this.issueTypes.stream()
+                        .map(NewspaperIssueType::label)
+                        .toList()
+        );
+    }
+
+    public String getSupplementTypeLabels() {
+        return gson.toJson(
+                this.supplementTypes.stream()
+                        .map(NewspaperSupplementType::label)
+                        .toList()
+        );
+    }
+
     public String getJsonData() {
         if (this.pages.get(0).getImage() == null) {
             Process pr = this.myStep.getProzess();
@@ -392,8 +459,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     public static void main(String[] args) throws Exception {
+        NewspaperRecognizerPlugin plugin = new NewspaperRecognizerPlugin();
+        plugin.initialize(null, null);
 
-        Gson gson = new Gson();
+        System.err.println(plugin.issueTypes);
+
+//        Gson gson = new Gson();
         //        Type nt = new TypeToken<Collection<NewspaperPage>>() {
         //        }.getType();
         //        Collection<NewspaperPage> pages = gson.fromJson(new JsonReader(new FileReader(
@@ -404,20 +475,20 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         //            page.setIssue(page.guessIssue());
         //        }
 
-        NewspaperPage page = new NewspaperPage("test.jpg", DateTimeFormat.forPattern("dd.MM.yyyy"));
-        String json = gson.toJson(page);
-        System.out.println(json);
-        NewspaperPage copy = gson.fromJson(json, NewspaperPage.class);
-        String json2 = gson.toJson(copy);
-        System.out.println(json2);
-
-        String page3String =
-                "{\"filename\":\"test.jpg\",\"result\":0.0,\"issue\":false,\"supplement\":false,\"supplementTitle\":false,\"showOtherImages\":true,\"supplementPages\":[],\"dateValid\":false}";
-        NewspaperPage copy3 = gson.fromJson(page3String, NewspaperPage.class);
-        copy3.initializeProperties();
-        System.out.println("copy3 otherpages = " + copy3.getOtherPages());
-        String json3 = gson.toJson(copy3);
-        System.out.println(json3);
+//        NewspaperPage page = new NewspaperPage("test.jpg", DateTimeFormat.forPattern("dd.MM.yyyy"));
+//        String json = gson.toJson(page);
+//        System.out.println(json);
+//        NewspaperPage copy = gson.fromJson(json, NewspaperPage.class);
+//        String json2 = gson.toJson(copy);
+//        System.out.println(json2);
+//
+//        String page3String =
+//                "{\"filename\":\"test.jpg\",\"result\":0.0,\"issue\":false,\"supplement\":false,\"supplementTitle\":false,\"showOtherImages\":true,\"supplementPages\":[],\"dateValid\":false}";
+//        NewspaperPage copy3 = gson.fromJson(page3String, NewspaperPage.class);
+//        copy3.initializeProperties();
+//        System.out.println("copy3 otherpages = " + copy3.getOtherPages());
+//        String json3 = gson.toJson(copy3);
+//        System.out.println(json3);
 
     }
 
