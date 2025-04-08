@@ -13,18 +13,14 @@ import java.text.DateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import de.intranda.goobi.plugins.newspaper.NewspaperIssueType;
 import de.intranda.goobi.plugins.newspaper.NewspaperPage;
 import de.intranda.goobi.plugins.newspaper.NewspaperSupplementType;
+import de.intranda.goobi.plugins.newspaper.NewspaperPageType;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang3.StringUtils;
@@ -104,8 +100,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     // TODO: Remove these old fixed types
     private DocStructType pageType;
-    private DocStructType issueType;
-    private DocStructType supplementType;
+
+    private Map<String, DocStructType> rulesetTypeMapping;
 
     private List<NewspaperIssueType> issueTypes;
     private List<NewspaperSupplementType> supplementTypes;
@@ -119,8 +115,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private MetadataType physPageNoType;
 
     private static final String PAGE_TYPE_NAME = "page";
-    private static final String ISSUE_TYPE_NAME = "NewspaperIssue";
-    private static final String SUPPLEMENT_TYPE_NAME = "NewspaperSupplement";
 
     private static final String PART_NUMBER_TYPE_NAME = "PartNumber";
     private static final String NUMBER_TYPE_NAME = "CurrentNo";
@@ -523,6 +517,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         DocStruct volume = purifyDigitalDocument(dd, boundBook, bbChildren);
 
         DocStruct currentIssue = null;
+        NewspaperPage currentIssuePage = null;
         DocStruct currentSupplement = null;
 
         // create entry for each page
@@ -552,6 +547,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             if (currentIssue == null || newspaperPage.isIssue()) {
                 mainPageNo = 1;
                 try {
+                    currentIssuePage = newspaperPage;
                     currentIssue = createNewIssue(dd, newspaperPage);
                     volume.addChild(currentIssue);
                 } catch (TypeNotAllowedAsChildException | TypeNotAllowedForParentException e) {
@@ -563,7 +559,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             if (newspaperPage.isSupplementTitle()) {
                 supplementPageNo = 1;
                 try {
-                    currentSupplement = dd.createDocStruct(supplementType);
+                    currentSupplement = createNewSupplement(dd, currentIssuePage, newspaperPage);
                     currentIssue.addChild(currentSupplement);
                 } catch (TypeNotAllowedAsChildException | TypeNotAllowedForParentException e) {
                     log.error(e);
@@ -609,7 +605,13 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         Prefs prefs = process.getRegelsatz().getPreferences();
         // initialize all DocStructType objects
         List<DocStructType> dsTypes = prefs.getAllDocStructTypes();
-        HashSet<String> dsTypesNames = new HashSet<>(Arrays.asList(PAGE_TYPE_NAME, ISSUE_TYPE_NAME, SUPPLEMENT_TYPE_NAME));
+        HashSet<String> dsTypesNames = new HashSet<>(List.of(PAGE_TYPE_NAME));
+        dsTypesNames.addAll(this.issueTypes.stream()
+                .map(NewspaperIssueType::rulesetType)
+                .collect(Collectors.toSet()));
+        dsTypesNames.addAll(this.supplementTypes.stream()
+                .map(NewspaperSupplementType::rulesetType)
+                .collect(Collectors.toSet()));
         initializeDocStructTypes(dsTypes, dsTypesNames);
 
         // initialize all MetadataType objects
@@ -622,8 +624,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private void initializeDocStructTypes(List<DocStructType> dsTypes, HashSet<String> dsTypesNames) {
         // set null first
         pageType = null;
-        issueType = null;
-        supplementType = null;
+        rulesetTypeMapping = new HashMap<>();
 
         // update all fields
         for (DocStructType dsType : dsTypes) {
@@ -636,13 +637,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                     case PAGE_TYPE_NAME:
                         pageType = dsType;
                         break;
-                    case ISSUE_TYPE_NAME:
-                        issueType = dsType;
-                        break;
-                    case SUPPLEMENT_TYPE_NAME:
-                        supplementType = dsType;
-                        break;
                     default:
+                        rulesetTypeMapping.put(typeName, dsType);
                         // no need
                 }
                 dsTypesNames.remove(typeName);
@@ -775,19 +771,31 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     private DocStruct createNewIssue(DigitalDocument dd, NewspaperPage newspaperPage) throws TypeNotAllowedForParentException {
-        DocStruct currentIssue = dd.createDocStruct(issueType);
+        var issueType = getIssueTypeForPage(newspaperPage);
+        var result = dd.createDocStruct(rulesetTypeMapping.get(issueType.rulesetType()));
 
-        createMetadata(partNumberType, newspaperPage.generateTitle(), currentIssue);
-        createMetadata(numberType, newspaperPage.getNumber(), currentIssue);
-        createMetadata(numberSortType, newspaperPage.getNumber(), currentIssue);
+        createMetadata(partNumberType, newspaperPage.generateTitle(), result);
+        createMetadata(numberType, newspaperPage.getNumber(), result);
+        createMetadata(numberSortType, newspaperPage.getNumber(), result);
         // Sometimes the NewspaperPage ctr is not called, therefore the formatter is not initialized
         newspaperPage.setDateFormatter(this.dateFormat);
-        createMetadata(dateIssuedType, w3cdtf.format(newspaperPage.getDate()), currentIssue);
+        createMetadata(dateIssuedType, w3cdtf.format(newspaperPage.getDate()), result);
         if (writePageTitle) {
-            createMetadata(titleType, getTitleFromPage(newspaperPage), currentIssue);
+            createMetadata(titleType, getTitleFromPage(newspaperPage, newspaperPage.getDate(), NewspaperPageType.ISSUE), result);
         }
 
-        return currentIssue;
+        return result;
+    }
+
+    private DocStruct createNewSupplement(DigitalDocument dd, NewspaperPage parentIssue, NewspaperPage newspaperPage) throws TypeNotAllowedForParentException {
+        var supplementType = getSupplementTypeForPage(newspaperPage);
+        var result = dd.createDocStruct(rulesetTypeMapping.get(supplementType.rulesetType()));
+
+        if (writePageTitle) {
+            createMetadata(titleType, getTitleFromPage(newspaperPage, parentIssue.getDate(), NewspaperPageType.SUPPLEMENT), result);
+        }
+
+        return result;
     }
 
     private void createMetadata(MetadataType metadataType, String value, DocStruct docstruct) {
@@ -851,10 +859,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
     }
 
-    private String getTitleFromPage(NewspaperPage page) {
-        LocalDate date = page.getDate();
-        var issueType = getIssueTypeForPage(page);
-        var title = issueType.titlePattern();
+    private String getTitleFromPage(NewspaperPage page, LocalDate date, NewspaperPageType type) {
+        var title = getTitlePatternForPage(page, type);
         var matcher = TITLE_GENERATOR_DATE_PATTERN.matcher(title);
         if (matcher.find()) {
             var datePattern = matcher.group(1);
@@ -864,9 +870,24 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         return title;
     }
 
+    private String getTitlePatternForPage(NewspaperPage page, NewspaperPageType type) {
+        return switch (type) {
+            case ISSUE -> getIssueTypeForPage(page).titlePattern();
+            case SUPPLEMENT -> getSupplementTypeForPage(page).titlePattern();
+            default -> throw new IllegalArgumentException("Can't get title pattern for page type \"" + type + "\"");
+        };
+    }
+
     private NewspaperIssueType getIssueTypeForPage(NewspaperPage page) {
         return this.issueTypes.stream()
                 .filter(t -> t.label().equals(page.getIssueType()))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private NewspaperSupplementType getSupplementTypeForPage(NewspaperPage page) {
+        return this.supplementTypes.stream()
+                .filter(t -> t.label().equals(page.getSupplementType()))
                 .findFirst()
                 .orElseThrow();
     }
