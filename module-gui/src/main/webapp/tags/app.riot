@@ -152,20 +152,14 @@
 										</div>
 										<!-- // Bild der Ausgabe -->
 
-										<!-- Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
-										<!--
-										<a
-											onclick="{() => noIssue(page)}"
-											class="btn btn-blank fa fa-trash"
-											style="position: absolute; right: 10px; bottom: 5px;">
-										-->
+										<!-- Button, um dieses Bild zu löschen -->
 										<a
 											if={props.showDeletePageButton}
 											onclick="{(e) => deletePage(e, page)}"
 											style="position: absolute; right: 10px; bottom: 5px;">
 											<span aria-hidden="true" class="fa fa-trash" />
 										</a>
-										<!-- // Button, um diese Ausgabe in vorherige Ausgabe einzugliedern -->
+										<!-- // Button, um dieses Bild zu löschen -->
 
 									</div>
 									<div class="col-12 col-xs-6 row flex-column gap-2">
@@ -641,7 +635,10 @@
 		        this.data[0].otherPages.push(this.data[i]);
 		        this.data[i].parent=0;
 		        this.data[i].supplementTitle = false;
+		        this.data[i].supplement = false;
 		        this.data[i].otherPages = [];
+		        this.data[i].issueType = null;
+		        this.data[i].supplementType = null;
 		    }
 		    console.timeEnd("forSchleife");
 		    this.deletingIssues = false;
