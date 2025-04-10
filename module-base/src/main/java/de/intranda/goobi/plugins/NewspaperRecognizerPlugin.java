@@ -14,7 +14,10 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import de.intranda.goobi.plugins.newspaper.*;
+import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperIssueType;
+import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperMetadataWriteConfiguration;
+import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperPage;
+import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperSupplementType;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang3.StringUtils;

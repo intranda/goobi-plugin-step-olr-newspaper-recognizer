@@ -1,4 +1,4 @@
-package de.intranda.goobi.plugins.newspaper;
+package de.intranda.goobi.plugins.newspaperRecognizer.data;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
