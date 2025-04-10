@@ -326,7 +326,7 @@
 			this.thumb_height = props.thumbHeight; // used in the frontend
 			this.loadallimages = props.loadallimages; // used in the function onMounted and in the frontend to communicate with the component defined by thumbcanvas.riot
 			this.delete_file_button = props.deleteFileButton; // used to delete an image
-			this.dateFormatDelimiter = props.dateFormatDelimiter; // used to customize date parsing
+			this.dateFormatPattern = props.dateFormatPattern; // used to customize date parsing
 			//console.log(props, this.thumb_height)
 			//console.log(this.data_el.value);
 			this.data = JSON.parse(this.data_el.value);
@@ -854,24 +854,20 @@
 		doGenerateDates(e, page, skip) {
 			console.log("skip:", skip)
 			debugger;
-			var regexDelimiter = this.dateFormatDelimiter;
-			if (regexDelimiter === '.' || regexDelimiter === '-') {
-				regexDelimiter = '\\' + regexDelimiter;
-			}
-			var dateRegex = new RegExp("^\\d{2}" + regexDelimiter + "\\d{2}" + regexDelimiter + "\\d{4}$");
+
 		    var startIdx = page.pos;
 	        var startPage = this.data[startIdx];
-			if(!startPage.dateStr || !startPage.dateStr.match(dateRegex)) {
-				alert("Valid date format is: dd" + this.dateFormatDelimiter + "mm" + this.dateFormatDelimiter + "yyyy");
+	        var startDate = this.parseDateByPattern(startPage.dateStr, this.dateFormatPattern);
+			if(!startDate) {
+				alert("Valid date format is: " + this.dateFormatPattern);
 				return;
 			}
+
 		    this.dataDirty = true;
 		    var issueType = startPage.issueType;
 		    var prefix = startPage.prefix;
 		    var suffix = startPage.suffix;
 	        var startNumber = parseInt(startPage.number);
-	        var dateArr = startPage.dateStr.split(this.dateFormatDelimiter);
-	        var startDate = new XDate(parseInt(dateArr[2]), parseInt(dateArr[1])-1, parseInt(dateArr[0]));
 	        var issueCounter = 0;
 	        for (var i = startIdx + 1; i < this.data.length; i++) {
 	            var page = this.data[i];
@@ -884,7 +880,7 @@
 		                page.prefix = prefix;
 		                page.suffix = suffix;
 		                page.number = "" + startNumber;
-						page.dateStr = startDate.toString("dd" + this.dateFormatDelimiter + "MM" + this.dateFormatDelimiter + "yyyy");
+						page.dateStr = startDate.toString(this.dateFormatPattern);
 		                page.dateValid = true;
 	            	}
 	            }
@@ -949,80 +945,60 @@
 	        }
 	    },
 
-	    /* triggered when the text input `Datum` gets a new input, used to validate the new date */
-	    validateDate(date) {
-			if(date.length == 0) {
-			    return true;
-			}
-			var regexDelimiter = this.dateFormatDelimiter;
-			if (regexDelimiter === '.' || regexDelimiter === '-') {
-				regexDelimiter = '\\' + regexDelimiter;
-			}
-	        // check for standard format
-	        if(new RegExp("^\\d{2}" + regexDelimiter + "\\d{2}" + regexDelimiter + "\\d{4}$").test(date)) {
-	            var dateArr = date.split(this.dateFormatDelimiter);
-	            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
-	                return false;
-	            }
-	            return true;
-	        }
-	     	// check for month format, e.g.: 01.1870
-	        if(new RegExp("^\\d{2}" + regexDelimiter + "\\d{4}$").test(date)) {
-	            // check for sanity of month
-	            var month = parseInt(date.split(this.dateFormatDelimiter)[0]);
-	        	if(month > 0 && month < 13) {
-	        	    return true;
-	        	}
-	        }
-	        // check for issue for two days, e.g.: 14.06.2011/15.06.2011
-	        if(new RegExp("^\\d{2}" + regexDelimiter + "\\d{2}" + regexDelimiter + "\\d{4}\/\\d{2}" + regexDelimiter + "\\d{2}" + regexDelimiter + "\\d{4}$").test(date)) {
-	            // check for sanity of day/month
-	            var dates = date.split("/");
-	            //check first date
-	            var dateArr = dates[0].split(this.dateFormatDelimiter);
-	            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
-	                return false;
-	            }
-	            dateArr = dates[1].split(this.dateFormatDelimiter);
-	            if( !this.checkDate(dateArr[0], dateArr[1], dateArr[2])){
-	                return false;
-	            }
-	            return true;
-	        }
-	     // check for multi-month issues, e.g.: 01.1870/03.1870
-	        if(new RegExp("^\\d{2}" + regexDelimiter + "\\d{4}\/\\d{2}" + regexDelimiter + "\\d{4}$").test(date)) {
-	        	// check for sanity of months
-	            var dates = date.split("/");
-	        	var month0 = dates[0].split(this.dateFormatDelimiter)[0];
-	        	var month1 = dates[1].split(this.dateFormatDelimiter)[0];
-	        	if(month0>0 && month0<13 && month1>0 && month1<13) {
-	        	    return true;
-	        	}
-	        }
-	        // check for two-year issues, e.g.: 1915/1916
-	        if(/^\\d{4}\/\\d{4}$/.test(date)) {
-	            return true;
-	        }
-	        return false;
-	    },
+        parseDateByPattern(dateStr, pattern) {
+          const tokenRegexMap = {
+            'dd': { regex: '(\\d{2})', field: 'day' },
+            'MM': { regex: '(\\d{2})', field: 'month' },
+            'yyyy': { regex: '(\\d{4})', field: 'year' }
+          };
 
-	    /* used by the function validateDate to get the validity of the input date */
-	    checkDate(day, month, year) {
-	        if(day < 1 || month < 1 || month > 12) {
-	            return false;
-	        }
-	        var dayList = [31,28,31,30,31,30,31,31,30,31,30,31];
-	        if(month === 2) {
-	            var leapyear = year % 400 == 0 || (year % 100 != 0 && year % 4 == 0);
-	            if(leapYear) {
-	                return day <= 29;
-	            } else {
-	                return day <= 28;
-	            }
-	        } else {
-	            return dayList[month-1] >= day;
-	        }
-	    }
+          const tokenRegex = /(dd|MM|yyyy)/g;
+
+          let match;
+          const orderedFields = [];
+
+          // Build the regex dynamically from the pattern
+          let regexStr = '';
+          let lastIndex = 0;
+
+          while ((match = tokenRegex.exec(pattern)) !== null) {
+            const token = match[0];
+            const index = match.index;
+
+            // Escape and include the separator characters
+            regexStr += pattern.slice(lastIndex, index).replace(/([.*+?^=!:${}()|[\]\\])/g, '\\$1');
+            regexStr += tokenRegexMap[token].regex;
+            orderedFields.push(tokenRegexMap[token].field);
+
+            lastIndex = index + token.length;
+          }
+
+          // Append any remaining static characters
+          regexStr += pattern.slice(lastIndex).replace(/([.*+?^=!:${}()|[\]\\])/g, '\\$1');
+
+          const fullRegex = new RegExp(`^${regexStr}$`);
+          const dateMatch = dateStr.match(fullRegex);
+
+          if (!dateMatch) return null;
+
+          // Map matched groups to date parts based on token order
+          const dateParts = {};
+          orderedFields.forEach((field, i) => {
+            dateParts[field] = parseInt(dateMatch[i + 1], 10);
+          });
+
+          const { day, month, year } = dateParts;
+
+          // Create XDate object (month is 1-based in XDate)
+          const date = new XDate(year + "-" + month + "-" + day);
+
+          // Check if the created date is valid
+          if (!date.valid() || date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+            return null;
+          }
+
+          return date;
+        }
 	 }
 	</script>
 </app>

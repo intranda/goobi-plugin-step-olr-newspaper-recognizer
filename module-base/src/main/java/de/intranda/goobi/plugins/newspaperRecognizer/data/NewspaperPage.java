@@ -4,13 +4,19 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import de.sub.goobi.metadaten.Image;
 import lombok.Data;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 public class NewspaperPage {
-    private transient DateTimeFormatter dateFormatter;
+    // Metadata 'DateIssued' date format
+    private static final DateTimeFormatter w3cdtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    @Setter
+    private transient DateTimeFormatter frontendDateFormat;
 
     //from json
     private String filename;
@@ -32,9 +38,8 @@ public class NewspaperPage {
     private String issueType;
     private String supplementType;
 
-    public NewspaperPage(String filename, DateTimeFormatter format) {
+    public NewspaperPage(String filename) {
         super();
-        this.dateFormatter = format;
         this.filename = filename;
     }
 
@@ -51,15 +56,19 @@ public class NewspaperPage {
         return result < level;
     }
 
-    public LocalDate getDate() {
-        if (dateStr != null && !dateStr.isEmpty()) {
-            return LocalDate.parse(dateStr, dateFormatter);
-        }
-        return LocalDate.now();
+    public Optional<LocalDate> getDate() {
+        return getRawDateString().map(s -> LocalDate.parse(s, frontendDateFormat));
     }
 
-    public void setDate(LocalDate date) {
-        this.dateStr = dateFormatter.format(date);
+    public Optional<String> getMetsDateString() {
+        return getDate().map(w3cdtf::format);
+    }
+
+    public Optional<String> getRawDateString() {
+        if (StringUtils.isBlank(dateStr)) {
+            return Optional.empty();
+        }
+        return Optional.of(dateStr);
     }
 
     public void addPage(NewspaperPage page) {
