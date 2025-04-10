@@ -27,7 +27,7 @@
 						id="id10"
 						onclick={reload}
 						class="btn d-flex align-items-center btn--title-action"
-						title={msgs['reload']}
+						title={translate_msg('reload')}
 						data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="fa fa-refresh"  />
 					</a>
@@ -35,7 +35,7 @@
 					<a
 						class="btn d-flex align-items-center btn--title-action"
 						onclick={exit}
-						title={msgs['pluginLeave']}
+						title={translate_msg('pluginLeave')}
 						data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="fa fa-times" />
 					</a>
@@ -44,7 +44,7 @@
 						class="btn d-flex align-items-center btn--title-action "
 						disabled={!dataDirty}
 						onclick={save_no_mets}
-						title={msgs['save']}
+						title={translate_msg('save')}
 						data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="fa fa-save" />
 					</a>
@@ -53,7 +53,7 @@
 						if={props.showWriteMetsButton}
 						class="btn d-flex align-items-center btn--title-action"
 						onclick={save}
-						title={msgs['plugin_newspaperRecognizer_writeMets']}
+						title={translate_msg('plugin_newspaperRecognizer_writeMets')}
 						data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="fa fa-check" />
 					</a>
@@ -63,17 +63,17 @@
 			<div>
 				<div if={!props.pagenumCorrect}>
 					<div>
-						<div class="alert alert-danger">{msgs['plugin_newspaperRecognizer_pagenumWarning']}</div>
+						<div class="alert alert-danger">{translate_msg('plugin_newspaperRecognizer_pagenumWarning')}</div>
 					</div>
 					<div class="section-footer">
-						<a class="btn btn-hot " onclick={restartAnalysis}>{msgs['plugin_newspaperRecognizer_recompute']}</a>
-						<a class="btn btn-hot" onclick={deleteManualResults}>{msgs['plugin_newspaperRecognizer_deleteManualResults']}</a>
+						<a class="btn btn-hot " onclick={restartAnalysis}>{translate_msg('plugin_newspaperRecognizer_recompute')}</a>
+						<a class="btn btn-hot" onclick={deleteManualResults}>{translate_msg('plugin_newspaperRecognizer_deleteManualResults')}</a>
 					</div>
 				</div>
 				<!-- Formular für Wochentage -->
 				<div if={!imagesLoaded && props.pagenumCorrect} class="row">
 					<div class="section-body-padded">
-						<h3>{msgs['plugin_newspaperRecognizer_loadingImages']}...</h3>
+						<h3>{translate_msg('plugin_newspaperRecognizer_loadingImages')}...</h3>
 						<progress max={data.length} value={loadedImages}></progress>
 					</div>
 				</div>
@@ -82,43 +82,43 @@
 						<!-- Wochentage als Checkboxen -->
 						<label class="check-week btn{monday ? ' active' : ''}">
 							<input type="checkbox" class="checkbox-week" checked={monday} onclick={() => this.toggleDay('monday')}></input>
-							{msgs['plugin_newspaperRecognizer_monday']}
+							{translate_msg('plugin_newspaperRecognizer_monday')}
 						</label>
 						<label class="check-week btn{tuesday ? ' active' : ''}">
 							<input type="checkbox" class="checkbox-week" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>
-							{msgs['plugin_newspaperRecognizer_tuesday']}
+							{translate_msg('plugin_newspaperRecognizer_tuesday')}
 						</label>
 						<label class="check-week btn{wednesday ? ' active' : ''}">
 							<input type="checkbox" class="checkbox-week" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>
-							{msgs['plugin_newspaperRecognizer_wednesday']}
+							{translate_msg('plugin_newspaperRecognizer_wednesday')}
 						</label>
 						<label class="check-week btn{thursday ? ' active' : ''}">
 							<input type="checkbox" class="checkbox-week" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>
-							{msgs['plugin_newspaperRecognizer_thursday']}
+							{translate_msg('plugin_newspaperRecognizer_thursday')}
 						</label>
 						<label class="check-week btn{friday ? ' active' : ''}">
 							<input type="checkbox" class="checkbox-week" checked={friday} onclick={() => this.toggleDay('friday')}></input>
-							{msgs['plugin_newspaperRecognizer_friday']}
+							{translate_msg('plugin_newspaperRecognizer_friday')}
 						</label>
 						<label class="check-week btn{saturday ? ' active' : ''}">
 							<input type="checkbox" class="checkbox-week" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>
-							{msgs['plugin_newspaperRecognizer_saturday']}
+							{translate_msg('plugin_newspaperRecognizer_saturday')}
 						</label>
 						<label class="check-week btn{sunday ? ' active' : ''}">
 							<input type="checkbox" class="checkbox-week" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>
-							{msgs['plugin_newspaperRecognizer_sunday']}
+							{translate_msg('plugin_newspaperRecognizer_sunday')}
 						</label>
 						<!-- // Wochentage als Checkboxen -->
 
 						<a class="btn btn-hot" onclick={delete_all_issues} style="position: relative;">
-							<span if={!deletingIssues}>{msgs['plugin_newspaperRecognizer_removeAllIssues']}</span>
+							<span if={!deletingIssues}>{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}</span>
 							<img if={deletingIssues} alt="Loading..." style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif" />
 						</a>
 					</div>
 					<div class="section-footer">
 						<label class="check-week btn{biWeekly ? ' active' : ''}">
 							<input type="checkbox" class="checkbox-week" checked={biWeekly} onclick={toggleBiWeekly}></input>
-							{msgs['plugin_newspaperRecognizer_biWeekly']}
+							{translate_msg('plugin_newspaperRecognizer_biWeekly')}
 						</label>
 						<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
 					</div>
@@ -172,8 +172,8 @@
 										<!-- Datum der Ausgabe -->
 										<div class="col-12 col-xs-5">
 											<div class="form-group {page.dateValid ? '' : 'has-error'}">
-												<input type="text" value={page.dateStr} onkeyup={e => changeDate(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_date']}" class="form-control"></input>
-												<span if={!page.dateValid} class="help-block">{msgs['plugin_newspaperRecognizer_wrongDateFormat']}</span>
+												<input type="text" value={page.dateStr} onkeyup={e => changeDate(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_date')}" class="form-control"></input>
+												<span if={!page.dateValid} class="help-block">{translate_msg('plugin_newspaperRecognizer_wrongDateFormat')}</span>
 											</div>
 										</div>
 
@@ -181,9 +181,9 @@
 										<div class="col-xs-5 ">
 											<div class="form-group">
 												<div class="input-group">
-													<input type="text" value={page.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{msgs['prefix']}" class="form-control" style="width:33%"></input>
-													<input type="text" value={page.number} onkeyup={e => changeNumber(e, page)} placeholder="{msgs['plugin_newspaperRecognizer_nro']}" class="form-control" style="width:34%"></input>
-													<input type="text" value={page.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{msgs['suffix']}" class="form-control" style="width:33%"></input>
+													<input type="text" value={page.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{translate_msg('prefix')}" class="form-control" style="width:33%"></input>
+													<input type="text" value={page.number} onkeyup={e => changeNumber(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_nro')}" class="form-control" style="width:34%"></input>
+													<input type="text" value={page.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{translate_msg('suffix')}" class="form-control" style="width:33%"></input>
 												</div>
 											</div>
 										</div>
@@ -192,7 +192,7 @@
 										<div class="col-xs-5">
 											<div class="form-group">
 												<select class="form-control" onchange={e => changeIssueType(e, page)}>
-													<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}">{type}</option>
+													<option each={type in issueTypes} selected="{type == page.issueType ? 'selected' : ''}" data-translation-id="{type}">{translate_msg(type)}</option>
 												</select>
 											</div>
 										</div>
@@ -208,7 +208,7 @@
                                                 <div class="col-11">
                                                     <div class="form-group">
                                                         <select class="form-control" onchange={e => changeSupplementType(e, otherPage)}>
-                                                            <option each={type in supplementTypes} selected="{type == otherPage.supplementType ? 'selected' : ''}">{type}</option>
+                                                            <option each={type in supplementTypes} selected="{type == otherPage.supplementType ? 'selected' : ''}" data-translation-id="{type}">{translate_msg(type)}</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -218,26 +218,26 @@
 										<!-- Details über zugehörige Seiten -->
 										<div class="col-xs-6">
 
-											{msgs['otherPages']}: {page.otherPages.length}
+											{translate_msg('otherPages')}: {page.otherPages.length}
 
 										</div>
 
 										<!-- Button für Datumsgenerierung -->
 										<div class="col-xs-6">
 											<a onclick={e => doGenerateDates(e, page, 1)} class="btn btn-blank">
-												{msgs['plugin_newspaperRecognizer_applyEveryIssue']}
+												{translate_msg('plugin_newspaperRecognizer_applyEveryIssue')}
 											</a>
 										</div>
 
 										<div class="col-xs-6">
 											<a onclick={e => doGenerateDates(e, page, 2)} class="btn btn-blank ">
-												{msgs['plugin_newspaperRecognizer_applyEverySecondIssue']}
+												{translate_msg('plugin_newspaperRecognizer_applyEverySecondIssue')}
 											</a>
 										</div>
 
 										<div class="col-xs-6" style="">
 											<a onclick={e => doGenerateDates(e, page, 3)} class="btn btn-blank">
-												{msgs['plugin_newspaperRecognizer_applyEveryThirdIssue']}
+												{translate_msg('plugin_newspaperRecognizer_applyEveryThirdIssue')}
 											</a>
 										</div>
 									</div>
@@ -285,11 +285,11 @@
 						<img src="template/img/goobi/ajaxloader2.gif" />
 					</span>
 					<!-- // verlassen-Button -->
-					<a class="btn btn-blank" onclick={exit}>{msgs['pluginLeave']}</a>
+					<a class="btn btn-blank" onclick={exit}>{translate_msg('pluginLeave')}</a>
 					<!-- Speicher-Button -->
-					<a class="btn btn-blank" disabled={!dataDirty} onclick={save_no_mets}>{msgs['save']}</a>
+					<a class="btn btn-blank" disabled={!dataDirty} onclick={save_no_mets}>{translate_msg('save')}</a>
 					<!-- // Speicher-Button -->
-					<a if={props.showWriteMetsButton} class="btn btn-success" onclick={save}>{msgs['plugin_newspaperRecognizer_writeMets']}</a>
+					<a if={props.showWriteMetsButton} class="btn btn-success" onclick={save}>{translate_msg('plugin_newspaperRecognizer_writeMets')}</a>
 				</div>
 			</template>
 		</div>
@@ -437,6 +437,15 @@
 
 	    onUpdated(props, state) {
 	    },
+
+        /* translation lookup (because otherwise missing keys would not remain as they are) */
+        translate_msg(key) {
+            if (key in this.msgs) {
+                return this.msgs[key];
+            } else {
+                return key;
+            }
+        },
 
 	    /* used at mounting by the function onMounted */
 	    addAjaxEvent() {
@@ -808,9 +817,8 @@
 		/* triggered when the selector `Ausgabe` gets an input */
 		changeIssueType(e, page) {
 		    this.dataDirty = true;
-		    page.issueType = e.target.selectedOptions[0].text;
+		    page.issueType = e.target.selectedOptions[0].getAttribute("data-translation-id");
 			console.log("Issue: " + page.issueType);
-			console.log(page);
 		},
 
 		/* triggered when the selector `Beilage` gets an input */
@@ -823,10 +831,8 @@
                     break;
                 }
             }
-            page.supplementType = e.target.selectedOptions[0].text;
+            page.supplementType = e.target.selectedOptions[0].getAttribute("data-translation-id");
             console.log("Supplement: " + page.supplementType);
-            console.log(page);
-            console.log(this.createSaveData());
         },
 
 		/* triggered when the text input `Nr.` gets an input */

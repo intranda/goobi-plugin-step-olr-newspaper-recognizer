@@ -1,7 +1,6 @@
 package de.intranda.goobi.plugins.newspaper;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +83,7 @@ public class NewspaperPage {
         this.showOtherImages = !this.showOtherImages;
     }
 
-    public String generateTitle() {
+    public String generatePartNumber() {
         StringBuilder b = new StringBuilder();
         if (prefix != null) {
             b.append(prefix);

@@ -1,4 +1,6 @@
 package de.intranda.goobi.plugins.newspaper;
 
-public record NewspaperIssueType(String rulesetType, String label, String titlePattern) {
+import java.util.List;
+
+public record NewspaperIssueType(String rulesetType, String label, List<NewspaperMetadataWriteConfiguration> customMetadata) {
 }
