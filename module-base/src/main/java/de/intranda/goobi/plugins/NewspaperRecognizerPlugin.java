@@ -305,7 +305,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         );
     }
 
-    public String getJsonData() {
+    public String getJsonData() throws DAOException, SwapException, IOException {
+        // TODO: Why this check here? Is this some kind of "uninitialized" check?
         if (this.pages.get(0).getImage() == null) {
             Process pr = this.myStep.getProzess();
             String imageDir = getImageDirectory(pr);
@@ -325,11 +326,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                     currentIssue.addPage(page);
                 }
 
-                Image image = new Image(imageDir + "/" + page.getFilename(), order++, "", page.getFilename(), page.getFilename());
-                String thumbUrl = createImageUrl(image, 400, "jpeg", contextPath, getStep().getProcessId(), imageDirName);
-                image.setThumbnailUrl(thumbUrl);
-                String largeThumbUrl = createImageUrl(image, 1600, "jpeg", contextPath, getStep().getProcessId(), imageDirName);
-                image.setLargeThumbnailUrl(largeThumbUrl);
+                Image image = new Image(myStep.getProzess(), imageDir, page.getFilename(), order++, 500);
+                // Due to GSON serialization issues, we remove the `imagePath` property of the image to avoid its serialization. It's not required for our purposes anyway!
+                image.setImagePath(null);
                 page.setImage(image);
             }
             log.info(String.format("Counted %d issues", count));
@@ -380,6 +379,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         return imageDir;
     }
 
+    // TODO: This method restores / loads the plugin configuration. Either by reading in the automatic analysis results or by reading the manual results (with higher priority). If neither exist, a default will be initialized
     private void readExportedFile() throws Exception {
         Process pr = this.myStep.getProzess();
         Path manualF = Paths.get(pr.getProcessDataDirectory() + ISSUE_RESULT_MANUAL_LOCATION);
@@ -422,16 +422,5 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private String getContextPath() {
         HelperForm hf = (HelperForm) Helper.getBeanByName("HelperForm", HelperForm.class);
         return hf.getServletPathWithHostAsUrl();
-    }
-
-    private String createImageUrl(Image currentImage, Integer size, String format, String baseUrl, int processId, String imageDirName) {
-        String url = String.format("%s/api/process/image/%d/%s/%s/full/!%d,%d/0/default.jpg", baseUrl, processId, imageDirName,
-                currentImage.getTooltip(), size, size);
-        String thumbsPath = String.format("/opt/digiverso/goobi/metadata/%d/thumbs/%s_%d/", processId, imageDirName, size);
-        if (StorageProvider.getInstance().isDirectory(Paths.get(thumbsPath))) {
-            url = String.format("%s/cs/cs?action=image&sourcepath=file:%s%s.jpg&format=jpg", baseUrl, thumbsPath,
-                    currentImage.getTooltip().substring(0, currentImage.getTooltip().lastIndexOf('.')));
-        }
-        return url;
     }
 }
