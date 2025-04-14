@@ -1,59 +1,41 @@
 package de.intranda.goobi.plugins.newspaperRecognizer.data;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import de.sub.goobi.metadaten.Image;
 import lombok.Data;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
+
 @Data
 public class NewspaperPage {
+    public static final double ANALYSIS_ISSUE_DETECTION_THRESHOLD = -0.8;
+
     // Metadata 'DateIssued' date format
     private static final DateTimeFormatter w3cdtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     @Setter
     private transient DateTimeFormatter frontendDateFormat;
 
-    //from json
-    private String filename;
+    //from automatic analysis
     private double result;
 
-    //from this application
-    private boolean issue;
-    private boolean supplement;
-    private boolean supplementTitle;
-    private String dateStr;
-    private String prefix;
-    private String number;
-    private String suffix;
-    private Image image;
-    private boolean showOtherImages = true;
-    private List<NewspaperPage> otherPages = new ArrayList<>();
-    private List<NewspaperPage> supplementPages = new ArrayList<>();
-    private boolean dateValid;
-    private String issueType;
-    private String supplementType;
+    // used in both
+    private String filename;
 
-    public NewspaperPage(String filename) {
-        super();
-        this.filename = filename;
-    }
+    //from this plugin
+    private Image image; // the 'Image' object is serialized to Json, the frontend accesses individual properties
+    private NewspaperPageMetadata metadata;
+    private String issueTypeName;
+    private String supplementTypeName;
+    private int supplementNumber;
 
-    public String getFilenameAsTif() {
-        return filename.replace(".jpg", ".tif");
-    }
+    private transient NewspaperIssueType issueType;
+    private transient NewspaperSupplementType supplementType;
 
-    public boolean guessIssue() {
-        this.issue = result < -0.8;
-        return this.issue;
-    }
-
-    public boolean guessIssue(double level) {
-        return result < level;
+    public boolean analysisIndicatesThisIsAnIssue() {
+        return result < ANALYSIS_ISSUE_DETECTION_THRESHOLD;
     }
 
     public Optional<LocalDate> getDate() {
@@ -65,57 +47,17 @@ public class NewspaperPage {
     }
 
     public Optional<String> getRawDateString() {
-        if (StringUtils.isBlank(dateStr)) {
+        if (StringUtils.isBlank(metadata.dateStr())) {
             return Optional.empty();
         }
-        return Optional.of(dateStr);
-    }
-
-    public void addPage(NewspaperPage page) {
-        if (this.otherPages == null) {
-            this.otherPages = new ArrayList<>();
-            this.showOtherImages = true;
-        }
-        this.otherPages.add(page);
-    }
-
-    public void addAllPages(List<NewspaperPage> otherPages2) {
-        if (this.otherPages == null) {
-            this.otherPages = new ArrayList<>();
-        }
-        for (NewspaperPage page : otherPages2) {
-            this.otherPages.add(page);
-        }
-    }
-
-    public void toggleShowOtherImages() {
-        this.showOtherImages = !this.showOtherImages;
+        return Optional.of(metadata.dateStr());
     }
 
     public String generatePartNumber() {
         StringBuilder b = new StringBuilder();
-        if (prefix != null) {
-            b.append(prefix);
-        }
-        if (number != null) {
-            b.append(number);
-        }
-        if (suffix != null) {
-            b.append(suffix);
-        }
+        Optional.ofNullable(metadata.prefix()).ifPresent(b::append);
+        Optional.ofNullable(metadata.number()).ifPresent(b::append);
+        Optional.ofNullable(metadata.suffix()).ifPresent(b::append);
         return b.toString();
     }
-
-    /**
-     * Make sure that collection properties are not null. Otherwise it will cause issues in javascript code
-     */
-    public void initializeProperties() {
-        if(this.otherPages == null) {
-            this.otherPages = new ArrayList<>();
-        }
-        if(this.supplementPages == null) {
-            this.supplementPages = new ArrayList<>();
-        }
-    }
-
 }

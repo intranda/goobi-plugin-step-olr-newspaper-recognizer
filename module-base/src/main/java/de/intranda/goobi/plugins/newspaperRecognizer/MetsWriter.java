@@ -88,18 +88,16 @@ public class MetsWriter {
         return result;
     }
 
-    private NewspaperIssueType getIssueTypeForPage(NewspaperPage page) {
+    public Optional<NewspaperIssueType> getIssueTypeForPage(NewspaperPage page) {
         return this.issueTypes.stream()
-                .filter(t -> t.label().equals(page.getIssueType()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Unable to find issue type \"" + page.getIssueType() + "\"!"));
+                .filter(t -> t.label().equals(page.getIssueTypeName()))
+                .findFirst();
     }
 
-    private NewspaperSupplementType getSupplementTypeForPage(NewspaperPage page) {
+    public Optional<NewspaperSupplementType> getSupplementTypeForPage(NewspaperPage page) {
         return this.supplementTypes.stream()
-                .filter(t -> t.label().equals(page.getSupplementType()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Unable to find supplement type \"" + page.getIssueType() + "\"!"));
+                .filter(t -> t.label().equals(page.getSupplementTypeName()))
+                .findFirst();
     }
 
     public void write(List<NewspaperPage> pages) throws TypeNotAllowedForParentException, TypeNotAllowedAsChildException, WriteException, SwapException, IOException, PreferencesException {
@@ -146,19 +144,16 @@ public class MetsWriter {
             // process bound book children
             processBoundBookChildren(bbChildren, page, i, newspaperPage);
 
-            if (newspaperPage.isIssue()) {
-                currentSupplement = null;
-            }
-
+            // TODO: Previously, issues were set not to be supplements. Replace this with some kind of validation logic somewhere else
             // create new issue if needed
-            if (currentIssue == null || newspaperPage.isIssue()) {
+            if (currentIssue == null || Optional.ofNullable(newspaperPage.getIssueType()).isPresent()) {
                 mainPageNo = 1;
                 currentIssuePage = newspaperPage;
                 currentIssue = createNewIssue(dd, newspaperPage);
                 volume.addChild(currentIssue);
             }
 
-            if (newspaperPage.isSupplementTitle()) {
+            if (Optional.ofNullable(newspaperPage.getSupplementType()).isPresent()) {
                 supplementPageNo = 1;
                 currentSupplement = createNewSupplement(dd, currentIssuePage, newspaperPage);
                 currentIssue.addChild(currentSupplement);
@@ -169,7 +164,8 @@ public class MetsWriter {
             }
 
             if (createNewPagination) {
-                int pageNo = newspaperPage.isSupplement() ? supplementPageNo : mainPageNo;
+                // TODO: Check supplement number logic here
+                int pageNo = newspaperPage.getSupplementNumber() > 0 ? supplementPageNo : mainPageNo;
                 createMetadata(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME), Integer.toString(pageNo), page);
             }
 
@@ -179,7 +175,8 @@ public class MetsWriter {
 
             mainPageNo++;
 
-            if (newspaperPage.isSupplement()) {
+            // TODO: Check if we can't just reuse the supplement number from the frontend
+            if (newspaperPage.getSupplementNumber() > 0) {
                 supplementPageNo++;
             }
         }
@@ -255,11 +252,15 @@ public class MetsWriter {
 
     private DocStruct createNewIssue(DigitalDocument dd, NewspaperPage newspaperPage) throws TypeNotAllowedForParentException {
         var issueType = getIssueTypeForPage(newspaperPage);
-        var result = dd.createDocStruct(docStructTypeMap.get(issueType.rulesetType()));
+        if (issueType.isEmpty()) {
+            throw new IllegalStateException("Can't create an issue for non-issues!");
+        }
 
-        if (!StringUtils.isBlank(newspaperPage.getNumber())) {
-            createMetadata(metadataTypeMap.get(NUMBER_TYPE_NAME), newspaperPage.getNumber(), result);
-            createMetadata(metadataTypeMap.get(NUMBER_SORT_TYPE_NAME), newspaperPage.getNumber(), result);
+        var result = dd.createDocStruct(docStructTypeMap.get(issueType.get().rulesetType()));
+
+        if (!StringUtils.isBlank(newspaperPage.getMetadata().number())) {
+            createMetadata(metadataTypeMap.get(NUMBER_TYPE_NAME), newspaperPage.getMetadata().number(), result);
+            createMetadata(metadataTypeMap.get(NUMBER_SORT_TYPE_NAME), newspaperPage.getMetadata().number(), result);
             createMetadata(metadataTypeMap.get(PART_NUMBER_TYPE_NAME), newspaperPage.generatePartNumber(), result);
         } else {
             String message = "The newspaper issue for image \"" + newspaperPage.getFilename() + "\" has no number associated!";
@@ -269,7 +270,7 @@ public class MetsWriter {
 
         newspaperPage.getMetsDateString().ifPresent(date -> createMetadata(metadataTypeMap.get(DATE_ISSUED_TYPE_NAME), date, result));
 
-        for (NewspaperMetadataWriteConfiguration mc : getIssueTypeForPage(newspaperPage).customMetadata()) {
+        for (NewspaperMetadataWriteConfiguration mc : issueType.get().customMetadata()) {
             createMetadata(metadataTypeMap.get(mc.key()), generateValue(newspaperPage, mc.value()), result);
         }
 
@@ -278,9 +279,13 @@ public class MetsWriter {
 
     private DocStruct createNewSupplement(DigitalDocument dd, NewspaperPage parentIssue, NewspaperPage newspaperPage) throws TypeNotAllowedForParentException {
         var supplementType = getSupplementTypeForPage(newspaperPage);
-        var result = dd.createDocStruct(docStructTypeMap.get(supplementType.rulesetType()));
+        if (supplementType.isEmpty()) {
+            throw new IllegalStateException("Can't create an supplement for non-supplements!");
+        }
 
-        for (NewspaperMetadataWriteConfiguration mc : getSupplementTypeForPage(newspaperPage).customMetadata()) {
+        var result = dd.createDocStruct(docStructTypeMap.get(supplementType.get().rulesetType()));
+
+        for (NewspaperMetadataWriteConfiguration mc : supplementType.get().customMetadata()) {
             createMetadata(metadataTypeMap.get(mc.key()), generateValue(parentIssue, mc.value()), result);
         }
 
@@ -358,10 +363,10 @@ public class MetsWriter {
             }
         }
 
-        if (!StringUtils.isBlank(referencePage.getNumber())) {
+        if (!StringUtils.isBlank(referencePage.getMetadata().number())) {
             var matcher = TITLE_GENERATOR_ISSUE_NUMBER_PATTERN.matcher(value);
             if (matcher.find()) {
-                value = matcher.replaceAll(referencePage.getNumber());
+                value = matcher.replaceAll(referencePage.getMetadata().number());
             }
 
             matcher = TITLE_GENERATOR_ISSUE_PART_NUMBER_PATTERN.matcher(value);

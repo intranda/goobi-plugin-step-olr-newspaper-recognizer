@@ -24,6 +24,7 @@ import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.goobi.beans.Process;
 import org.goobi.beans.Step;
 import org.goobi.managedbeans.StepBean;
@@ -45,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 @PluginImplementation
 @Log4j2
@@ -103,11 +103,10 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             issueTypes = initializeIssueTypes(config.configurationsAt("issue"));
             supplementTypes = initializeSupplementTypes(config.configurationsAt("supplement"));
 
-            validateConfig();
-            readExportedFile();
-
             metsWriter = new MetsWriter(step.getProzess(), issueTypes, supplementTypes, createNewPagination, paginationType, useFakePagination);
             metsWriter.initialize();
+
+            readExportedFile();
         } catch (Exception e) {
             String message = "Error during plugin initialization";
             log.error(message, e);
@@ -115,33 +114,30 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
     }
 
-    private void validateConfig() {
-        if (issueTypes.size() != issueTypes.stream()
+    private List<NewspaperIssueType> initializeIssueTypes(List<HierarchicalConfiguration> config) {
+        var result = config.stream()
+                .map(this::parseIssueType)
+                .toList();
+        if (result.size() != result.stream()
                 .map(NewspaperIssueType::label)
                 .distinct()
                 .count()) {
-            // TODO: Localize
-            Helper.setFehlerMeldung("Issue type labels are not unique!");
+            throw new IllegalArgumentException("Issue type labels are not unique!");
         }
-        if (supplementTypes.size() != supplementTypes.stream()
-                .map(NewspaperSupplementType::label)
-                .distinct()
-                .count()) {
-            // TODO: Localize
-            Helper.setFehlerMeldung("Supplement type labels are not unique!");
-        }
-    }
-
-    private List<NewspaperIssueType> initializeIssueTypes(List<HierarchicalConfiguration> config) {
-        return config.stream()
-                .map(this::parseIssueType)
-                .toList();
+        return result;
     }
 
     private List<NewspaperSupplementType> initializeSupplementTypes(List<HierarchicalConfiguration> config) {
-        return config.stream()
+        var result = config.stream()
                 .map(this::parseSupplementType)
                 .toList();
+        if (result.size() != result.stream()
+                .map(NewspaperSupplementType::label)
+                .distinct()
+                .count()) {
+            throw new IllegalArgumentException("Supplement type labels are not unique!");
+        }
+        return result;
     }
 
     private NewspaperIssueType parseIssueType(HierarchicalConfiguration config) {
@@ -210,16 +206,22 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         log.debug("deleteFile is called");
         log.debug("deleting file: " + fileNameToDelete);
         Process pr = this.myStep.getProzess();
-        String imageDir = getImageDirectory(pr);
-        Path filePathToDelete = Path.of(imageDir, fileNameToDelete);
         try {
-            // delete file from disk
-            StorageProvider.getInstance().deleteFile(filePathToDelete);
+            // try to delete the file from both the media and master folder
+            Path filePathToDelete = Path.of(pr.getImagesTifDirectory(false), fileNameToDelete);
+            if (StorageProvider.getInstance().isFileExists(filePathToDelete)) {
+                StorageProvider.getInstance().deleteFile(filePathToDelete);
+            }
+            filePathToDelete = Path.of(pr.getImagesOrigDirectory(false), fileNameToDelete);
+            if (StorageProvider.getInstance().isFileExists(filePathToDelete)) {
+                StorageProvider.getInstance().deleteFile(filePathToDelete);
+            }
+
             // delete the NewspaperPage object from pages
             pages.remove(fileIdToDelete);
 
-        } catch (IOException e) {
-            log.error("IOException happened trying to delete file \"{}\"", filePathToDelete, e);
+        } catch (IOException | DAOException | SwapException e) {
+            log.error("Exception happened trying to delete file \"{}\"", fileNameToDelete, e);
         }
     }
 
@@ -306,35 +308,19 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     public String getJsonData() throws DAOException, SwapException, IOException {
-        // TODO: Why this check here? Is this some kind of "uninitialized" check?
-        if (this.pages.get(0).getImage() == null) {
-            Process pr = this.myStep.getProzess();
-            String imageDir = getImageDirectory(pr);
-            String imageDirName = Paths.get(imageDir).toFile().getName();
+        if (this.pages.stream().anyMatch(p -> p.getImage() == null)) {
+            Process process = this.myStep.getProzess();
+            String imageDir = getImageDirectory(process); // TODO: Check if this path is correct or only the directory name required
             int order = 0;
-            int count = 0;
-            String contextPath = getContextPath();
-            NewspaperPage currentIssue = null;
             for (NewspaperPage page : pages) {
-                if (count == 0) {
-                    page.setIssue(true);
-                }
-                if (page.isIssue()) {
-                    currentIssue = page;
-                    count++;
-                } else if (currentIssue != null) {
-                    currentIssue.addPage(page);
-                }
-
-                Image image = new Image(myStep.getProzess(), imageDir, page.getFilename(), order++, 500);
+                // TODO: Previously, the first page was automatically made an issue
+                Image image = new Image(process, imageDir, page.getFilename(), order++, 500);
                 // Due to GSON serialization issues, we remove the `imagePath` property of the image to avoid its serialization. It's not required for our purposes anyway!
                 image.setImagePath(null);
                 page.setImage(image);
             }
-            log.info(String.format("Counted %d issues", count));
+            log.info(String.format("Counted %d issues", pages.stream().filter(p -> p.getIssueType() != null).count()));
         }
-
-        this.pages.forEach(NewspaperPage::initializeProperties);
 
         return gson.toJson(this.pages);
     }
@@ -342,7 +328,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     public void setJsonData(String json) {
         log.info("saving json data");
         this.pages = gson.fromJson(json, listType);
-        this.pages.forEach(p -> p.setFrontendDateFormat(dateFormat));
+        this.pages.forEach(this::initializePage);
         Process pr = this.myStep.getProzess();
         try {
             String manualF = pr.getProcessDataDirectory() + ISSUE_RESULT_MANUAL_LOCATION;
@@ -353,6 +339,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         } catch (Exception e) {
             log.error(e);
         }
+    }
+
+    private void initializePage(NewspaperPage page) {
+        page.setFrontendDateFormat(dateFormat);
+        metsWriter.getIssueTypeForPage(page).ifPresent(page::setIssueType);
+        metsWriter.getSupplementTypeForPage(page).ifPresent(page::setSupplementType);
     }
 
     public String saveMetsFile() {
@@ -385,7 +377,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         Path manualF = Paths.get(pr.getProcessDataDirectory() + ISSUE_RESULT_MANUAL_LOCATION);
         Path automaticF = Paths.get(pr.getProcessDataDirectory() + ISSUE_RESULT_LOCATION);
         if (StorageProvider.getInstance().isFileExists(manualF)) {
-
             try (BufferedReader br = new BufferedReader(new InputStreamReader(StorageProvider.getInstance().newInputStream(manualF)))) {
                 this.pages = gson.fromJson(br, listType);
             }
@@ -394,33 +385,31 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 this.pages = gson.fromJson(new JsonReader(fr), listType);
             }
 
-            for (NewspaperPage page : pages) {
-                page.guessIssue();
-            }
+            // TODO: Test this
+            this.pages.stream()
+                    .filter(NewspaperPage::analysisIndicatesThisIsAnIssue)
+                    .forEach(p -> p.setIssueTypeName(this.issueTypes.getFirst().label()));
         } else {
             String imageDir = getImageDirectory(pr);
             List<Path> files = StorageProvider.getInstance().listFiles(imageDir);
             pages = new ArrayList<>();
             for (Path p : files) {
-                pages.add(new NewspaperPage(p.getFileName().toString()));
+                NewspaperPage newPage = new NewspaperPage();
+                newPage.setFilename(p.getFileName().toString());
+                pages.add(newPage);
             }
 
-            for (NewspaperPage page : pages) {
-                page.guessIssue();
-            }
-            if (!StorageProvider.getInstance().isDirectory(automaticF.getParent())) {
-                StorageProvider.getInstance().createDirectories(automaticF.getParent());
+            // TODO: This was automatic before, should be manual?!
+            if (!StorageProvider.getInstance().isDirectory(manualF.getParent())) {
+                StorageProvider.getInstance().createDirectories(manualF.getParent());
             }
 
-            OutputStream out = StorageProvider.getInstance().newOutputStream(automaticF);
-            try (BufferedWriter bufw = new BufferedWriter(new OutputStreamWriter(out))) {
-                gson.toJson(this.pages, bufw);
+            OutputStream out = StorageProvider.getInstance().newOutputStream(manualF);
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out))) {
+                gson.toJson(this.pages, bw);
             }
         }
-    }
 
-    private String getContextPath() {
-        HelperForm hf = (HelperForm) Helper.getBeanByName("HelperForm", HelperForm.class);
-        return hf.getServletPathWithHostAsUrl();
+        this.pages.forEach(this::initializePage);
     }
 }
