@@ -9,7 +9,6 @@ import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperMetadataWrite
 import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperPage;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperSupplementType;
 import de.sub.goobi.config.ConfigPlugins;
-import de.sub.goobi.forms.HelperForm;
 import de.sub.goobi.helper.Helper;
 import de.sub.goobi.helper.HelperSchritte;
 import de.sub.goobi.helper.StorageProvider;
@@ -24,7 +23,6 @@ import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.commons.lang3.StringUtils;
 import org.goobi.beans.Process;
 import org.goobi.beans.Step;
 import org.goobi.managedbeans.StepBean;

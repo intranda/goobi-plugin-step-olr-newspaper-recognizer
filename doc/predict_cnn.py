@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-import mxnet as mx
-import sys
-import os
 import json
+import mxnet as mx
+import os
+import sys
 
 if len(sys.argv) > 4:
     dirName = sys.argv[1]
