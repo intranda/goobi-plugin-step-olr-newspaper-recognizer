@@ -637,6 +637,7 @@
 		    }
 
 		    if (!page.issueTypeName) {
+                this.wipePageData(page);
 		        page.issueTypeName = this.defaultIssueType;
 		    } else {
                 this.wipePageData(page);

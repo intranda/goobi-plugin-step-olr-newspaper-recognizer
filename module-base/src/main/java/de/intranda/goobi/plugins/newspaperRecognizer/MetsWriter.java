@@ -144,7 +144,6 @@ public class MetsWriter {
             // process bound book children
             processBoundBookChildren(bbChildren, page, i, newspaperPage);
 
-            // TODO: Previously, issues were set not to be supplements. Replace this with some kind of validation logic somewhere else
             // create new issue if needed
             if (currentIssue == null || Optional.ofNullable(newspaperPage.getIssueType()).isPresent()) {
                 mainPageNo = 1;
@@ -152,19 +151,17 @@ public class MetsWriter {
                 currentIssue = createNewIssue(dd, newspaperPage);
                 volume.addChild(currentIssue);
             }
-
-            if (Optional.ofNullable(newspaperPage.getSupplementType()).isPresent()) {
+            else if (Optional.ofNullable(newspaperPage.getSupplementType()).isPresent()) {
                 supplementPageNo = 1;
                 currentSupplement = createNewSupplement(dd, currentIssuePage, newspaperPage);
                 currentIssue.addChild(currentSupplement);
             }
 
-            if (currentSupplement != null) {
+            if (currentSupplement != null && newspaperPage.getSupplementNumber() > 0) {
                 currentSupplement.addReferenceTo(page, LOGICAL_PHYSICAL_TYPE);
             }
 
             if (createNewPagination) {
-                // TODO: Check supplement number logic here
                 int pageNo = newspaperPage.getSupplementNumber() > 0 ? supplementPageNo : mainPageNo;
                 createMetadata(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME), Integer.toString(pageNo), page);
             }
@@ -241,12 +238,13 @@ public class MetsWriter {
         }
 
         // process old logical pages
-        List<Metadata> oldLogPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME))).orElse(Collections.emptyList());
+        List<Metadata> oldLogPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME)))
+                .orElse(Collections.emptyList());
 
         if (oldLogPage.isEmpty()) {
             createMetadata(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME), "uncounted", page);
         } else {
-            createMetadata(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME), oldLogPage.get(0).getValue(), page);
+            createMetadata(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME), oldLogPage.getFirst().getValue(), page);
         }
     }
 

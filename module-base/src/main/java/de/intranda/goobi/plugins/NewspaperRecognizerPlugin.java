@@ -23,6 +23,7 @@ import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.goobi.beans.Process;
 import org.goobi.beans.Step;
 import org.goobi.managedbeans.StepBean;
@@ -104,7 +105,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             metsWriter = new MetsWriter(step.getProzess(), issueTypes, supplementTypes, createNewPagination, paginationType, useFakePagination);
             metsWriter.initialize();
 
-            readExportedFile();
+            loadPluginData();
         } catch (Exception e) {
             String message = "Error during plugin initialization";
             log.error(message, e);
@@ -308,10 +309,9 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     public String getJsonData() throws DAOException, SwapException, IOException {
         if (this.pages.stream().anyMatch(p -> p.getImage() == null)) {
             Process process = this.myStep.getProzess();
-            String imageDir = getImageDirectory(process); // TODO: Check if this path is correct or only the directory name required
+            String imageDir = getImageDirectory(process);
             int order = 0;
             for (NewspaperPage page : pages) {
-                // TODO: Previously, the first page was automatically made an issue
                 Image image = new Image(process, imageDir, page.getFilename(), order++, 500);
                 // Due to GSON serialization issues, we remove the `imagePath` property of the image to avoid its serialization. It's not required for our purposes anyway!
                 image.setImagePath(null);
@@ -369,15 +369,17 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         return imageDir;
     }
 
-    // TODO: This method restores / loads the plugin configuration. Either by reading in the automatic analysis results or by reading the manual results (with higher priority). If neither exist, a default will be initialized
-    private void readExportedFile() throws Exception {
+    private void loadPluginData() throws SwapException, IOException {
         Process pr = this.myStep.getProzess();
         Path manualF = Paths.get(pr.getProcessDataDirectory() + ISSUE_RESULT_MANUAL_LOCATION);
         Path automaticF = Paths.get(pr.getProcessDataDirectory() + ISSUE_RESULT_LOCATION);
+
+        // try manual plugin data first
         if (StorageProvider.getInstance().isFileExists(manualF)) {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(StorageProvider.getInstance().newInputStream(manualF)))) {
                 this.pages = gson.fromJson(br, listType);
             }
+        // otherwise try to load automatic analysis results
         } else if (StorageProvider.getInstance().isFileExists(automaticF)) {
             try (BufferedReader fr = new BufferedReader(new InputStreamReader(StorageProvider.getInstance().newInputStream(automaticF)))) {
                 this.pages = gson.fromJson(new JsonReader(fr), listType);
@@ -387,6 +389,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             this.pages.stream()
                     .filter(NewspaperPage::analysisIndicatesThisIsAnIssue)
                     .forEach(p -> p.setIssueTypeName(this.issueTypes.getFirst().label()));
+        // if all else fails, create blank data
         } else {
             String imageDir = getImageDirectory(pr);
             List<Path> files = StorageProvider.getInstance().listFiles(imageDir);
@@ -397,7 +400,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 pages.add(newPage);
             }
 
-            // TODO: This was automatic before, should be manual?!
             if (!StorageProvider.getInstance().isDirectory(manualF.getParent())) {
                 StorageProvider.getInstance().createDirectories(manualF.getParent());
             }
@@ -406,6 +408,10 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out))) {
                 gson.toJson(this.pages, bw);
             }
+        }
+
+        if (!this.pages.isEmpty() && StringUtils.isBlank(this.pages.getFirst().getIssueTypeName())) {
+            this.pages.getFirst().setIssueTypeName(this.issueTypes.getFirst().label());
         }
 
         this.pages.forEach(this::initializePage);
