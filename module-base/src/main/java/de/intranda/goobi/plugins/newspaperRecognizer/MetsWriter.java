@@ -18,6 +18,8 @@ import ugh.exceptions.*;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -39,6 +41,7 @@ public class MetsWriter {
     private static final Pattern TITLE_GENERATOR_DATE_PATTERN = Pattern.compile("\\{date:(.*)\\}");
     private static final Pattern TITLE_GENERATOR_ISSUE_NUMBER_PATTERN = Pattern.compile("\\{no\\}");
     private static final Pattern TITLE_GENERATOR_ISSUE_PART_NUMBER_PATTERN = Pattern.compile("\\{partNo\\}");
+    public static final String MISSING_PLACEHOLDER_VALUE = "[MISSING]";
 
     private Map<String, DocStructType> docStructTypeMap;
     private Map<String, MetadataType> metadataTypeMap;
@@ -358,27 +361,38 @@ public class MetsWriter {
     }
 
     private String generateValue(NewspaperPage referencePage, String value) {
-        if (referencePage.getDate().isPresent()) {
-            var matcher = TITLE_GENERATOR_DATE_PATTERN.matcher(value);
-            if (matcher.find()) {
-                var datePattern = matcher.group(1);
-                var dateFormat = DateTimeFormatter.ofPattern(datePattern);
-                value = matcher.replaceAll(dateFormat.format(referencePage.getDate().get()));
-            }
-        }
-
-        if (!StringUtils.isBlank(referencePage.getMetadata().number())) {
-            var matcher = TITLE_GENERATOR_ISSUE_NUMBER_PATTERN.matcher(value);
-            if (matcher.find()) {
-                value = matcher.replaceAll(referencePage.getMetadata().number());
-            }
-
-            matcher = TITLE_GENERATOR_ISSUE_PART_NUMBER_PATTERN.matcher(value);
-            if (matcher.find()) {
-                value = matcher.replaceAll(referencePage.generatePartNumber());
-            }
-        }
-
+        value = replaceRegexOccurrenceWith(
+                value,
+                TITLE_GENERATOR_DATE_PATTERN,
+                m -> DateTimeFormatter.ofPattern(m.group(1)).format(referencePage.getDate().orElseThrow())
+        );
+        value = replaceRegexOccurrenceWith(
+                value,
+                TITLE_GENERATOR_ISSUE_NUMBER_PATTERN,
+                m -> referencePage.getMetadata().number()
+        );
+        value = replaceRegexOccurrenceWith(
+                value,
+                TITLE_GENERATOR_ISSUE_PART_NUMBER_PATTERN,
+                m -> referencePage.generatePartNumber()
+        );
         return value;
+    }
+
+    private String replaceRegexOccurrenceWith(String s, Pattern regex, Function<Matcher, String> targetValueFunction) {
+        var matcher = regex.matcher(s);
+        if (matcher.find()) {
+            String targetValue = null;
+            try {
+                targetValue = targetValueFunction.apply(matcher);
+            } catch (RuntimeException e) {
+                // Ignore any issues
+            }
+            if (StringUtils.isBlank(targetValue)) {
+                targetValue = MISSING_PLACEHOLDER_VALUE;
+            }
+            s = matcher.replaceAll(targetValue);
+        }
+        return s;
     }
 }
