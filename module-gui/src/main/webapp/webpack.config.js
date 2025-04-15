@@ -1,10 +1,20 @@
+const CopyPlugin = require("copy-webpack-plugin")
 const path = require("path")
 const webpack = require("webpack")
+const fs = require("fs")
+const homedir = require("os").homedir();
 
-module.exports = {
-    watch: false,
+function loadConfig() {
+  const fs = require("fs");
+  const homedir = require("os").homedir();
+  const config = fs.readFileSync(homedir + '/.config/gulp_userconfig.json')
+  return config ? JSON.parse(config).tomcatLocation : '';
+};
+let customLocation = loadConfig();
+
+module.exports = (env, argv) => {
+  return {
     entry: './main.js',
-    mode: "development",
     output: {
         path: path.resolve(__dirname, 'resources/dist/intranda_step_newspaperRecognizer/js/'),
         //path: path.resolve(__dirname, '../GUI/META-INF/resources/uii/newspaperjs/'),
@@ -35,5 +45,15 @@ module.exports = {
           }
         }
       ]
-    }
+    },
+    plugins: [
+      argv.mode == 'development' ? new CopyPlugin({
+        patterns: [
+          { from: 'resources/dist/intranda_step_newspaperRecognizer/js/',
+            to: `${customLocation}dist/intranda_step_newspaperRecognizer/js/`,
+          },
+        ]
+      }) : false,
+    ]
   }
+}
