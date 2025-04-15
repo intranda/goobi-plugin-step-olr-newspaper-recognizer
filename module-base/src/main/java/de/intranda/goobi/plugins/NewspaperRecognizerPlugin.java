@@ -350,7 +350,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     public String saveMetsFile() {
         try {
             metsWriter.write(pages);
-        } catch (TypeNotAllowedForParentException | TypeNotAllowedAsChildException | WriteException | SwapException | IOException | PreferencesException e) {
+        } catch (TypeNotAllowedForParentException | TypeNotAllowedAsChildException | WriteException | SwapException | IOException | PreferencesException | RuntimeException e) {
             String message = "An error occurred while persisting data into the Mets file";
             log.error(message, e);
             Helper.setFehlerMeldung(message, e);

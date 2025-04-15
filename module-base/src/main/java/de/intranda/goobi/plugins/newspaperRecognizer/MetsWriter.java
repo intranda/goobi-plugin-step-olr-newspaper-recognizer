@@ -163,7 +163,7 @@ public class MetsWriter {
 
             if (createNewPagination) {
                 int pageNo = newspaperPage.getSupplementNumber() > 0 ? supplementPageNo : mainPageNo;
-                createMetadata(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME), Integer.toString(pageNo), page);
+                createMetadata(LOG_PAGE_NO_TYPE_NAME, Integer.toString(pageNo), page);
             }
 
             // link pages to issue and volume
@@ -222,7 +222,7 @@ public class MetsWriter {
 
     private void processBoundBookChildren(List<DocStruct> bbChildren, DocStruct page, int currentNumber, NewspaperPage newspaperPage) {
         if (bbChildren == null) {
-            createMetadata(metadataTypeMap.get(PHYS_PAGE_NO_TYPE_NAME), "" + (currentNumber + 1), page);
+            createMetadata(PHYS_PAGE_NO_TYPE_NAME, "" + (currentNumber + 1), page);
             return;
         }
 
@@ -230,7 +230,7 @@ public class MetsWriter {
         Optional<DocStruct> oldPage = bbChildren.stream().filter(p -> newspaperPage.getFilename().equals(p.getImageName())).findAny();
 
         // process old physical pages
-        createMetadata(metadataTypeMap.get(PHYS_PAGE_NO_TYPE_NAME), "" + (currentNumber + 1), page);
+        createMetadata(PHYS_PAGE_NO_TYPE_NAME, "" + (currentNumber + 1), page);
 
         if (createNewPagination) {
             // no need to process old logical page
@@ -238,38 +238,39 @@ public class MetsWriter {
         }
 
         // process old logical pages
+        // TODO
         List<Metadata> oldLogPage = oldPage.map(p -> (List<Metadata>) p.getAllMetadataByType(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME)))
                 .orElse(Collections.emptyList());
 
         if (oldLogPage.isEmpty()) {
-            createMetadata(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME), "uncounted", page);
+            createMetadata(LOG_PAGE_NO_TYPE_NAME, "uncounted", page);
         } else {
-            createMetadata(metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME), oldLogPage.getFirst().getValue(), page);
+            createMetadata(LOG_PAGE_NO_TYPE_NAME, oldLogPage.getFirst().getValue(), page);
         }
     }
 
     private DocStruct createNewIssue(DigitalDocument dd, NewspaperPage newspaperPage) throws TypeNotAllowedForParentException {
         var issueType = getIssueTypeForPage(newspaperPage);
         if (issueType.isEmpty()) {
-            throw new IllegalStateException("Can't create an issue for non-issues!");
+            throw new IllegalStateException("Unable to load issue type \"" + newspaperPage.getIssueTypeName() + "\"");
         }
 
         var result = dd.createDocStruct(docStructTypeMap.get(issueType.get().rulesetType()));
 
         if (!StringUtils.isBlank(newspaperPage.getMetadata().number())) {
-            createMetadata(metadataTypeMap.get(NUMBER_TYPE_NAME), newspaperPage.getMetadata().number(), result);
-            createMetadata(metadataTypeMap.get(NUMBER_SORT_TYPE_NAME), newspaperPage.getMetadata().number(), result);
-            createMetadata(metadataTypeMap.get(PART_NUMBER_TYPE_NAME), newspaperPage.generatePartNumber(), result);
+            createMetadata(NUMBER_TYPE_NAME, newspaperPage.getMetadata().number(), result);
+            createMetadata(NUMBER_SORT_TYPE_NAME, newspaperPage.getMetadata().number(), result);
+            createMetadata(PART_NUMBER_TYPE_NAME, newspaperPage.generatePartNumber(), result);
         } else {
             String message = "The newspaper issue for image \"" + newspaperPage.getFilename() + "\" has no number associated!";
             log.warn(message);
             Helper.setFehlerMeldung(message);
         }
 
-        newspaperPage.getMetsDateString().ifPresent(date -> createMetadata(metadataTypeMap.get(DATE_ISSUED_TYPE_NAME), date, result));
+        newspaperPage.getMetsDateString().ifPresent(date -> createMetadata(DATE_ISSUED_TYPE_NAME, date, result));
 
         for (NewspaperMetadataWriteConfiguration mc : issueType.get().customMetadata()) {
-            createMetadata(metadataTypeMap.get(mc.key()), generateValue(newspaperPage, mc.value()), result);
+            createMetadata(mc.key(), generateValue(newspaperPage, mc.value()), result);
         }
 
         return result;
@@ -278,21 +279,24 @@ public class MetsWriter {
     private DocStruct createNewSupplement(DigitalDocument dd, NewspaperPage parentIssue, NewspaperPage newspaperPage) throws TypeNotAllowedForParentException {
         var supplementType = getSupplementTypeForPage(newspaperPage);
         if (supplementType.isEmpty()) {
-            throw new IllegalStateException("Can't create an supplement for non-supplements!");
+            throw new IllegalStateException("Unable to load supplement type \"" + newspaperPage.getSupplementTypeName() + "\"");
         }
 
         var result = dd.createDocStruct(docStructTypeMap.get(supplementType.get().rulesetType()));
 
         for (NewspaperMetadataWriteConfiguration mc : supplementType.get().customMetadata()) {
-            createMetadata(metadataTypeMap.get(mc.key()), generateValue(parentIssue, mc.value()), result);
+            createMetadata(mc.key(), generateValue(parentIssue, mc.value()), result);
         }
 
         return result;
     }
 
-    private void createMetadata(MetadataType metadataType, String value, DocStruct docstruct) {
+    private void createMetadata(String metadataTypeName, String value, DocStruct docstruct) {
+        MetadataType metadataType = Optional.ofNullable(metadataTypeMap.get(metadataTypeName))
+                .orElseThrow(() -> new IllegalArgumentException("Unknown metadata type \"" + metadataTypeName + "\""));
+
         // check whether the input metadataType is LOG_PAGE_NO_TYPE_NAME, if so modify value accordingly
-        if (metadataTypeMap.get(LOG_PAGE_NO_TYPE_NAME).equals(metadataType)) {
+        if (LOG_PAGE_NO_TYPE_NAME.equals(metadataTypeName)) {
             value = createFakePagination(value);
         }
         try {
@@ -300,7 +304,9 @@ public class MetsWriter {
             md.setValue(value);
             docstruct.addMetadata(md);
         } catch (MetadataTypeNotAllowedException e) {
-            log.error(e);
+            String message = "Error writing metadata \"" + metadataType.getName() + "\"";
+            log.error(message, e);
+            Helper.setFehlerMeldung(message, e);
         }
     }
 
