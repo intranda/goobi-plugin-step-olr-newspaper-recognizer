@@ -7,8 +7,12 @@ const homedir = require("os").homedir();
 function loadConfig() {
   const fs = require("fs");
   const homedir = require("os").homedir();
-  const config = fs.readFileSync(homedir + '/.config/gulp_userconfig.json')
-  return config ? JSON.parse(config).tomcatLocation : '';
+  try {
+    const config = fs.readFileSync(homedir + '/.config/gulp_userconfig.json')
+    return config ? JSON.parse(config).tomcatLocation : '';
+  } catch (err) {
+    return '';
+  }
 };
 let customLocation = loadConfig();
 
