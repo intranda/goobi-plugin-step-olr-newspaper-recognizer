@@ -43,20 +43,12 @@
 					<a
 						class="btn d-flex align-items-center btn--title-action "
 						disabled={!dataDirty}
-						onclick={savePluginData}
+						onclick={save}
 						title={translate_msg('save')}
 						data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="fa fa-save" />
 					</a>
 					<!-- // Speicher-Button -->
-					<a
-						if={props.showWriteMetsButton}
-						class="btn d-flex align-items-center btn--title-action"
-						onclick={saveMets}
-						title={translate_msg('plugin_newspaperRecognizer_writeMets')}
-						data-bs-toggle="tooltip">
-						<span aria-hidden="true" class="fa fa-check" />
-					</a>
 				</div>
 			</div>
 
@@ -252,9 +244,8 @@
 					<!-- // verlassen-Button -->
 					<a class="btn btn-blank" onclick={exit}>{translate_msg('pluginLeave')}</a>
 					<!-- Speicher-Button -->
-					<a class="btn btn-blank" disabled={!dataDirty} onclick={savePluginData}>{translate_msg('save')}</a>
+					<a class="btn btn-blank" disabled={!dataDirty} onclick={save}>{translate_msg('save')}</a>
 					<!-- // Speicher-Button -->
-					<a if={props.showWriteMetsButton} class="btn btn-success" onclick={saveMets}>{translate_msg('plugin_newspaperRecognizer_writeMets')}</a>
 				</div>
 			</template>
 		</div>
@@ -272,8 +263,7 @@
 	    onBeforeMount(props, state) {
 			// fields of props are defined in plugin_newspaperRecognizer.xhtml
 			this.data_el = props.data_el; // used in both save functions, and it has one key `value` which contains the data contents in the JSON format
-			this.saveMetsButton = props.saveButton; // used only in the function "save"
-			this.savePluginDataButton = props.saveDataButton; // used only in the function "savePluginData"
+			this.saveButton = props.saveButton; // used only in the function "save"
 			this.finish_button = props.finishButton; // used only in the function "exit"
 			this.restartAnalysisButton = props.restartAnalysisButton; // used only in the function "restartAnalysis"
 			this.deleteManualResultsButton = props.deleteManualResultsButton; // used only in the function "deleteManualResults"
@@ -341,11 +331,6 @@
 	    onMounted(props, state) {
 	      this.addAjaxEvent();
 	      console.log("mounted");
-	      /*
-	      setInterval(() => {
-		        this.savePluginData();
-		    }, 15000);
-		  */
 	      if(this.loadallimages && props.pagenumCorrect) {
 	    	  this.loadedImages = 0; // used in the frontend to show the progress of loading
 	    	  window.npImages = {};
@@ -464,7 +449,7 @@
 
 				// update the list data to update the rendering in the frontend
 				this.data.splice(position, 1);
-				this.savePluginDataButton.click();
+				this.saveButton.click();
 
 				// update indices of all pages after the deleted page
 				for (let i = 0; i < this.data.length; i++) {
@@ -499,30 +484,18 @@
 		},
 
 		/* triggered when the button `METS schreiben` is clicked */
-		saveMets() {
-		    this.data_el.value = this.createSaveData();
-		    this.saveMetsButton.click();
-		    this.dataDirty = false;
-		    this.update();
-		},
-
-		/* triggered when the button `Speichern` is clicked */
-		savePluginData() {
-		    var saved = false;
+		save() {
 		    if(this.dataDirty) {
-		        var saveData = this.createSaveData();
-			    this.data_el.value = saveData;
-			    this.savePluginDataButton.click();
-			    console.log("save plugin data")
-			    this.dataDirty = false;
-			    saved = true;
-			}
-		    if(saved) {
-		        this.update();
-		    }
+                this.data_el.value = this.createSaveData();
+                this.saveButton.click();
+                this.dataDirty = false;
+                this.update();
+            }
 		},
 
-		/* used by the functions save and savePluginData */
+
+
+		/* used by save function */
 		createSaveData() {
 			var saveData = [];
 	        for(var i=0;i<this.data.length;i++) {

@@ -36,10 +36,7 @@
         </h:form>
         <h:form id="newspaper_form">
 			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
-			<h:commandLink id="save_mets_button" action="#{AktuelleSchritteForm.myPlugin.saveMetsFile}">
-				<f:ajax execute="@form" />
-			</h:commandLink>
-			<h:commandLink id="save_data_button">
+			<h:commandLink id="save_button" action="#{AktuelleSchritteForm.myPlugin.save}">
 				<f:ajax execute="@form" />
 			</h:commandLink>
 			<h:commandLink id="finish_button" action="#{AktuelleSchritteForm.myPlugin.finish}"></h:commandLink>
@@ -63,8 +60,7 @@
            window.noLoadImages = true;
            var opts = {
            		data_el: document.getElementById('newspaper_form:my_plugin_data'),
-           		saveButton: document.getElementById('newspaper_form:save_mets_button'),
-           		saveDataButton: document.getElementById('newspaper_form:save_data_button'),
+           		saveButton: document.getElementById('newspaper_form:save_button'),
            		finishButton: document.getElementById('newspaper_form:finish_button'),
            		restartAnalysisButton: document.getElementById('extra_form:delete_and_start_over_button'),
            		deleteManualResultsButton: document.getElementById('extra_form:delete_manual_results_button'),
@@ -73,7 +69,6 @@
            		thumbHeight: 400,
            		title: "#{msgs[('plugin_').concat(AktuelleSchritteForm.myPlugin.title)]}",
            		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages},
-           		showWriteMetsButton: #{AktuelleSchritteForm.myPlugin.showWriteMetsButton},
 			    showDeletePageButton: #{AktuelleSchritteForm.myPlugin.showDeletePageButton},
 			    dateFormatPattern: '#{AktuelleSchritteForm.myPlugin.dateFormatPattern}',
            		pagenumCorrect: #{AktuelleSchritteForm.myPlugin.pageNumberCountEqual()},

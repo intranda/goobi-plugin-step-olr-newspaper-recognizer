@@ -60,7 +60,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private int tocDepth;
 
     private boolean loadAllImages;
-    private boolean showWriteMetsButton;
     private boolean showDeletePageButton;
     private String dateFormatPattern;
     private DateTimeFormatter dateFormat;
@@ -89,7 +88,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             XMLConfiguration config = ConfigPlugins.getPluginConfig(PLUGIN_NAME);
             tocDepth = config.getInt("defaultDepth", 1);
             loadAllImages = config.getBoolean("loadAllImages", true);
-            showWriteMetsButton = config.getBoolean("showWriteMetsButton", true);
             showDeletePageButton = config.getBoolean("showDeletePageButton", false);
             dateFormatPattern = config.getString("dateFormat", "dd.MM.yyyy");
             dateFormat = DateTimeFormatter.ofPattern(dateFormatPattern);
@@ -347,7 +345,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         metsWriter.getSupplementTypeForPage(page).ifPresent(page::setSupplementType);
     }
 
-    public String saveMetsFile() {
+    public String save() {
         try {
             metsWriter.write(pages);
         } catch (TypeNotAllowedForParentException | TypeNotAllowedAsChildException | WriteException | SwapException | IOException | PreferencesException | RuntimeException e) {

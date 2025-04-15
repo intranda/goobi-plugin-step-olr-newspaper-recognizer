@@ -2,7 +2,6 @@
 	<!-- which depth shall be used for the document analysis -->
 	<defaultDepth>1</defaultDepth>
 	<loadAllImages>true</loadAllImages>
-	<showWriteMetsButton>true</showWriteMetsButton>
     <showDeletePageButton>false</showDeletePageButton>
 	<dateFormat>dd.MM.yyyy</dateFormat>
 	<!-- The previous "writePageTitle" configuration option is not present anymore. It is replaced with "metadata" child elements in the "issue" and "supplement" elements. If no title metadata is written, there is no title generation. -->
