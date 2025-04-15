@@ -29,7 +29,6 @@
     </ui:define>
 
     <ui:define name="content">
-        <h:outputStylesheet library="css" name="newspapergrid.css?v=${buildNumber}" />
         <h:form id="extra_form">
             <h:commandLink id="delete_and_start_over_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualDataAndStartAutoAnalysis}"/>
             <h:commandLink id="delete_manual_results_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualData}"/>

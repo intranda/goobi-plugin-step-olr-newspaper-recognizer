@@ -1,6 +1,8 @@
 import * as riot from 'riot'
 import App from './tags/app.riot'
 
+import './resources/css/newspapergrid.css'
+
 const mountApp = riot.component(App)
 
 /* The goobiOpts look like this:
