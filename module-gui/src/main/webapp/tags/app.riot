@@ -464,7 +464,7 @@
 
 		/* triggered when the button `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met */
 		restartAnalysis() {
-			var confirmed = confirm(translate_msg('plugin_newspaperRecognizer_confirmRestartAnalysis'));
+			var confirmed = confirm(this.translate_msg('plugin_newspaperRecognizer_confirmRestartAnalysis'));
 			if(confirmed) {
 				this.restartAnalysisButton.click();
 			}
@@ -472,7 +472,7 @@
 
 		/* triggered when some button under the `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met. */
 		deleteManualResults() {
-			var confirmed = confirm(translate_msg('plugin_newspaperRecognizer_confirmDeleteManualResults'));
+			var confirmed = confirm(this.translate_msg('plugin_newspaperRecognizer_confirmDeleteManualResults'));
 			if(confirmed) {
 				this.deleteManualResultsButton.click();
 			}
@@ -480,7 +480,7 @@
 
 		/* triggered when the `delete` buttonis clicked, which will remove the picture */
 		deletePage(e, page){
-			var confirmed = confirm(translate_msg('plugin_newspaperRecognizer_confirmDeleteImage'))
+			var confirmed = confirm(this.translate_msg('plugin_newspaperRecognizer_confirmDeleteImage'))
 
 			if (confirmed) {
 				this.dataDirty = true;
