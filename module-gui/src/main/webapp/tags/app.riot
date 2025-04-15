@@ -62,7 +62,7 @@
 
 			<div>
 				<div if={!props.pagenumCorrect}>
-					<div>
+					<div class="p-3">
 						<div class="alert alert-danger">{translate_msg('plugin_newspaperRecognizer_pagenumWarning')}</div>
 					</div>
 					<div class="section-footer">
@@ -78,196 +78,167 @@
 					</div>
 				</div>
 				<template if={imagesLoaded && props.pagenumCorrect}>
-					<div class="section-footer">
+					<div class="d-flex justify-content-end p-2">
 						<!-- Wochentage als Checkboxen -->
-						<label class="check-week btn{monday ? ' active' : ''}">
-							<input type="checkbox" class="checkbox-week" checked={monday} onclick={() => this.toggleDay('monday')}></input>
+						<label class="check-week btn btn-{monday ? 'neutral-600' : 'blank'}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={monday} onclick={() => this.toggleDay('monday')}></input>
 							{translate_msg('plugin_newspaperRecognizer_monday')}
 						</label>
-						<label class="check-week btn{tuesday ? ' active' : ''}">
-							<input type="checkbox" class="checkbox-week" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>
+						<label class="check-week btn btn-{tuesday ? 'neutral-600' : 'blank'}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>
 							{translate_msg('plugin_newspaperRecognizer_tuesday')}
 						</label>
-						<label class="check-week btn{wednesday ? ' active' : ''}">
-							<input type="checkbox" class="checkbox-week" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>
+						<label class="check-week btn btn-{wednesday ? 'neutral-600' : 'blank'}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>
 							{translate_msg('plugin_newspaperRecognizer_wednesday')}
 						</label>
-						<label class="check-week btn{thursday ? ' active' : ''}">
-							<input type="checkbox" class="checkbox-week" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>
+						<label class="check-week btn btn-{thursday ? 'neutral-600' : 'blank'}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>
 							{translate_msg('plugin_newspaperRecognizer_thursday')}
 						</label>
-						<label class="check-week btn{friday ? ' active' : ''}">
-							<input type="checkbox" class="checkbox-week" checked={friday} onclick={() => this.toggleDay('friday')}></input>
+						<label class="check-week btn btn-{friday ? 'neutral-600' : 'blank'}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={friday} onclick={() => this.toggleDay('friday')}></input>
 							{translate_msg('plugin_newspaperRecognizer_friday')}
 						</label>
-						<label class="check-week btn{saturday ? ' active' : ''}">
-							<input type="checkbox" class="checkbox-week" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>
+						<label class="check-week btn btn-{saturday ? 'neutral-600' : 'blank'}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>
 							{translate_msg('plugin_newspaperRecognizer_saturday')}
 						</label>
-						<label class="check-week btn{sunday ? ' active' : ''}">
-							<input type="checkbox" class="checkbox-week" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>
+						<label class="check-week btn btn-{sunday ? 'neutral-600' : 'blank'}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>
 							{translate_msg('plugin_newspaperRecognizer_sunday')}
 						</label>
 						<!-- // Wochentage als Checkboxen -->
-
+						<label class="check-week btn btn-{biWeekly ? 'neutral-600' : 'blank'}">
+							<input type="checkbox" class="checkbox-week btn-check" checked={biWeekly} onclick={toggleBiWeekly}></input>
+							{translate_msg('plugin_newspaperRecognizer_biWeekly')}
+						</label>
+						<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
+					</div>
+					<div class="d-flex justify-content-end p-2 border-bottom">
 						<a class="btn btn-hot" onclick={delete_all_issues} style="position: relative;">
 							<span if={!deletingIssues}>{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}</span>
 							<img if={deletingIssues} alt="Loading..." style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif" />
 						</a>
 					</div>
-					<div class="section-footer">
-						<label class="check-week btn{biWeekly ? ' active' : ''}">
-							<input type="checkbox" class="checkbox-week" checked={biWeekly} onclick={toggleBiWeekly}></input>
-							{translate_msg('plugin_newspaperRecognizer_biWeekly')}
-						</label>
-						<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
-					</div>
 					<!-- // Formular für Wochentage -->
-
-
 					<!-- Bereich für Ausgaben -->
-					<div class="section-body-padded border-bottom border-top">
+					<div class="section-body">
 						<!-- Auflistung aller Ausgaben -->
-						<my_row each={page in data} if={page.issueTypeName}>
-							<div class="row thumbnail-row">
-								<div class="col-12 col-sm-4 row mb-auto pb-2">
+						<div class="issues">
+							<template each={page in data} if={page.issueTypeName}>
 
-									<div class="col-12 col-xs-6 thumbnail-image" style="position: relative;">
+								<div class="thumbnail-image px-3 pb-3 d-flex gap-2">
 
-										<!-- Bild der Ausgabe -->
-										<div class="goobi-thumbnail font-light">
-											<div class="goobi-thumbnail-image">
-												<div class="thumb" style="min-height: {thumb_height}px;">
+									<!-- Button, um dieses Bild zu löschen -->
+									<a
+										class="btn btn-blank align-self-start"
+										if={props.showDeletePageButton}
+										onclick="{(e) => deletePage(e, page)}"
+										title="{translate_msg('loeschen')}"
+										data-bs-toggle="tooltip">
+										<span aria-hidden="true" class="fa fa-trash" />
+									</a>
+									<!-- // Button, um dieses Bild zu löschen -->
 
-													<a onclick="{(e) => onPageClick(e, page, page.pos)}">
-														<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl}
-																image_large={page.image.largeThumbnailUrl}
-																title={page.image.tooltip}
-																page_id={page.pos}
-																loadallimages={loadallimages}
-																preload_large={true}>
-														</thumbcanvas>
-													</a>
+									<!-- Bild der Ausgabe -->
+									<div class="goobi-thumbnail font-light">
+										<div class="goobi-thumbnail-image">
+											<div class="thumb" style="min-height: {thumb_height}px;">
 
-												</div>
+												<a onclick="{(e) => onPageClick(e, page, page.pos)}">
+													<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl}
+															image_large={page.image.largeThumbnailUrl}
+															title={page.image.tooltip}
+															page_id={page.pos}
+															loadallimages={loadallimages}
+															preload_large={true}>
+													</thumbcanvas>
+												</a>
+
 											</div>
 										</div>
-										<!-- // Bild der Ausgabe -->
-
-										<!-- Button, um dieses Bild zu löschen -->
-										<a
-											if={props.showDeletePageButton}
-											onclick="{(e) => deletePage(e, page)}"
-											style="position: absolute; right: 10px; bottom: 5px;">
-											<span aria-hidden="true" class="fa fa-trash" />
-										</a>
-										<!-- // Button, um dieses Bild zu löschen -->
-
 									</div>
-									<div class="col-12 col-xs-6 row flex-column gap-2">
-										<!-- Datum der Ausgabe -->
-										<div class="col-12 col-xs-5">
-											<div class="form-group {page.dateValid ? '' : 'has-error'}">
-												<input type="text" value={page.metadata?.dateStr} onkeyup={e => changeDate(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_date')}" class="form-control"></input>
-												<span if={!page.dateValid} class="help-block">{translate_msg('plugin_newspaperRecognizer_wrongDateFormat')}</span>
-											</div>
+									<!-- // Bild der Ausgabe -->
+
+								</div>
+								<div class="issue-controls d-flex flex-column gap-2 px-3 pb-3" style="min-height: {thumb_height}px;">
+									<!-- Datum der Ausgabe -->
+									<div class="form-group px-0 {page.dateValid ? '' : 'has-error'}">
+										<input type="text" value={page.metadata?.dateStr} onblur={e => validateDateField(e, page)} onkeyup={e => revalidateDateField(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_date')}" class="form-control"></input>
+										<span if={!page.dateValid} class="help-inline text-danger">{translate_msg('plugin_newspaperRecognizer_wrongDateFormat')}</span>
+									</div>
+
+									<!-- Nummer der Ausgabe -->
+									<div class="form-group px-0">
+										<div class="input-group">
+											<input type="text" value={page.metadata?.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{translate_msg('prefix')}" class="form-control" style="width:33%"></input>
+											<input type="text" value={page.metadata?.number} onkeyup={e => changeNumber(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_nro')}" class="form-control" style="width:34%"></input>
+											<input type="text" value={page.metadata?.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{translate_msg('suffix')}" class="form-control" style="width:33%"></input>
 										</div>
+									</div>
 
-										<!-- Nummer der Ausgabe -->
-										<div class="col-xs-5 ">
-											<div class="form-group">
-												<div class="input-group">
-													<input type="text" value={page.metadata?.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{translate_msg('prefix')}" class="form-control" style="width:33%"></input>
-													<input type="text" value={page.metadata?.number} onkeyup={e => changeNumber(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_nro')}" class="form-control" style="width:34%"></input>
-													<input type="text" value={page.metadata?.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{translate_msg('suffix')}" class="form-control" style="width:33%"></input>
-												</div>
-											</div>
-										</div>
+									<!-- "Typ" der Ausgabe -->
+									<select class="form-select" onchange={e => changeIssueType(e, page)}>
+										<option each={type in issueTypes} selected="{type == page.issueTypeName ? 'selected' : ''}" data-translation-id="{type}">{translate_msg(type)}</option>
+									</select>
 
-										<!-- "Typ" der Ausgabe -->
-										<div class="col-xs-5">
-											<div class="form-group">
-												<select class="form-control" onchange={e => changeIssueType(e, page)}>
-													<option each={type in issueTypes} selected="{type == page.issueTypeName ? 'selected' : ''}" data-translation-id="{type}">{translate_msg(type)}</option>
-												</select>
-											</div>
-										</div>
+									<!-- "Typ" der Beilage -->
+									<div each={(subPage, subPageIndex) in this.getSubPages(page.pos)} if={subPage.supplementTypeName} class="d-flex align-items-center gap-2">
+										<svg height="30" width="40" xmlns="http://www.w3.org/2000/svg">
+											<circle r="15" cx="15" cy="15" fill="{suppl_colors[(subPage.supplementNumber-1)%5]}" />
+										</svg>
+										<select class="form-select" onchange={e => changeSupplementType(e, subPage)}>
+											<option each={type in supplementTypes} selected="{type == subPage.supplementTypeName ? 'selected' : ''}" data-translation-id="{type}">{translate_msg(type)}</option>
+										</select>
+									</div>
 
-										<!-- "Typ" der Beilage -->
-										<div each={(subPage, subPageIndex) in this.getSubPages(page.pos)}>
-                                            <div if={subPage.supplementTypeName} class="row">
-                                                <div class="col">
-                                                    <svg height="30" width="30" xmlns="http://www.w3.org/2000/svg">
-                                                        <circle r="15" cx="15" cy="15" fill="{suppl_colors[(subPage.supplementNumber-1)%5]}" />
-                                                    </svg>
-                                                </div>
-                                                <div class="col-11">
-                                                    <div class="form-group">
-                                                        <select class="form-control" onchange={e => changeSupplementType(e, subPage)}>
-                                                            <option each={type in supplementTypes} selected="{type == subPage.supplementTypeName ? 'selected' : ''}" data-translation-id="{type}">{translate_msg(type)}</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
+									<div class="d-flex flex-column gap-2">
 										<!-- Details über zugehörige Seiten -->
-										<div class="col-xs-6">
+										<span>
 											{translate_msg('otherPages')}: {this.getSubPages(page.pos).length}
-										</div>
-
+										</span>
 										<!-- Button für Datumsgenerierung -->
-										<div class="col-xs-6">
-											<a onclick={e => generateFollowingIssueMetadata(e, page, 1)} class="btn btn-blank">
-												{translate_msg('plugin_newspaperRecognizer_applyEveryIssue')}
-											</a>
-										</div>
+										<a onclick={e => generateFollowingIssueMetadata(e, page, 1)} class="btn btn-blank align-self-end">
+											{translate_msg('plugin_newspaperRecognizer_applyEveryIssue')}
+										</a>
 
-										<div class="col-xs-6">
-											<a onclick={e => generateFollowingIssueMetadata(e, page, 2)} class="btn btn-blank ">
-												{translate_msg('plugin_newspaperRecognizer_applyEverySecondIssue')}
-											</a>
-										</div>
+										<a onclick={e => generateFollowingIssueMetadata(e, page, 2)} class="btn btn-blank align-self-end">
+											{translate_msg('plugin_newspaperRecognizer_applyEverySecondIssue')}
+										</a>
 
-										<div class="col-xs-6" style="">
-											<a onclick={e => generateFollowingIssueMetadata(e, page, 3)} class="btn btn-blank">
-												{translate_msg('plugin_newspaperRecognizer_applyEveryThirdIssue')}
+										<a onclick={e => generateFollowingIssueMetadata(e, page, 3)} class="btn btn-blank align-self-end">
+											{translate_msg('plugin_newspaperRecognizer_applyEveryThirdIssue')}
+										</a>
+									</div>
+								</div>
+								<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
+								<div class="thumbnails px-3 pb-3" style="--thumb-size: {thumb_height / 2.5}px;">
+									<!-- THUMBNAIL -->
+									<!-- Having a subPageIndex here would not work, as the real index over all pages is required -->
+									<div each={subPage in this.getSubPages(page.pos)} class="newspaper-thumbnail">
+										<div class="newspaper-thumbnail__image" style="min-height: {thumb_height/2}px;">
+											<a onclick={(e) => onPageClick(e, subPage, subPage.pos)}>
+												<thumbcanvas
+														width={thumb_height/2}
+														height={thumb_height/2}
+														render_text={subPage.supplementNumber ? subPage.supplementNumber : null}
+														render_size="24"
+														render_bg_color={subPage.supplementNumber ? suppl_colors[(subPage.supplementNumber-1)%5] : null}
+														image_small={subPage.image.thumbnailUrl}
+														image_large={subPage.image.largeThumbnailUrl}
+														title={subPage.image.tooltip}
+														page_id={subPage.pos}
+														loadallimages={loadallimages}
+														preload_large={false}>
+												</thumbcanvas>
 											</a>
 										</div>
 									</div>
+
 								</div>
-
-								<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
-								<div class="other-pages col-12 col-sm-8">
-									<div class="col-sm-8">
-										<div class="newspaper-thumbnails">
-											<!-- THUMBNAIL -->
-                                            <!-- Having a subPageIndex here would not work, as the real index over all pages is required -->
-											<div each={subPage in this.getSubPages(page.pos)} class="newspaper-thumbnail">
-												<div class="newspaper-thumbnail__image" style="min-height: {thumb_height/2}px;">
-													<a onclick={(e) => onPageClick(e, subPage, subPage.pos)}>
-														<thumbcanvas
-																width={thumb_height/2}
-																height={thumb_height/2}
-																render_text={subPage.supplementNumber ? subPage.supplementNumber : null}
-																render_size="24"
-																render_bg_color={subPage.supplementNumber ? suppl_colors[(subPage.supplementNumber-1)%5] : null}
-																image_small={subPage.image.thumbnailUrl}
-																image_large={subPage.image.largeThumbnailUrl}
-																title={subPage.image.tooltip}
-																page_id={subPage.pos}
-																loadallimages={loadallimages}
-																preload_large={false}>
-														</thumbcanvas>
-													</a>
-												</div>
-											</div>
-
-										</div>
-								</div>
-
-							</div>
-						</my_row>
+							</template>
+						</div>
 					</div>
 				</template>
 			</div>
@@ -575,11 +546,13 @@
 		/* triggered when the checkbox option `Zweiwöchentlich` is clicked */
 		toggleBiWeekly() {
 		    this.biWeekly = !this.biWeekly;
+			this.update();
 		},
 
 		/* triggered when any checkbox option for days is clicked */
 		toggleDay(day) {
 		    this[day] = !this[day];
+			this.update();
 		},
 
 		/* triggered when the button `Alle Ausgaben entfernen` is clicked */
@@ -698,12 +671,22 @@
 		   }
 		},
 
-		/* triggered when the text input `Datum` gets an input */
-		changeDate(e, page) {
+		// validate the date input
+		validateDateField(e, page) {
 		    this.dataDirty = true;
 		    page.metadata.dateStr = e.target.value;
 		    page.dateValid = this.validateDate(page.metadata?.dateStr);
 		    this.update();
+		},
+
+		// revalidate the date input, only if it is not valid
+		revalidateDateField(e, page) {
+			if (!page.dateValid) {
+				this.dataDirty = true;
+				page.metadata.dateStr = e.target.value;
+				page.dateValid = this.validateDate(page.metadata?.dateStr);
+				this.update();
+			}
 		},
 
 		/* triggered when the text input `Nr.` gets an input */
