@@ -78,44 +78,44 @@
 					</div>
 				</div>
 				<template if={imagesLoaded && props.pagenumCorrect}>
-					<div class="d-flex justify-content-end p-2">
-						<!-- Wochentage als Checkboxen -->
-						<label class="check-week btn btn-{monday ? 'neutral-600' : 'blank'}">
-							<input type="checkbox" class="checkbox-week btn-check" checked={monday} onclick={() => this.toggleDay('monday')}></input>
-							{translate_msg('plugin_newspaperRecognizer_monday')}
-						</label>
-						<label class="check-week btn btn-{tuesday ? 'neutral-600' : 'blank'}">
-							<input type="checkbox" class="checkbox-week btn-check" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>
-							{translate_msg('plugin_newspaperRecognizer_tuesday')}
-						</label>
-						<label class="check-week btn btn-{wednesday ? 'neutral-600' : 'blank'}">
-							<input type="checkbox" class="checkbox-week btn-check" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>
-							{translate_msg('plugin_newspaperRecognizer_wednesday')}
-						</label>
-						<label class="check-week btn btn-{thursday ? 'neutral-600' : 'blank'}">
-							<input type="checkbox" class="checkbox-week btn-check" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>
-							{translate_msg('plugin_newspaperRecognizer_thursday')}
-						</label>
-						<label class="check-week btn btn-{friday ? 'neutral-600' : 'blank'}">
-							<input type="checkbox" class="checkbox-week btn-check" checked={friday} onclick={() => this.toggleDay('friday')}></input>
-							{translate_msg('plugin_newspaperRecognizer_friday')}
-						</label>
-						<label class="check-week btn btn-{saturday ? 'neutral-600' : 'blank'}">
-							<input type="checkbox" class="checkbox-week btn-check" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>
-							{translate_msg('plugin_newspaperRecognizer_saturday')}
-						</label>
-						<label class="check-week btn btn-{sunday ? 'neutral-600' : 'blank'}">
-							<input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>
-							{translate_msg('plugin_newspaperRecognizer_sunday')}
-						</label>
-						<!-- // Wochentage als Checkboxen -->
-						<label class="check-week btn btn-{biWeekly ? 'neutral-600' : 'blank'}">
-							<input type="checkbox" class="checkbox-week btn-check" checked={biWeekly} onclick={toggleBiWeekly}></input>
-							{translate_msg('plugin_newspaperRecognizer_biWeekly')}
-						</label>
-						<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
-					</div>
-					<div class="d-flex justify-content-end p-2 border-bottom">
+					<div class="d-flex justify-content-between gap-2 p-3 border-bottom">
+						<div class="d-flex gap-2 flex-nowrap">
+							<!-- Wochentage als Checkboxen -->
+							<label class="check-week btn btn-{monday ? 'neutral-600' : 'blank'}">
+								<input type="checkbox" class="checkbox-week btn-check" checked={monday} onclick={() => this.toggleDay('monday')}></input>
+								{translate_msg('plugin_newspaperRecognizer_monday')}
+							</label>
+							<label class="check-week btn btn-{tuesday ? 'neutral-600' : 'blank'}">
+								<input type="checkbox" class="checkbox-week btn-check" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>
+								{translate_msg('plugin_newspaperRecognizer_tuesday')}
+							</label>
+							<label class="check-week btn btn-{wednesday ? 'neutral-600' : 'blank'}">
+								<input type="checkbox" class="checkbox-week btn-check" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>
+								{translate_msg('plugin_newspaperRecognizer_wednesday')}
+							</label>
+							<label class="check-week btn btn-{thursday ? 'neutral-600' : 'blank'}">
+								<input type="checkbox" class="checkbox-week btn-check" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>
+								{translate_msg('plugin_newspaperRecognizer_thursday')}
+							</label>
+							<label class="check-week btn btn-{friday ? 'neutral-600' : 'blank'}">
+								<input type="checkbox" class="checkbox-week btn-check" checked={friday} onclick={() => this.toggleDay('friday')}></input>
+								{translate_msg('plugin_newspaperRecognizer_friday')}
+							</label>
+							<label class="check-week btn btn-{saturday ? 'neutral-600' : 'blank'}">
+								<input type="checkbox" class="checkbox-week btn-check" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>
+								{translate_msg('plugin_newspaperRecognizer_saturday')}
+							</label>
+							<label class="check-week btn btn-{sunday ? 'neutral-600' : 'blank'}">
+								<input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>
+								{translate_msg('plugin_newspaperRecognizer_sunday')}
+							</label>
+							<!-- // Wochentage als Checkboxen -->
+							<label class="check-week btn btn-{biWeekly ? 'neutral-600' : 'blank'}">
+								<input type="checkbox" class="checkbox-week btn-check" checked={biWeekly} onclick={toggleBiWeekly}></input>
+								{translate_msg('plugin_newspaperRecognizer_biWeekly')}
+							</label>
+							<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
+						</div>
 						<a class="btn btn-hot" onclick={delete_all_issues} style="position: relative;">
 							<span if={!deletingIssues}>{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}</span>
 							<img if={deletingIssues} alt="Loading..." style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif" />
