@@ -464,8 +464,7 @@
 
 		/* triggered when the button `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met */
 		restartAnalysis() {
-		    // TODO: Localize
-			var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse und startet eine neue automatische Analyse. Wirklich fortfahren?")
+			var confirmed = confirm(translate_msg('plugin_newspaperRecognizer_confirmRestartAnalysis'));
 			if(confirmed) {
 				this.restartAnalysisButton.click();
 			}
@@ -473,8 +472,7 @@
 
 		/* triggered when some button under the `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met. */
 		deleteManualResults() {
-		    // TODO: Localize
-			var confirmed = confirm("Dies löscht alle manuell erstellten Ergebnisse. Wirklich fortfahren?");
+			var confirmed = confirm(translate_msg('plugin_newspaperRecognizer_confirmDeleteManualResults'));
 			if(confirmed) {
 				this.deleteManualResultsButton.click();
 			}
@@ -482,8 +480,7 @@
 
 		/* triggered when the `delete` buttonis clicked, which will remove the picture */
 		deletePage(e, page){
-		    // TODO: Localize
-			var confirmed = confirm("Dies löscht dieses Bild. Wirklich fortfahren?");
+			var confirmed = confirm(translate_msg('plugin_newspaperRecognizer_confirmDeleteImage'))
 
 			if (confirmed) {
 				this.dataDirty = true;
@@ -595,7 +592,7 @@
 		        this.wipePageData(this.data[i]);
 		    }
 		    this.data[0].issueTypeName = this.defaultIssueType;
-		    this.deletingIssues = false;
+		    this.deletingIssues = false;jjjjjjjjjjjj
 			this.update();
 		},
 

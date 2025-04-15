@@ -281,8 +281,10 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         Process pr = this.myStep.getProzess();
         Path manualF = Paths.get(pr.getProcessDataDirectory() + ISSUE_RESULT_MANUAL_LOCATION);
 
-        log.info("Deleting {}", manualF);
-        StorageProvider.getInstance().deleteFile(manualF);
+        if (StorageProvider.getInstance().isFileExists(manualF)) {
+            log.info("Deleting {}", manualF);
+            StorageProvider.getInstance().deleteFile(manualF);
+        }
     }
 
     public boolean pageNumberCountEqual() {
@@ -385,7 +387,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 this.pages = gson.fromJson(new JsonReader(fr), listType);
             }
 
-            // TODO: Test this
             this.pages.stream()
                     .filter(NewspaperPage::analysisIndicatesThisIsAnIssue)
                     .forEach(p -> p.setIssueTypeName(this.issueTypes.getFirst().label()));

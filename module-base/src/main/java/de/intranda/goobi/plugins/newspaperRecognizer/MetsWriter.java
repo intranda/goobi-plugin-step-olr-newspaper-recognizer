@@ -172,7 +172,7 @@ public class MetsWriter {
 
             mainPageNo++;
 
-            // TODO: Check if we can't just reuse the supplement number from the frontend
+            // if frontend has a supplement numbering associated, we can count pages for the supplement
             if (newspaperPage.getSupplementNumber() > 0) {
                 supplementPageNo++;
             }
