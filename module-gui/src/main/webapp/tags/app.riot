@@ -41,8 +41,7 @@
 					</a>
 					<!-- Speicher-Button -->
 					<a
-						class="btn d-flex align-items-center btn--title-action "
-						disabled={!dataDirty}
+						class="btn d-flex align-items-center btn--title-action{dataDirty ? '' : ' disabled'}"
 						onclick={save}
 						title={translate_msg('save')}
 						data-bs-toggle="tooltip">
@@ -162,7 +161,7 @@
 										{translate_msg('plugin_newspaperRecognizer_removeAllIssuesConfirm')}
 									</div>
 									<div class="modal-footer">
-										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
+										<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
 										<button type="button" class="btn btn-hot" onclick={resetAllIssues} data-bs-dismiss="modal">{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}</button>
 									</div>
 								</div>
@@ -310,7 +309,7 @@
 					<!-- // verlassen-Button -->
 					<a class="btn btn-blank" onclick={exit}>{translate_msg('pluginLeave')}</a>
 					<!-- Speicher-Button -->
-					<a class="btn btn-blank" disabled={!dataDirty} onclick={save}>{translate_msg('save')}</a>
+					<a class="btn btn-blank{dataDirty ? '' : ' disabled'}" onclick={save}>{translate_msg('save')}</a>
 					<!-- // Speicher-Button -->
 				</div>
 			</template>
