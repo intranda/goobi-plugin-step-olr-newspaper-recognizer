@@ -48,6 +48,13 @@
 						<span aria-hidden="true" class="fa fa-save" />
 					</a>
 					<!-- // Speicher-Button -->
+					<a
+						class="btn d-flex align-items-center btn--title-action{dataDirty ? '' : ' disabled'}"
+						onclick={saveAndExit}
+						title="{translate_msg('pluginSaveAndLeave')}"
+						data-bs-toggle="tooltip">
+						<span aria-hidden="true" class="fa fa-sign-out" />
+					</a>
 				</div>
 			</div>
 
@@ -311,6 +318,7 @@
 					<!-- Speicher-Button -->
 					<a class="btn btn-blank{dataDirty ? '' : ' disabled'}" onclick={save}>{translate_msg('save')}</a>
 					<!-- // Speicher-Button -->
+					<a class="btn btn-blank{dataDirty ? '' : ' disabled'}" onclick={saveAndExit}>{translate_msg('pluginSaveAndLeave')}</a>
 				</div>
 			</template>
 		</div>
@@ -556,6 +564,16 @@
                 this.dataDirty = false;
                 this.update();
             }
+		},
+
+		saveAndExit() {
+		    if(this.dataDirty) {
+				this.data_el.value = this.createSaveData();
+				this.saveButton.click();
+				this.dataDirty = false;
+				this.update();
+			}
+		    this.finish_button.click();
 		},
 
 
