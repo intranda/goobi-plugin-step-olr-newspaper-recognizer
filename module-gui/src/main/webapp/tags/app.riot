@@ -23,14 +23,6 @@
 					{props.title}
 				</h2>
 				<div class="actions d-flex">
-					<a
-						id="id10"
-						onclick={restartAnalysis}
-						class="btn d-flex align-items-center btn--title-action"
-						title={translate_msg('plugin_newspaperRecognizer_recompute')}
-						data-bs-toggle="tooltip">
-						<span aria-hidden="true" class="fa fa-refresh"  />
-					</a>
 					<!-- // verlassen-Button -->
 					<a
 						class="btn d-flex align-items-center btn--title-action"
@@ -65,7 +57,44 @@
 					</div>
 					<div class="section-footer">
 						<a class="btn btn-hot " onclick={restartAnalysis}>{translate_msg('plugin_newspaperRecognizer_recompute')}</a>
-						<a class="btn btn-hot" onclick={deleteManualResults}>{translate_msg('plugin_newspaperRecognizer_deleteManualResults')}</a>
+
+						<button
+							type="button"
+							class="btn btn-image position-absolute top-0"
+							if={props.showDeletePageButton}
+							data-bs-toggle="modal"
+							data-bs-target="#deleteManualResultsModal">
+							{translate_msg('plugin_newspaperRecognizer_deleteManualResults')}
+						</div>
+						<div
+							class="modal modal-hot fade"
+							id="deleteManualResultsModal"
+							tabindex="-1"
+							role="dialog"
+							aria-labelledby="deleteManualResultsModalLabel">
+							<div
+								class="modal-dialog"
+								role="document">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title" id="deleteManualResultsModalLabel">
+											{translate_msg('plugin_newspaperRecognizer_deleteManualResults')}
+										</h5>
+										<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
+											<span aria-hidden="true" class="fa fa-times" />
+										</button>
+									</div>
+									<div class="modal-body">
+										{translate_msg('plugin_newspaperRecognizer_confirmAction')}
+									</div>
+									<div class="modal-footer">
+										<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
+										<!-- Button, um dieses Bild zu löschen -->
+										<button type="button" class="btn btn-hot" onclick={deleteManualResults}>{translate_msg('plugin_newspaperRecognizer_deleteManualResults')}</button>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 				<!-- Formular für Wochentage -->
@@ -138,38 +167,75 @@
 							</label>
 							<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
 						</div>
-						<button
-							type="button"
-							class="btn btn-hot"
-							data-bs-toggle="modal"
-							data-bs-target="#resetAllIssuesModal">
-							{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}
-						</button>
-						<!-- Modal -->
-						<div
-							class="modal modal-hot fade"
-							id="resetAllIssuesModal"
-							tabindex="-1"
-							role="dialog"
-							aria-labelledby="resetAllIssuesModalLabel">
+						<div class="d-flex gap-2">
+							<button
+								type="button"
+								class="btn btn-hot"
+								data-bs-toggle="modal"
+								data-bs-target="#confirmRecomputeModal">
+								{translate_msg('plugin_newspaperRecognizer_recompute')}
+							</div>
 							<div
-								class="modal-dialog"
-								role="document">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title" id="resetAllIssuesModalLabel">
-											{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}
-										</h5>
-										<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-											<span aria-hidden="true" class="fa fa-times" />
-										</button>
+								class="modal modal-hot fade"
+								id="confirmRecomputeModal"
+								tabindex="-1"
+								role="dialog"
+								aria-labelledby="confirmRecomputeModalLabel">
+								<div
+									class="modal-dialog"
+									role="document">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title" id="confirmRecomputeModalLabel">
+												{translate_msg('plugin_newspaperRecognizer_recompute')}
+											</h5>
+											<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
+												<span aria-hidden="true" class="fa fa-times" />
+											</button>
+										</div>
+										<div class="modal-body">
+											{translate_msg('plugin_newspaperRecognizer_confirmAction')}
+										</div>
+										<div class="modal-footer">
+											<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
+											<button type="button" class="btn btn-hot" onclick={restartAnalysis} data-bs-dismiss="modal">{translate_msg('plugin_newspaperRecognizer_recompute')}</button>
+										</div>
 									</div>
-									<div class="modal-body">
-										{translate_msg('plugin_newspaperRecognizer_removeAllIssuesConfirm')}
-									</div>
-									<div class="modal-footer">
-										<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
-										<button type="button" class="btn btn-hot" onclick={resetAllIssues} data-bs-dismiss="modal">{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}</button>
+								</div>
+							</div>
+							<button
+								type="button"
+								class="btn btn-hot"
+								data-bs-toggle="modal"
+								data-bs-target="#resetAllIssuesModal">
+								{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}
+							</button>
+							<!-- Modal -->
+							<div
+								class="modal modal-hot fade"
+								id="resetAllIssuesModal"
+								tabindex="-1"
+								role="dialog"
+								aria-labelledby="resetAllIssuesModalLabel">
+								<div
+									class="modal-dialog"
+									role="document">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title" id="resetAllIssuesModalLabel">
+												{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}
+											</h5>
+											<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
+												<span aria-hidden="true" class="fa fa-times" />
+											</button>
+										</div>
+										<div class="modal-body">
+											{translate_msg('plugin_newspaperRecognizer_confirmAction')}
+										</div>
+										<div class="modal-footer">
+											<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
+											<button type="button" class="btn btn-hot" onclick={resetAllIssues} data-bs-dismiss="modal">{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}</button>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -198,17 +264,48 @@
 															preload_large={true}>
 													</thumbcanvas>
 												</a>
-
-												<!-- Button, um dieses Bild zu löschen -->
-												<a
+												<button
+													type="button"
 													class="btn btn-image position-absolute top-0"
 													if={props.showDeletePageButton}
-													onclick="{(e) => deletePage(e, page)}"
-													title="{translate_msg('loeschen')}"
-													data-bs-toggle="tooltip">
+													data-bs-toggle="modal"
+													data-bs-target="#deletePageModal">
 													<span aria-hidden="true" class="fa fa-trash" />
-												</a>
-												<!-- // Button, um dieses Bild zu löschen -->
+												</button>
+												<div
+													class="modal modal-hot fade"
+													id="deletePageModal"
+													tabindex="-1"
+													role="dialog"
+													aria-labelledby="deletePageModalLabel">
+													<div
+														class="modal-dialog"
+														role="document">
+														<div class="modal-content">
+															<div class="modal-header">
+																<h5 class="modal-title" id="deletePageModalLabel">
+																	{translate_msg('loeschen')}
+																</h5>
+																<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
+																	<span aria-hidden="true" class="fa fa-times" />
+																</button>
+															</div>
+															<div class="modal-body">
+																{translate_msg('plugin_newspaperRecognizer_confirmAction')}
+															</div>
+															<div class="modal-footer">
+																<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
+																<!-- Button, um dieses Bild zu löschen -->
+																<button
+																	class="btn btn-hot"
+																	onclick="{(e) => deletePage(e, page)}"
+																	data-bs-dismiss="modal">
+																	{translate_msg('loeschen')}
+																</button>
+															</div>
+														</div>
+													</div>
+												</div>
 
 											</div>
 										</div>
@@ -287,15 +384,49 @@
 														preload_large={false}>
 												</thumbcanvas>
 											</a>
-											<!-- Button, um dieses Bild zu löschen -->
-											<a
+											<button
+												type="button"
 												class="btn btn-image position-absolute top-0"
 												if={props.showDeletePageButton}
-												onclick="{(e) => deletePage(e, subPage)}"
-												title="{translate_msg('loeschen')}"
-												data-bs-toggle="tooltip">
+												data-bs-toggle="modal"
+												data-bs-target="#deleteSubPageModal">
 												<span aria-hidden="true" class="fa fa-trash" />
-											</a>
+											</div>
+											<div
+												class="modal modal-hot fade"
+												id="deleteSubPageModal"
+												tabindex="-1"
+												role="dialog"
+												aria-labelledby="deleteSubPageModalLabel">
+												<div
+													class="modal-dialog"
+													role="document">
+													<div class="modal-content">
+														<div class="modal-header">
+															<h5 class="modal-title" id="deleteSubPageModalLabel">
+																{translate_msg('loeschen')}
+															</h5>
+															<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
+																<span aria-hidden="true" class="fa fa-times" />
+															</button>
+														</div>
+														<div class="modal-body">
+															{translate_msg('plugin_newspaperRecognizer_confirmAction')}
+														</div>
+														<div class="modal-footer">
+															<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
+															<!-- Button, um dieses Bild zu löschen -->
+															<button
+																class="btn btn-hot"
+																if={props.showDeletePageButton}
+																onclick="{(e) => deletePage(e, subPage)}"
+																data-bs-dismiss="modal">
+																{translate_msg('loeschen')}
+															</button>
+														</div>
+													</div>
+												</div>
+											</div>
 											<!-- // Button, um dieses Bild zu löschen -->
 										</div>
 									</div>
@@ -495,61 +626,52 @@
 
 		/* triggered when the button `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met */
 		restartAnalysis() {
-			var confirmed = confirm(this.translate_msg('plugin_newspaperRecognizer_confirmRestartAnalysis'));
-			if(confirmed) {
-				this.restartAnalysisButton.click();
-			}
+			this.restartAnalysisButton.click();
 		},
 
 		/* triggered when some button under the `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met. */
 		deleteManualResults() {
-			var confirmed = confirm(this.translate_msg('plugin_newspaperRecognizer_confirmDeleteManualResults'));
-			if(confirmed) {
-				this.deleteManualResultsButton.click();
-			}
+			this.deleteManualResultsButton.click();
 		},
 
 		/* triggered when the `delete` buttonis clicked, which will remove the picture */
 		deletePage(e, page){
-			var confirmed = confirm(this.translate_msg('plugin_newspaperRecognizer_confirmDeleteImage'))
 
-			if (confirmed) {
-				this.dataDirty = true;
-				// remove this page from data
-				let position = page.pos;
+			this.dataDirty = true;
+			// remove this page from data
+			let position = page.pos;
 
-				// delete file from the backend
-				this.setFileToDelete(page.filename, position);
-				this.delete_file_button.click();
+			// delete file from the backend
+			this.setFileToDelete(page.filename, position);
+			this.delete_file_button.click();
 
-				// update the list data to update the rendering in the frontend
-				this.data.splice(position, 1);
-				this.saveButton.click();
+			// update the list data to update the rendering in the frontend
+			this.data.splice(position, 1);
+			this.saveButton.click();
 
-				// update indices of all pages after the deleted page
-				for (let i = 0; i < this.data.length; i++) {
-                    this.data[i].pos = i;
-                }
-                // make first image an issue if it isn't
-                if (this.data.length > 0 || !this.data[0].issueTypeName) {
-                    this.data[0].issueTypeName = this.defaultIssueType;
-                }
-
-                if (this.data[0].supplementTypeName || this.data[0].supplementNumber > 0) {
-                    const supplementTypeName = this.data[0].supplementTypeName;
-                    const supplementNumber = this.data[0].supplementNumber;
-                    this.data[0].supplementTypeName = null;
-                    this.data[0].supplementNumber = 0;
-                    // if the next page belongs to the same supplement as the current one originally did, move head page to next page
-                    if (this.data.length >= 2 && !this.data[1].issueTypeName && this.data[1].supplementNumber == supplementNumber) {
-                        this.data[1].supplementTypeName = supplementTypeName;
-                    }
-                }
-
-                this.regenerateSupplementNumbering(position);
-
-				this.update();
+			// update indices of all pages after the deleted page
+			for (let i = 0; i < this.data.length; i++) {
+				this.data[i].pos = i;
 			}
+			// make first image an issue if it isn't
+			if (this.data.length > 0 || !this.data[0].issueTypeName) {
+				this.data[0].issueTypeName = this.defaultIssueType;
+			}
+
+			if (this.data[0].supplementTypeName || this.data[0].supplementNumber > 0) {
+				const supplementTypeName = this.data[0].supplementTypeName;
+				const supplementNumber = this.data[0].supplementNumber;
+				this.data[0].supplementTypeName = null;
+				this.data[0].supplementNumber = 0;
+				// if the next page belongs to the same supplement as the current one originally did, move head page to next page
+				if (this.data.length >= 2 && !this.data[1].issueTypeName && this.data[1].supplementNumber == supplementNumber) {
+					this.data[1].supplementTypeName = supplementTypeName;
+				}
+			}
+
+			this.regenerateSupplementNumbering(position);
+
+			this.update();
 		},
 
 		/* used to transfer the location information of the file to the backend */
