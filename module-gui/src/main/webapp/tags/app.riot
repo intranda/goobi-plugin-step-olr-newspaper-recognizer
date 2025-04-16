@@ -120,23 +120,12 @@
 						<div class="issues">
 							<template each={page in data} if={page.issueTypeName}>
 
-								<div class="thumbnail-image px-3 pb-3 d-flex gap-2">
-
-									<!-- Button, um dieses Bild zu löschen -->
-									<a
-										class="btn btn-blank align-self-start"
-										if={props.showDeletePageButton}
-										onclick="{(e) => deletePage(e, page)}"
-										title="{translate_msg('loeschen')}"
-										data-bs-toggle="tooltip">
-										<span aria-hidden="true" class="fa fa-trash" />
-									</a>
-									<!-- // Button, um dieses Bild zu löschen -->
+								<div class="thumbnail-image px-3 pb-3">
 
 									<!-- Bild der Ausgabe -->
 									<div class="goobi-thumbnail font-light">
 										<div class="goobi-thumbnail-image">
-											<div class="thumb" style="min-height: {thumb_height}px;">
+											<div class="thumb position-relative" style="min-height: {thumb_height}px;">
 
 												<a onclick="{(e) => onPageClick(e, page, page.pos)}">
 													<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl}
@@ -147,6 +136,17 @@
 															preload_large={true}>
 													</thumbcanvas>
 												</a>
+
+												<!-- Button, um dieses Bild zu löschen -->
+												<a
+													class="btn btn-image position-absolute top-0"
+													if={props.showDeletePageButton}
+													onclick="{(e) => deletePage(e, page)}"
+													title="{translate_msg('loeschen')}"
+													data-bs-toggle="tooltip">
+													<span aria-hidden="true" class="fa fa-trash" />
+												</a>
+												<!-- // Button, um dieses Bild zu löschen -->
 
 											</div>
 										</div>
@@ -209,7 +209,7 @@
 									<!-- THUMBNAIL -->
 									<!-- Having a subPageIndex here would not work, as the real index over all pages is required -->
 									<div each={subPage in this.getSubPages(page.pos)} class="newspaper-thumbnail">
-										<div class="newspaper-thumbnail__image" style="min-height: {thumb_height/2}px;">
+										<div class="newspaper-thumbnail__image position-relative" style="min-height: {thumb_height/2}px;">
 											<a onclick={(e) => onPageClick(e, subPage, subPage.pos)}>
 												<thumbcanvas
 														width={thumb_height/2}
@@ -225,6 +225,16 @@
 														preload_large={false}>
 												</thumbcanvas>
 											</a>
+											<!-- Button, um dieses Bild zu löschen -->
+											<a
+												class="btn btn-image position-absolute top-0"
+												if={props.showDeletePageButton}
+												onclick="{(e) => deletePage(e, subPage)}"
+												title="{translate_msg('loeschen')}"
+												data-bs-toggle="tooltip">
+												<span aria-hidden="true" class="fa fa-trash" />
+											</a>
+											<!-- // Button, um dieses Bild zu löschen -->
 										</div>
 									</div>
 
