@@ -1,13 +1,11 @@
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
-	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-	xmlns:c="http://java.sun.com/jsp/jstl/core"
-	xmlns:h="http://xmlns.jcp.org/jsf/html"
-	xmlns:f="http://xmlns.jcp.org/jsf/core"
-	xmlns:o="http://omnifaces.org/ui"
-	xmlns:of="http://omnifaces.org/functions"
-	template="/uii/template/template.html"
-	xmlns:intranda="http://xmlns.jcp.org/jsf/composite/composites"
-	xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+				xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+				xmlns:c="http://java.sun.com/jsp/jstl/core"
+				xmlns:h="http://xmlns.jcp.org/jsf/html"
+				xmlns:f="http://xmlns.jcp.org/jsf/core"
+				template="/uii/template/template.html"
+				xmlns:intranda="http://xmlns.jcp.org/jsf/composite/composites"
+>
 
     <ui:param name="myPageTitle" value="#{msgs.plugin}: #{msgs[('plugin_').concat(AktuelleSchritteForm.myPlugin.title)]}" />
 
@@ -31,17 +29,13 @@
     </ui:define>
 
     <ui:define name="content">
-        <h:outputStylesheet library="css" name="newspapergrid.css?v=${buildNumber}" />
         <h:form id="extra_form">
             <h:commandLink id="delete_and_start_over_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualDataAndStartAutoAnalysis}"/>
             <h:commandLink id="delete_manual_results_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualData}"/>
         </h:form>
         <h:form id="newspaper_form">
 			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
-			<h:commandLink id="save_mets_button" action="#{AktuelleSchritteForm.myPlugin.saveMetsFile}">
-				<f:ajax execute="@form" />
-			</h:commandLink>
-			<h:commandLink id="save_data_button">
+			<h:commandLink id="save_button" action="#{AktuelleSchritteForm.myPlugin.save}">
 				<f:ajax execute="@form" />
 			</h:commandLink>
 			<h:commandLink id="finish_button" action="#{AktuelleSchritteForm.myPlugin.finish}"></h:commandLink>
@@ -65,8 +59,7 @@
            window.noLoadImages = true;
            var opts = {
            		data_el: document.getElementById('newspaper_form:my_plugin_data'),
-           		saveButton: document.getElementById('newspaper_form:save_mets_button'),
-           		saveDataButton: document.getElementById('newspaper_form:save_data_button'),
+           		saveButton: document.getElementById('newspaper_form:save_button'),
            		finishButton: document.getElementById('newspaper_form:finish_button'),
            		restartAnalysisButton: document.getElementById('extra_form:delete_and_start_over_button'),
            		deleteManualResultsButton: document.getElementById('extra_form:delete_manual_results_button'),
@@ -75,10 +68,11 @@
            		thumbHeight: 400,
            		title: "#{msgs[('plugin_').concat(AktuelleSchritteForm.myPlugin.title)]}",
            		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages},
-           		showWriteMetsButton: #{AktuelleSchritteForm.myPlugin.showWriteMetsButton},
 			    showDeletePageButton: #{AktuelleSchritteForm.myPlugin.showDeletePageButton},
-			    dateFormatDelimiter: '#{AktuelleSchritteForm.myPlugin.dateFormatDelimiter}',
+			    dateFormatPattern: '#{AktuelleSchritteForm.myPlugin.dateFormatPattern}',
            		pagenumCorrect: #{AktuelleSchritteForm.myPlugin.pageNumberCountEqual()},
+		   		issueTypes: #{AktuelleSchritteForm.myPlugin.getIssueTypeLabels()},
+		   		supplementTypes: #{AktuelleSchritteForm.myPlugin.getSupplementTypeLabels()},
            };
            console.log(opts);
            mountNewspaperCorrection(opts);

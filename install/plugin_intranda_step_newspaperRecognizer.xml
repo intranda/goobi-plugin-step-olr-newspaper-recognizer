@@ -2,10 +2,9 @@
 	<!-- which depth shall be used for the document analysis -->
 	<defaultDepth>1</defaultDepth>
 	<loadAllImages>true</loadAllImages>
-	<showWriteMetsButton>true</showWriteMetsButton>
     <showDeletePageButton>false</showDeletePageButton>
-	<dateFormatDelimiter>.</dateFormatDelimiter>
-	<writePageTitle>true</writePageTitle>
+	<dateFormat>dd.MM.yyyy</dateFormat>
+	<!-- The previous "writePageTitle" configuration option is not present anymore. It is replaced with "metadata" child elements in the "issue" and "supplement" elements. If no title metadata is written, there is no title generation. -->
     
     <!-- configurations related to pagination settings -->
 	<pagination>
@@ -23,4 +22,31 @@
 		<!-- whether or not to use the fake pagination, if true then use [N] where N is a properly formatted number, otherwise use the bare N itself. DEFAULT false. -->
 		<useFakePagination>false</useFakePagination>
 	</pagination>
+
+	<!-- The "label" can be any constant text as well as a message identifier. If the "label" is present in the translations, it will be translated to the current language. -->
+	<issue type="NewspaperIssue" label="plugin_intranda_step_newspaperRecognizer_issueType_issue">
+		<metadata key="TitleDocMain" value="Ausgabe {partNo} vom {date:dd.MM.yyyy}" />
+		<metadata key="MainTitle" value="Ausgabe {partNo} vom {date:dd.MM.yyyy}" />
+	</issue>
+	<issue type="NewspaperIssue" label="plugin_intranda_step_newspaperRecognizer_issueType_morningIssue">
+		<metadata key="TitleDocMain" value="Morgenausgabe {partNo} vom {date:dd.MM.yyyy}" />
+		<metadata key="MainTitle" value="Morgenausgabe {partNo} vom {date:dd.MM.yyyy}" />
+	</issue>
+	<issue type="NewspaperIssue" label="plugin_intranda_step_newspaperRecognizer_issueType_eveningIssue">
+		<metadata key="TitleDocMain" value="Abendausgabe {partNo} vom {date:dd.MM.yyyy}" />
+		<metadata key="MainTitle" value="Abendausgabe {partNo} vom {date:dd.MM.yyyy}" />
+	</issue>
+
+	<supplement type="NewspaperSupplement" label="Allgemeine Beilage">
+		<metadata key="TitleDocMain" value="Beilage zur {no}. Ausgabe vom {date:dd.MM.yyyy}" />
+		<metadata key="MainTitle" value="Beilage zur {no}. Ausgabe vom {date:dd.MM.yyyy}" />
+	</supplement>
+	<supplement type="NewspaperSupplement" label="Kultur">
+		<metadata key="TitleDocMain" value="Kulturteil zur {no}. Ausgabe vom {date:dd.MM.yyyy}" />
+		<metadata key="MainTitle" value="Kulturteil zur {no}. Ausgabe vom {date:dd.MM.yyyy}" />
+	</supplement>
+	<supplement type="NewspaperSupplement" label="Sport">
+		<metadata key="TitleDocMain" value="Sportteil zur {no}. Ausgabe vom {date:dd.MM.yyyy}" />
+		<metadata key="MainTitle" value="Sportteil zur {no}. Ausgabe vom {date:dd.MM.yyyy}" />
+	</supplement>
 </config_plugin>
