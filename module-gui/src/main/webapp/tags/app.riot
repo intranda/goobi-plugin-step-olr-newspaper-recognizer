@@ -132,10 +132,42 @@
 							</label>
 							<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
 						</div>
-						<a class="btn btn-hot" onclick={delete_all_issues} style="position: relative;">
-							<span if={!deletingIssues}>{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}</span>
-							<img if={deletingIssues} alt="Loading..." style="max-height: 20px; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)" src="template/img/goobi/ajaxloader2.gif" />
-						</a>
+						<button
+							type="button"
+							class="btn btn-hot"
+							data-bs-toggle="modal"
+							data-bs-target="#resetAllIssuesModal">
+							{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}
+						</button>
+						<!-- Modal -->
+						<div
+							class="modal modal-hot fade"
+							id="resetAllIssuesModal"
+							tabindex="-1"
+							role="dialog"
+							aria-labelledby="resetAllIssuesModalLabel">
+							<div
+								class="modal-dialog"
+								role="document">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title" id="resetAllIssuesModalLabel">
+											{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}
+										</h5>
+										<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
+											<span aria-hidden="true" class="fa fa-times" />
+										</button>
+									</div>
+									<div class="modal-body">
+										{translate_msg('plugin_newspaperRecognizer_removeAllIssuesConfirm')}
+									</div>
+									<div class="modal-footer">
+										<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
+										<button type="button" class="btn btn-hot" onclick={resetAllIssues} data-bs-dismiss="modal">{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}</button>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 					<!-- // Formular für Wochentage -->
 					<!-- Bereich für Ausgaben -->
@@ -314,7 +346,7 @@
 			this.biWeekly = false;
 			this.dataDirty = false; // will be set to true if any modification of the data is made or any new data is created, used as a flag for `Save`
 			this.msgs = {}; // object used to maintain the messages that is to be rendered in the frontend
-			this.deletingIssues = false; // used only in the function "delete_all_issues"
+			this.deletingIssues = false; // used only in the function "resetAllIssues"
 			this.data = JSON.parse(this.data_el.value);
 			this.defaultIssueType = this.issueTypes[0];
 			this.defaultSupplementType = this.supplementTypes[0];
@@ -563,8 +595,7 @@
 		},
 
 		/* triggered when the button `Alle Ausgaben entfernen` is clicked */
-		/* TODO: Rename to `Reset all issues` ?! */
-		delete_all_issues(e) {
+		resetAllIssues(e) {
 			this.deletingIssues = true;
 			this.update();
 		    this.dataDirty = true;
