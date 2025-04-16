@@ -872,24 +872,28 @@
 		changeNumber(e, page) {
 		    this.dataDirty = true;
 		    page.metadata.number = e.target.value;
+			this.update();
 		},
 
 		/* triggered when the text input `Präfix` gets an input */
 		changePrefix(e, page) {
 		    this.dataDirty = true;
 		    page.metadata.prefix = e.target.value;
+			this.update();
 		},
 
 		/* triggered when the text input `Suffix` gets an input */
 		changeSuffix(e, page) {
 		    this.dataDirty = true;
 		    page.metadata.suffix = e.target.value;
+			this.update();
 		},
 
 		/* triggered when the selector `Ausgabe` gets an input */
 		changeIssueType(e, page) {
 		    this.dataDirty = true;
 		    page.issueTypeName = e.target.selectedOptions[0].getAttribute("data-translation-id");
+			this.update();
 			//console.log("Issue: " + page.issueTypeName);
 		},
 
