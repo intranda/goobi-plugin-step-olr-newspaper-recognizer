@@ -75,36 +75,60 @@
 							<!-- Wochentage als Checkboxen -->
 							<label class="check-week btn btn-{monday ? 'neutral-600' : 'blank'}">
 								<input type="checkbox" class="checkbox-week btn-check" checked={monday} onclick={() => this.toggleDay('monday')}></input>
-								{translate_msg('plugin_newspaperRecognizer_monday')}
+								<span class="fa fa-lg {monday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span>
+									{translate_msg('plugin_newspaperRecognizer_monday')}
+								</span>
 							</label>
 							<label class="check-week btn btn-{tuesday ? 'neutral-600' : 'blank'}">
 								<input type="checkbox" class="checkbox-week btn-check" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>
-								{translate_msg('plugin_newspaperRecognizer_tuesday')}
+								<span class="fa fa-lg {tuesday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span>
+									{translate_msg('plugin_newspaperRecognizer_tuesday')}
+								</span>
 							</label>
 							<label class="check-week btn btn-{wednesday ? 'neutral-600' : 'blank'}">
 								<input type="checkbox" class="checkbox-week btn-check" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>
-								{translate_msg('plugin_newspaperRecognizer_wednesday')}
+								<span class="fa fa-lg {wednesday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span>
+									{translate_msg('plugin_newspaperRecognizer_wednesday')}
+								</span>
 							</label>
 							<label class="check-week btn btn-{thursday ? 'neutral-600' : 'blank'}">
 								<input type="checkbox" class="checkbox-week btn-check" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>
-								{translate_msg('plugin_newspaperRecognizer_thursday')}
+								<span class="fa fa-lg {thursday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span>
+									{translate_msg('plugin_newspaperRecognizer_thursday')}
+								</span>
 							</label>
 							<label class="check-week btn btn-{friday ? 'neutral-600' : 'blank'}">
 								<input type="checkbox" class="checkbox-week btn-check" checked={friday} onclick={() => this.toggleDay('friday')}></input>
-								{translate_msg('plugin_newspaperRecognizer_friday')}
+								<span class="fa fa-lg {friday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span>
+									{translate_msg('plugin_newspaperRecognizer_friday')}
+								</span>
 							</label>
 							<label class="check-week btn btn-{saturday ? 'neutral-600' : 'blank'}">
 								<input type="checkbox" class="checkbox-week btn-check" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>
-								{translate_msg('plugin_newspaperRecognizer_saturday')}
+								<span class="fa fa-lg {saturday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span>
+									{translate_msg('plugin_newspaperRecognizer_saturday')}
+								</span>
 							</label>
 							<label class="check-week btn btn-{sunday ? 'neutral-600' : 'blank'}">
 								<input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>
-								{translate_msg('plugin_newspaperRecognizer_sunday')}
+								<span class="fa fa-lg {sunday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span>
+									{translate_msg('plugin_newspaperRecognizer_sunday')}
+								</span>
 							</label>
 							<!-- // Wochentage als Checkboxen -->
 							<label class="check-week btn btn-{biWeekly ? 'neutral-600' : 'blank'}">
 								<input type="checkbox" class="checkbox-week btn-check" checked={biWeekly} onclick={toggleBiWeekly}></input>
-								{translate_msg('plugin_newspaperRecognizer_biWeekly')}
+								<span class="fa fa-lg {biWeekly ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span>
+									{translate_msg('plugin_newspaperRecognizer_biWeekly')}
+								</span>
 							</label>
 							<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
 						</div>
