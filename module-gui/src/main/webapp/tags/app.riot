@@ -79,49 +79,49 @@
 					<div class="d-flex justify-content-between gap-2 p-3 border-bottom">
 						<div class="d-flex gap-2 flex-nowrap">
 							<!-- Wochentage als Checkboxen -->
-							<label class="check-week btn btn-{monday ? 'neutral-600' : 'blank'}">
+							<label class="check-week btn btn-{monday ? 'neutral-600' : 'blank'}" title="{translate_msg('plugin_newspaperRecognizer_toggle_weekday')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={monday} onclick={() => this.toggleDay('monday')}></input>
 								<span class="fa fa-lg {monday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_monday')}
 								</span>
 							</label>
-							<label class="check-week btn btn-{tuesday ? 'neutral-600' : 'blank'}">
+							<label class="check-week btn btn-{tuesday ? 'neutral-600' : 'blank'}" title="{translate_msg('plugin_newspaperRecognizer_toggle_weekday')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>
 								<span class="fa fa-lg {tuesday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_tuesday')}
 								</span>
 							</label>
-							<label class="check-week btn btn-{wednesday ? 'neutral-600' : 'blank'}">
+							<label class="check-week btn btn-{wednesday ? 'neutral-600' : 'blank'}" title="{translate_msg('plugin_newspaperRecognizer_toggle_weekday')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>
 								<span class="fa fa-lg {wednesday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_wednesday')}
 								</span>
 							</label>
-							<label class="check-week btn btn-{thursday ? 'neutral-600' : 'blank'}">
+							<label class="check-week btn btn-{thursday ? 'neutral-600' : 'blank'}" title="{translate_msg('plugin_newspaperRecognizer_toggle_weekday')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>
 								<span class="fa fa-lg {thursday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_thursday')}
 								</span>
 							</label>
-							<label class="check-week btn btn-{friday ? 'neutral-600' : 'blank'}">
+							<label class="check-week btn btn-{friday ? 'neutral-600' : 'blank'}" title="{translate_msg('plugin_newspaperRecognizer_toggle_weekday')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={friday} onclick={() => this.toggleDay('friday')}></input>
 								<span class="fa fa-lg {friday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_friday')}
 								</span>
 							</label>
-							<label class="check-week btn btn-{saturday ? 'neutral-600' : 'blank'}">
+							<label class="check-week btn btn-{saturday ? 'neutral-600' : 'blank'}" title="{translate_msg('plugin_newspaperRecognizer_toggle_weekday')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>
 								<span class="fa fa-lg {saturday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_saturday')}
 								</span>
 							</label>
-							<label class="check-week btn btn-{sunday ? 'neutral-600' : 'blank'}">
+							<label class="check-week btn btn-{sunday ? 'neutral-600' : 'blank'}" title="{translate_msg('plugin_newspaperRecognizer_toggle_weekday')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>
 								<span class="fa fa-lg {sunday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
 								<span>
@@ -129,7 +129,7 @@
 								</span>
 							</label>
 							<!-- // Wochentage als Checkboxen -->
-							<label class="check-week btn btn-{biWeekly ? 'neutral-600' : 'blank'}">
+							<label class="check-week btn btn-{biWeekly ? 'neutral-600' : 'blank'}" title="{translate_msg('plugin_newspaperRecognizer_toggle_biweekly')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={biWeekly} onclick={toggleBiWeekly}></input>
 								<span class="fa fa-lg {biWeekly ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
 								<span>
