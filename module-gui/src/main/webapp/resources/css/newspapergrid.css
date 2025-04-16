@@ -99,3 +99,23 @@ progress {
 	color: #368ee0;
 	width: 100%;
 }
+
+.btn-image {
+	background: rgba(0, 0, 0, 0.2);
+	color: var(--clr-white);
+}
+
+.btn-image:hover {
+	background: rgba(0, 0, 0, 0.4);
+	color: var(--clr-white);
+}
+
+
+.modal-hot .modal-header {
+	background: var(--clr-danger);
+	color: var(--clr-white);
+}
+
+.modal-hot .modal-header .btn {
+	color: var(--clr-white);
+}
