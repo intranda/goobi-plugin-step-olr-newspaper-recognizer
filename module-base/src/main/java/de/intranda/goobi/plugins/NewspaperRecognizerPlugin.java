@@ -11,6 +11,7 @@ import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperSupplementTyp
 import de.sub.goobi.config.ConfigPlugins;
 import de.sub.goobi.helper.Helper;
 import de.sub.goobi.helper.HelperSchritte;
+import de.sub.goobi.helper.NIOFileUtils;
 import de.sub.goobi.helper.StorageProvider;
 import de.sub.goobi.helper.enums.StepStatus;
 import de.sub.goobi.helper.exceptions.DAOException;
@@ -41,10 +42,7 @@ import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @PluginImplementation
 @Log4j2
@@ -286,8 +284,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     public boolean pageNumberCountEqual() {
-        String imageDir = getImageDirectory(this.myStep.getProzess());
-        return this.pages.size() == StorageProvider.getInstance().list(imageDir).size();
+        return this.pages.size() == getImages(this.myStep.getProzess()).size();
     }
 
     public String getIssueTypeLabels() {
@@ -309,7 +306,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     public String getJsonData() throws DAOException, SwapException, IOException {
         if (this.pages.stream().anyMatch(p -> p.getImage() == null)) {
             Process process = this.myStep.getProzess();
-            String imageDir = getImageDirectory(process);
+            String imageDir = process.getImagesTifDirectory(true);
             int order = 0;
             for (NewspaperPage page : pages) {
                 Image image = new Image(process, imageDir, page.getFilename(), order++, 500);
@@ -356,17 +353,20 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         return "";
     }
 
-    private String getImageDirectory(Process pr) {
-        String imageDir = null;
+    private List<Path> getImages(Process pr) {
         try {
-            imageDir = pr.getImagesTifDirectory(false);
-            if (!StorageProvider.getInstance().isDirectory(Paths.get(imageDir))) {
-                imageDir = pr.getImagesOrigDirectory(false);
-            }
+            return StorageProvider.getInstance().list(
+                    pr.getImagesTifDirectory(true),
+                    NIOFileUtils.imageNameFilter
+            ).stream()
+                    .map(Path::of)
+                    .toList();
         } catch (Exception e) {
-            log.error(e);
+            String message = "Error listing process images";
+            log.error(message, e);
+            Helper.setFehlerMeldung(message, e);
+            return Collections.emptyList();
         }
-        return imageDir;
     }
 
     private void loadPluginData() throws SwapException, IOException {
@@ -390,8 +390,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                     .forEach(p -> p.setIssueTypeName(this.issueTypes.getFirst().label()));
         // if all else fails, create blank data
         } else {
-            String imageDir = getImageDirectory(pr);
-            List<Path> files = StorageProvider.getInstance().listFiles(imageDir);
+            List<Path> files = getImages(pr);
             pages = new ArrayList<>();
             for (Path p : files) {
                 NewspaperPage newPage = new NewspaperPage();
