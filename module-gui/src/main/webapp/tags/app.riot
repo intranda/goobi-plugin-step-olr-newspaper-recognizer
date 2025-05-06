@@ -535,7 +535,6 @@
 	    onMounted(props, state) {
 	      this.addAjaxEvent();
 	      console.log("mounted");
-		  gwInitTooltips.init();
 	      if(this.loadallimages && props.pagenumCorrect) {
 	    	  this.loadedImages = 0; // used in the frontend to show the progress of loading
 	    	  window.npImages = {};
@@ -569,7 +568,6 @@
 	    },
 
 	    onUpdated(props, state) {
-			gwInitTooltips.init();
 	    },
 
         /* translation lookup (because otherwise missing keys would not remain as they are) */
