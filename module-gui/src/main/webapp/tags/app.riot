@@ -534,6 +534,7 @@
 	    /* triggered at mounting */
 	    onMounted(props, state) {
 	      this.addAjaxEvent();
+		  initFunctions();
 	      console.log("mounted");
 	      if(this.loadallimages && props.pagenumCorrect) {
 	    	  this.loadedImages = 0; // used in the frontend to show the progress of loading
@@ -568,6 +569,7 @@
 	    },
 
 	    onUpdated(props, state) {
+			initFunctions();
 	    },
 
         /* translation lookup (because otherwise missing keys would not remain as they are) */
