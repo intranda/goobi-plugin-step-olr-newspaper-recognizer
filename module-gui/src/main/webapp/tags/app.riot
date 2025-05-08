@@ -316,8 +316,8 @@
 								<div class="issue-controls d-flex flex-column gap-2 px-3 pb-3" style="min-height: {thumb_height}px;">
 									<!-- Datum der Ausgabe -->
 									<div class="form-group px-0 {page.dateValid ? '' : 'has-error'}">
-										<input type="text" value={page.metadata?.dateStr} onblur={e => validateDateField(e, page)} onkeyup={e => revalidateDateField(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_date')}" class="form-control"></input>
-										<span if={!page.dateValid} class="help-inline text-danger">{translate_msg('plugin_newspaperRecognizer_wrongDateFormat')}</span>
+										<input type="text" value={page.metadata?.dateStr} onblur={e => validateDateField(e, page)} onkeyup={e => validateDateField(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_date')}" class="form-control"></input>
+										<span if={!page.dateValid} class="help-inline">{translate_msg('plugin_newspaperRecognizer_wrongDateFormat')} {this.dateFormatPattern}</span>
 									</div>
 
 									<!-- Nummer der Ausgabe -->
@@ -850,21 +850,14 @@
 		   }
 		},
 
-		// validate the date input
-		validateDateField(e, page) {
-		    this.dataDirty = true;
-		    page.metadata.dateStr = e.target.value;
-		    page.dateValid = this.validateDate(page.metadata?.dateStr);
-		    this.update();
-		},
-
 		// revalidate the date input, only if it is not valid
-		revalidateDateField(e, page) {
-			if (!page.dateValid) {
-				this.dataDirty = true;
-				page.metadata.dateStr = e.target.value;
-				page.dateValid = this.validateDate(page.metadata?.dateStr);
-				this.update();
+		validateDateField(e, page) {
+			this.dataDirty = true;
+			page.metadata.dateStr = e.target.value;
+			page.dateValid = this.validateDate(page.metadata?.dateStr);
+			this.update();
+			if (e.type === "blur" && !page.dateValid) {
+				e.target.nextElementSibling.classList.add('text-danger');
 			}
 		},
 
