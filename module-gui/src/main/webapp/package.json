@@ -4,7 +4,8 @@
   "description": "JS frontend for goobi pagination plugin",
   "main": "main.js",
   "scripts": {
-    "build": "webpack-cli",
+    "build": "webpack-cli --mode=production",
+    "dev": "webpack-cli --mode=development --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Oliver Paetzel",
@@ -19,6 +20,9 @@
     "@riotjs/compiler": "^5.0.0",
     "@riotjs/webpack-loader": "^5.0.0",
     "babel-loader": "^8.0.6",
+    "copy-webpack-plugin": "^13.0.0",
+    "css-loader": "^7.1.2",
+    "style-loader": "^4.0.0",
     "webpack": "^5.91.0"
   }
 }
