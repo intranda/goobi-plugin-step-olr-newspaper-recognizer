@@ -1,59 +1,59 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>io.goobi.workflow.plugin</groupId>
-        <artifactId>plugin-step-olr-newspaper-recognizer</artifactId>
-        <version>25.05-SNAPSHOT</version>
-    </parent>
-    <artifactId>plugin-step-olr-newspaper-recognizer-gui</artifactId>
-    <packaging>jar</packaging>
-    <build>
-        <resources>
-            <resource>
-                <targetPath>META-INF/resources</targetPath>
-                <directory>src/main/webapp/resources</directory>
-            </resource>
-            <resource>
-                <targetPath>META-INF/resources</targetPath>
-                <directory>src/main/webapp/dist</directory>
-            </resource>
-        </resources>
-        <plugins>
-            <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <version>1.15.0</version>
-                <executions>
-                    <execution>
-                        <id>Install node and npm</id>
-                        <goals>
-                            <goal>install-node-and-npm</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>npm install</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>npm run build</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>run build</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-                <configuration>
-                    <nodeVersion>v21.2.0</nodeVersion>
-                    <npmVersion>10.2.3</npmVersion>
-                    <workingDirectory>src/main/webapp/</workingDirectory>
-                    <installDirectory>target</installDirectory>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+<?xml version='1.0' encoding='UTF-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.goobi.workflow.plugin</groupId>
+    <artifactId>plugin-step-olr-newspaper-recognizer</artifactId>
+    <version>25.05</version>
+  </parent>
+  <artifactId>plugin-step-olr-newspaper-recognizer-gui</artifactId>
+  <packaging>jar</packaging>
+  <build>
+    <resources>
+      <resource>
+        <targetPath>META-INF/resources</targetPath>
+        <directory>src/main/webapp/resources</directory>
+      </resource>
+      <resource>
+        <targetPath>META-INF/resources</targetPath>
+        <directory>src/main/webapp/dist</directory>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>1.15.0</version>
+        <executions>
+          <execution>
+            <id>Install node and npm</id>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>npm install</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>npm run build</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run build</arguments>
+            </configuration>
+          </execution>
+        </executions>
+        <configuration>
+          <nodeVersion>v21.2.0</nodeVersion>
+          <npmVersion>10.2.3</npmVersion>
+          <workingDirectory>src/main/webapp/</workingDirectory>
+          <installDirectory>target</installDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
