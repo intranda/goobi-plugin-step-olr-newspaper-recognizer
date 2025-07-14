@@ -55,8 +55,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private static final String ISSUE_RESULT_LOCATION = "/taskmanager/issues_result.json";
     private static final String ISSUE_RESULT_MANUAL_LOCATION = "/taskmanager/issues_result_manual.json";
 
-    private int tocDepth;
-
     private boolean loadAllImages;
     private boolean showDeletePageButton;
     private String dateFormatPattern;
@@ -84,7 +82,6 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             this.returnPath = returnPath;
             this.myStep = step;
             XMLConfiguration config = ConfigPlugins.getPluginConfig(PLUGIN_NAME);
-            tocDepth = config.getInt("defaultDepth", 1);
             loadAllImages = config.getBoolean("loadAllImages", true);
             showDeletePageButton = config.getBoolean("showDeletePageButton", false);
             dateFormatPattern = config.getString("dateFormat", "dd.MM.yyyy");

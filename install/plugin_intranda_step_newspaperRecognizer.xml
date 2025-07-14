@@ -1,6 +1,4 @@
 <config_plugin>
-	<!-- which depth shall be used for the document analysis -->
-	<defaultDepth>1</defaultDepth>
 	<loadAllImages>true</loadAllImages>
     <showDeletePageButton>false</showDeletePageButton>
 	<dateFormat>dd.MM.yyyy</dateFormat>
