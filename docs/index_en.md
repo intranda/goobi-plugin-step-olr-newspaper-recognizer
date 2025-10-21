@@ -3,6 +3,10 @@ title: Control of Issue Recognition within Newspapers
 identifier: intranda_step_newspaperRecognizer
 description: Step Plugin for manual issue control in newspapers
 published: true
+keywords:
+    - Goobi workflow
+    - Plugin
+    - Step Plugin
 ---
 
 ## Introduction
