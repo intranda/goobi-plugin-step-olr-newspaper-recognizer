@@ -3,6 +3,10 @@ title: Kontrolle der Ausgabenerkennung innerhalb von Zeitungen
 identifier: intranda_step_newspaperRecognizer
 description: Step Plugin zur manuellen Ausgabenkontrolle in Zeitungen
 published: true
+keywords:
+    - Goobi workflow
+    - Plugin
+    - Step Plugin
 ---
 
 ## Einführung
