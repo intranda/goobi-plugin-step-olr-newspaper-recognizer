@@ -3,6 +3,7 @@ package de.intranda.goobi.plugins;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
+import de.intranda.goobi.plugins.newspaperRecognizer.DuplicateIssueValidator;
 import de.intranda.goobi.plugins.newspaperRecognizer.MetsWriter;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperIssueType;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperMetadataWriteConfiguration;
@@ -57,6 +58,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     private boolean loadAllImages;
     private boolean showDeletePageButton;
+    private boolean preventDuplicateIssues;
     private String dateFormatPattern;
     private DateTimeFormatter dateFormat;
 
@@ -84,6 +86,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             XMLConfiguration config = ConfigPlugins.getPluginConfig(PLUGIN_NAME);
             loadAllImages = config.getBoolean("loadAllImages", true);
             showDeletePageButton = config.getBoolean("showDeletePageButton", false);
+            preventDuplicateIssues = config.getBoolean("preventDuplicateIssues", false);
             dateFormatPattern = config.getString("dateFormat", "dd.MM.yyyy");
             dateFormat = DateTimeFormatter.ofPattern(dateFormatPattern);
 
@@ -341,6 +344,10 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     public String save() {
         try {
+            if (preventDuplicateIssues && DuplicateIssueValidator.hasDuplicates(pages)) {
+                Helper.setFehlerMeldung(Helper.getTranslation("plugin_newspaperRecognizer_duplicateIssueWarning"));
+                return "";
+            }
             metsWriter.write(pages);
         } catch (TypeNotAllowedForParentException | TypeNotAllowedAsChildException | WriteException | SwapException | IOException | PreferencesException | RuntimeException e) {
             String message = "An error occurred while persisting data into the Mets file";

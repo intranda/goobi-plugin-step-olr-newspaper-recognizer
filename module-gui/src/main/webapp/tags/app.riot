@@ -33,7 +33,7 @@
 					</a>
 					<!-- Speicher-Button -->
 					<a
-						class="btn d-flex align-items-center btn--title-action{dataDirty ? '' : ' disabled'}"
+						class="btn d-flex align-items-center btn--title-action{(dataDirty && !(preventDuplicateIssues && duplicateIssueWarnings && duplicateIssueWarnings.length > 0)) ? '' : ' disabled'}"
 						onclick={save}
 						title={translate_msg('save')}
 						data-bs-toggle="tooltip">
@@ -41,7 +41,7 @@
 					</a>
 					<!-- // Speicher-Button -->
 					<a
-						class="btn d-flex align-items-center btn--title-action{dataDirty ? '' : ' disabled'}"
+						class="btn d-flex align-items-center btn--title-action{(dataDirty && !(preventDuplicateIssues && duplicateIssueWarnings && duplicateIssueWarnings.length > 0)) ? '' : ' disabled'}"
 						onclick={saveAndExit}
 						title="{translate_msg('pluginSaveAndLeave')}"
 						data-bs-toggle="tooltip">
@@ -51,6 +51,18 @@
 			</div>
 
 			<div>
+				<div if={this.duplicateIssueWarnings && this.duplicateIssueWarnings.length > 0}>
+					<div class="p-3">
+						<div class="alert alert-danger">
+							{translate_msg('plugin_newspaperRecognizer_duplicateIssueWarning')}
+							<ul>
+								<li each={warning in this.duplicateIssueWarnings}>
+									{translate_msg(warning.type)}: {warning.date} ({warning.count}x)
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
 				<div if={!props.pagenumCorrect}>
 					<div class="p-3">
 						<div class="alert alert-danger">{translate_msg('plugin_newspaperRecognizer_pagenumWarning')}</div>
@@ -315,9 +327,10 @@
 								</div>
 								<div class="issue-controls d-flex flex-column gap-2 px-3 pb-3" style="min-height: {thumb_height}px;">
 									<!-- Datum der Ausgabe -->
-									<div class="form-group px-0 {page.dateValid ? '' : 'has-error'}">
+									<div class="form-group px-0 {(page.dateValid && !page.duplicateIssue) ? '' : 'has-validation-error'}">
 										<input type="text" value={page.metadata?.dateStr} onblur={e => validateDateField(e, page)} onkeyup={e => validateDateField(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_date')}" class="form-control"></input>
 										<span if={!page.dateValid} class="help-inline">{translate_msg('plugin_newspaperRecognizer_wrongDateFormat')} {this.dateFormatPattern}</span>
+										<span if={page.dateValid && page.duplicateIssue} class="help-inline text-danger">{translate_msg('plugin_newspaperRecognizer_duplicateIssue')}</span>
 									</div>
 
 									<!-- Nummer der Ausgabe -->
@@ -330,9 +343,12 @@
 									</div>
 
 									<!-- "Typ" der Ausgabe -->
-									<select class="form-select" onchange={e => changeIssueType(e, page)}>
-										<option each={type in issueTypes} selected="{type == page.issueTypeName ? 'selected' : ''}" data-translation-id="{type}">{translate_msg(type)}</option>
-									</select>
+									<div class="form-group px-0 {page.duplicateIssue ? 'has-validation-error' : ''}">
+										<select class="form-select" onchange={e => changeIssueType(e, page)}>
+											<option each={type in issueTypes} selected="{type == page.issueTypeName ? 'selected' : ''}" data-translation-id="{type}">{translate_msg(type)}</option>
+										</select>
+										<span if={page.duplicateIssue} class="help-inline text-danger">{translate_msg('plugin_newspaperRecognizer_duplicateIssue')}</span>
+									</div>
 
 									<!-- "Typ" der Beilage -->
 									<div each={(subPage, subPageIndex) in this.getSubPages(page.pos)} if={subPage.supplementTypeName} class="d-flex align-items-center gap-2">
@@ -447,9 +463,9 @@
 					<!-- // verlassen-Button -->
 					<a class="btn btn-blank" onclick={exit}>{translate_msg('pluginLeave')}</a>
 					<!-- Speicher-Button -->
-					<a class="btn btn-blank{dataDirty ? '' : ' disabled'}" onclick={save}>{translate_msg('save')}</a>
+					<a class="btn btn-blank{(dataDirty && !(preventDuplicateIssues && duplicateIssueWarnings && duplicateIssueWarnings.length > 0)) ? '' : ' disabled'}" onclick={save}>{translate_msg('save')}</a>
 					<!-- // Speicher-Button -->
-					<a class="btn btn-blank{dataDirty ? '' : ' disabled'}" onclick={saveAndExit}>{translate_msg('pluginSaveAndLeave')}</a>
+					<a class="btn btn-blank{(dataDirty && !(preventDuplicateIssues && duplicateIssueWarnings && duplicateIssueWarnings.length > 0)) ? '' : ' disabled'}" onclick={saveAndExit}>{translate_msg('pluginSaveAndLeave')}</a>
 				</div>
 			</template>
 		</div>
@@ -478,6 +494,7 @@
 			this.dateFormatPattern = props.dateFormatPattern; // used to customize date parsing
 			this.issueTypes = props.issueTypes;
 			this.supplementTypes = props.supplementTypes;
+			this.preventDuplicateIssues = props.preventDuplicateIssues;
 
 	        // additional initialization
 			this.suppl_colors = ["#146abf", "#e00404", "#6300b5", "#ba5d06", "#467021"];
@@ -503,9 +520,13 @@
                 // initialize date validations
 			    var dateStr = page.metadata?.dateStr;
 			    page.dateValid = this.validateDate(page.metadata?.dateStr);
+			    page.duplicateIssue = false;
 
 			    page.pos = i; // every page has a property `pos` valued as its order among all pages
 			}
+
+			this.duplicateIssueWarnings = [];
+			this.validateDuplicateIssues();
 
 			this.monday = true;
 			this.tuesday = true;
@@ -680,6 +701,9 @@
 
 		/* triggered when the button `METS schreiben` is clicked */
 		save() {
+		    if (this.preventDuplicateIssues && this.duplicateIssueWarnings && this.duplicateIssueWarnings.length > 0) {
+		        return;
+		    }
 		    if(this.dataDirty) {
                 this.data_el.value = this.createSaveData();
                 this.saveButton.click();
@@ -689,6 +713,9 @@
 		},
 
 		saveAndExit() {
+		    if (this.preventDuplicateIssues && this.duplicateIssueWarnings && this.duplicateIssueWarnings.length > 0) {
+		        return;
+		    }
 		    if(this.dataDirty) {
 				this.data_el.value = this.createSaveData();
 				this.saveButton.click();
@@ -743,6 +770,7 @@
 		    }
 		    this.data[0].issueTypeName = this.defaultIssueType;
 		    this.deletingIssues = false;
+		    this.validateDuplicateIssues();
 			this.update();
 		},
 
@@ -798,6 +826,7 @@
                 this.applySupplementNumberForFollowingPages(page.pos, 0, this.data[page.pos-1].supplementNumber);
 		        this.regenerateSupplementNumbering(page.pos);
             }
+            this.validateDuplicateIssues();
 		},
 
 		/* called when a non-issue page should toggle its supplement state */
@@ -848,11 +877,39 @@
 		   }
 		},
 
+		validateDuplicateIssues() {
+			this.data.forEach(p => p.duplicateIssue = false);
+			this.duplicateIssueWarnings = [];
+
+			if (!this.preventDuplicateIssues) return;
+
+			var issuePages = this.data.filter(p => p.issueTypeName && p.metadata?.dateStr);
+			var groups = {};
+			issuePages.forEach(p => {
+				var key = p.issueTypeName + '|' + p.metadata.dateStr;
+				if (!groups[key]) groups[key] = [];
+				groups[key].push(p);
+			});
+
+			for (var key in groups) {
+				if (groups[key].length >= 2) {
+					groups[key].forEach(p => p.duplicateIssue = true);
+					var parts = key.split('|');
+					this.duplicateIssueWarnings.push({
+						type: parts[0],
+						date: parts[1],
+						count: groups[key].length
+					});
+				}
+			}
+		},
+
 		// revalidate the date input, only if it is not valid
 		validateDateField(e, page) {
 			this.dataDirty = true;
 			page.metadata.dateStr = e.target.value;
 			page.dateValid = this.validateDate(page.metadata?.dateStr);
+			this.validateDuplicateIssues();
 			this.update();
 			if (e.type === "blur" && !page.dateValid) {
 				e.target.nextElementSibling.classList.add('text-danger');
@@ -884,6 +941,7 @@
 		changeIssueType(e, page) {
 		    this.dataDirty = true;
 		    page.issueTypeName = e.target.selectedOptions[0].getAttribute("data-translation-id");
+			this.validateDuplicateIssues();
 			this.update();
 			//console.log("Issue: " + page.issueTypeName);
 		},
@@ -936,6 +994,7 @@
 	            	}
 	            }
 	        }
+	        this.validateDuplicateIssues();
 	        this.update();
 	    },
 

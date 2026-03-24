@@ -1,0 +1,20 @@
+<config_plugin>
+	<loadAllImages>true</loadAllImages>
+    <showDeletePageButton>false</showDeletePageButton>
+	<preventDuplicateIssues>true</preventDuplicateIssues>
+	<dateFormat>dd.MM.yyyy</dateFormat>
+
+	<pagination>
+		<createNewPagination>true</createNewPagination>
+		<type>1</type>
+		<useFakePagination>false</useFakePagination>
+	</pagination>
+
+	<issue type="NewspaperIssue" label="plugin_intranda_step_newspaperRecognizer_issueType_issue">
+		<metadata key="TitleDocMain" value="Ausgabe {partNo} vom {date:dd.MM.yyyy}" />
+	</issue>
+
+	<supplement type="NewspaperSupplement" label="Allgemeine Beilage">
+		<metadata key="TitleDocMain" value="Beilage zur {no}. Ausgabe vom {date:dd.MM.yyyy}" />
+	</supplement>
+</config_plugin>
