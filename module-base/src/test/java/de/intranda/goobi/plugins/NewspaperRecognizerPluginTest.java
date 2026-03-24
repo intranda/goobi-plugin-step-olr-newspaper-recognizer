@@ -98,4 +98,88 @@ public class NewspaperRecognizerPluginTest {
         assertEquals("", result);
         PowerMock.verifyAll();
     }
+
+    // --- Supplement duplicate save tests ---
+
+    private NewspaperPage createSupplementPage(String issueTypeName, String dateStr, String supplementTypeName) {
+        NewspaperPage page = new NewspaperPage();
+        page.setIssueTypeName(issueTypeName);
+        page.setMetadata(new NewspaperPageMetadata(dateStr, null, null, null));
+        page.setSupplementTypeName(supplementTypeName);
+        return page;
+    }
+
+    @Test
+    public void save_withDuplicateSupplementsAndPreventEnabled_blocksWrite() throws Exception {
+        plugin.setPreventDuplicateIssues(false);
+        plugin.setPreventDuplicateSupplements(true);
+        List<NewspaperPage> pages = new ArrayList<>();
+        pages.add(createPage("IssueA", "01.01.2025"));
+        NewspaperPage supp1 = new NewspaperPage();
+        supp1.setSupplementTypeName("Kultur");
+        pages.add(supp1);
+        NewspaperPage supp2 = new NewspaperPage();
+        supp2.setSupplementTypeName("Kultur");
+        pages.add(supp2);
+        plugin.setPages(pages);
+
+        PowerMock.mockStatic(Helper.class);
+        expect(Helper.getTranslation("plugin_newspaperRecognizer_duplicateSupplementWarning")).andReturn("Duplicate supplements found");
+        Helper.setFehlerMeldung("Duplicate supplements found");
+        expectLastCall().once();
+        PowerMock.replayAll();
+
+        String result = plugin.save();
+
+        assertEquals("", result);
+        PowerMock.verifyAll();
+    }
+
+    @Test
+    public void save_withoutDuplicateSupplementsAndPreventEnabled_proceedsNormally() throws Exception {
+        plugin.setPreventDuplicateIssues(false);
+        plugin.setPreventDuplicateSupplements(true);
+        List<NewspaperPage> pages = new ArrayList<>();
+        pages.add(createPage("IssueA", "01.01.2025"));
+        NewspaperPage supp1 = new NewspaperPage();
+        supp1.setSupplementTypeName("Kultur");
+        pages.add(supp1);
+        NewspaperPage supp2 = new NewspaperPage();
+        supp2.setSupplementTypeName("Sport");
+        pages.add(supp2);
+        plugin.setPages(pages);
+
+        metsWriter.write(pages);
+        expectLastCall().once();
+        PowerMock.replayAll();
+
+        String result = plugin.save();
+
+        assertEquals("", result);
+        PowerMock.verifyAll();
+    }
+
+    @Test
+    public void save_withDuplicateSupplementsButPreventDisabled_proceedsNormally() throws Exception {
+        plugin.setPreventDuplicateIssues(false);
+        plugin.setPreventDuplicateSupplements(false);
+        List<NewspaperPage> pages = new ArrayList<>();
+        pages.add(createPage("IssueA", "01.01.2025"));
+        NewspaperPage supp1 = new NewspaperPage();
+        supp1.setSupplementTypeName("Kultur");
+        pages.add(supp1);
+        NewspaperPage supp2 = new NewspaperPage();
+        supp2.setSupplementTypeName("Kultur");
+        pages.add(supp2);
+        plugin.setPages(pages);
+
+        metsWriter.write(pages);
+        expectLastCall().once();
+        PowerMock.replayAll();
+
+        String result = plugin.save();
+
+        assertEquals("", result);
+        PowerMock.verifyAll();
+    }
 }

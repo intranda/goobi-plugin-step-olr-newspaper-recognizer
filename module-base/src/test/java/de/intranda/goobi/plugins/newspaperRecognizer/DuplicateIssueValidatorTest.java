@@ -141,4 +141,97 @@ public class DuplicateIssueValidatorTest {
 
         assertFalse(DuplicateIssueValidator.hasDuplicates(pages));
     }
+
+    // --- Supplement duplicate tests ---
+
+    private NewspaperPage createSupplementPage(String supplementTypeName) {
+        NewspaperPage page = new NewspaperPage();
+        page.setSupplementTypeName(supplementTypeName);
+        return page;
+    }
+
+    @Test
+    public void noDuplicateSupplements_distinctTypes() {
+        List<NewspaperPage> pages = List.of(
+                createPage("IssueA", "01.01.2025"),
+                createSupplementPage("Kultur"),
+                createSupplementPage("Sport")
+        );
+
+        assertTrue(DuplicateIssueValidator.findDuplicateSupplements(pages).isEmpty());
+        assertFalse(DuplicateIssueValidator.hasDuplicateSupplements(pages));
+    }
+
+    @Test
+    public void duplicateSupplementDetected_sameTypeInSameIssue() {
+        List<NewspaperPage> pages = List.of(
+                createPage("IssueA", "01.01.2025"),
+                createSupplementPage("Kultur"),
+                createSupplementPage("Kultur")
+        );
+
+        Map<String, List<NewspaperPage>> result = DuplicateIssueValidator.findDuplicateSupplements(pages);
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey("0|Kultur"));
+        assertEquals(2, result.get("0|Kultur").size());
+        assertTrue(DuplicateIssueValidator.hasDuplicateSupplements(pages));
+    }
+
+    @Test
+    public void sameSupplementTypeInDifferentIssues_noDuplicate() {
+        List<NewspaperPage> pages = List.of(
+                createPage("IssueA", "01.01.2025"),
+                createSupplementPage("Kultur"),
+                createPage("IssueA", "02.01.2025"),
+                createSupplementPage("Kultur")
+        );
+
+        assertTrue(DuplicateIssueValidator.findDuplicateSupplements(pages).isEmpty());
+        assertFalse(DuplicateIssueValidator.hasDuplicateSupplements(pages));
+    }
+
+    @Test
+    public void noSupplementHeadPages_noDuplicate() {
+        List<NewspaperPage> pages = List.of(
+                createPage("IssueA", "01.01.2025"),
+                new NewspaperPage()
+        );
+
+        assertTrue(DuplicateIssueValidator.findDuplicateSupplements(pages).isEmpty());
+    }
+
+    @Test
+    public void hasDuplicateSupplements_returnsBooleanCorrectly() {
+        List<NewspaperPage> noDups = List.of(
+                createPage("IssueA", "01.01.2025"),
+                createSupplementPage("Kultur"),
+                createSupplementPage("Sport")
+        );
+        assertFalse(DuplicateIssueValidator.hasDuplicateSupplements(noDups));
+
+        List<NewspaperPage> withDups = List.of(
+                createPage("IssueA", "01.01.2025"),
+                createSupplementPage("Kultur"),
+                createSupplementPage("Kultur")
+        );
+        assertTrue(DuplicateIssueValidator.hasDuplicateSupplements(withDups));
+    }
+
+    @Test
+    public void supplementBeforeAnyIssue_excluded() {
+        List<NewspaperPage> pages = List.of(
+                createSupplementPage("Kultur"),
+                createSupplementPage("Kultur"),
+                createPage("IssueA", "01.01.2025")
+        );
+
+        assertTrue(DuplicateIssueValidator.findDuplicateSupplements(pages).isEmpty());
+        assertFalse(DuplicateIssueValidator.hasDuplicateSupplements(pages));
+    }
+
+    @Test
+    public void emptyPageList_noDuplicateSupplements() {
+        assertFalse(DuplicateIssueValidator.hasDuplicateSupplements(Collections.emptyList()));
+        assertTrue(DuplicateIssueValidator.findDuplicateSupplements(Collections.emptyList()).isEmpty());
+    }
 }

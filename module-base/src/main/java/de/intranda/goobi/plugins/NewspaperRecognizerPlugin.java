@@ -59,6 +59,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private boolean loadAllImages;
     private boolean showDeletePageButton;
     private boolean preventDuplicateIssues;
+    private boolean preventDuplicateSupplements;
     private String dateFormatPattern;
     private DateTimeFormatter dateFormat;
 
@@ -87,6 +88,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             loadAllImages = config.getBoolean("loadAllImages", true);
             showDeletePageButton = config.getBoolean("showDeletePageButton", false);
             preventDuplicateIssues = config.getBoolean("preventDuplicateIssues", false);
+            preventDuplicateSupplements = config.getBoolean("preventDuplicateSupplements", false);
             dateFormatPattern = config.getString("dateFormat", "dd.MM.yyyy");
             dateFormat = DateTimeFormatter.ofPattern(dateFormatPattern);
 
@@ -346,6 +348,10 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         try {
             if (preventDuplicateIssues && DuplicateIssueValidator.hasDuplicates(pages)) {
                 Helper.setFehlerMeldung(Helper.getTranslation("plugin_newspaperRecognizer_duplicateIssueWarning"));
+                return "";
+            }
+            if (preventDuplicateSupplements && DuplicateIssueValidator.hasDuplicateSupplements(pages)) {
+                Helper.setFehlerMeldung(Helper.getTranslation("plugin_newspaperRecognizer_duplicateSupplementWarning"));
                 return "";
             }
             metsWriter.write(pages);

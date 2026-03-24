@@ -2,6 +2,7 @@
 	<loadAllImages>true</loadAllImages>
     <showDeletePageButton>false</showDeletePageButton>
 	<preventDuplicateIssues>true</preventDuplicateIssues>
+	<preventDuplicateSupplements>true</preventDuplicateSupplements>
 	<dateFormat>dd.MM.yyyy</dateFormat>
 
 	<pagination>
