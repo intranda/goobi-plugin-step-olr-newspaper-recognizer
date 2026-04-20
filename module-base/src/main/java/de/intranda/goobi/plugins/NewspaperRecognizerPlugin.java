@@ -1,8 +1,36 @@
 package de.intranda.goobi.plugins;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.lang.reflect.Type;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+
+import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.lang3.StringUtils;
+import org.goobi.beans.Process;
+import org.goobi.beans.Step;
+import org.goobi.managedbeans.StepBean;
+import org.goobi.production.enums.PluginGuiType;
+import org.goobi.production.plugin.interfaces.AbstractStepPlugin;
+import org.goobi.production.plugin.interfaces.IPlugin;
+import org.goobi.production.plugin.interfaces.IStepPlugin;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
+
 import de.intranda.goobi.plugins.newspaperRecognizer.DuplicateIssueValidator;
 import de.intranda.goobi.plugins.newspaperRecognizer.MetsWriter;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperIssueType;
@@ -23,27 +51,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
-import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.commons.lang3.StringUtils;
-import org.goobi.beans.Process;
-import org.goobi.beans.Step;
-import org.goobi.managedbeans.StepBean;
-import org.goobi.production.enums.PluginGuiType;
-import org.goobi.production.plugin.interfaces.AbstractStepPlugin;
-import org.goobi.production.plugin.interfaces.IPlugin;
-import org.goobi.production.plugin.interfaces.IStepPlugin;
 import ugh.exceptions.PreferencesException;
 import ugh.exceptions.TypeNotAllowedAsChildException;
 import ugh.exceptions.TypeNotAllowedForParentException;
 import ugh.exceptions.WriteException;
-
-import java.io.*;
-import java.lang.reflect.Type;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
 
 @PluginImplementation
 @Log4j2
@@ -141,27 +152,26 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         return new NewspaperIssueType(
                 config.getString("[@type]"),
                 config.getString("[@label]"),
-                config.configurationsAt("metadata").stream()
+                config.configurationsAt("metadata")
+                        .stream()
                         .map(this::parseMetadataWriteConfigurations)
-                        .toList()
-        );
+                        .toList());
     }
 
     private NewspaperSupplementType parseSupplementType(HierarchicalConfiguration config) {
         return new NewspaperSupplementType(
                 config.getString("[@type]"),
                 config.getString("[@label]"),
-                config.configurationsAt("metadata").stream()
+                config.configurationsAt("metadata")
+                        .stream()
                         .map(this::parseMetadataWriteConfigurations)
-                        .toList()
-        );
+                        .toList());
     }
 
     private NewspaperMetadataWriteConfiguration parseMetadataWriteConfigurations(HierarchicalConfiguration config) {
         return new NewspaperMetadataWriteConfiguration(
                 config.getString("[@key]"),
-                config.getString("[@value]")
-        );
+                config.getString("[@value]"));
     }
 
     @Override
@@ -293,16 +303,14 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         return gson.toJson(
                 this.issueTypes.stream()
                         .map(NewspaperIssueType::label)
-                        .toList()
-        );
+                        .toList());
     }
 
     public String getSupplementTypeLabels() {
         return gson.toJson(
                 this.supplementTypes.stream()
                         .map(NewspaperSupplementType::label)
-                        .toList()
-        );
+                        .toList());
     }
 
     public String getJsonData() throws DAOException, SwapException, IOException {
@@ -355,7 +363,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 return "";
             }
             metsWriter.write(pages);
-        } catch (TypeNotAllowedForParentException | TypeNotAllowedAsChildException | WriteException | SwapException | IOException | PreferencesException | RuntimeException e) {
+        } catch (TypeNotAllowedForParentException | TypeNotAllowedAsChildException | WriteException | SwapException | IOException
+                | PreferencesException | RuntimeException e) {
             String message = "An error occurred while persisting data into the Mets file";
             log.error(message, e);
             Helper.setFehlerMeldung(message, e);
@@ -365,10 +374,11 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     private List<Path> getImages(Process pr) {
         try {
-            return StorageProvider.getInstance().list(
-                    pr.getImagesTifDirectory(true),
-                    NIOFileUtils.imageNameFilter
-            ).stream()
+            return StorageProvider.getInstance()
+                    .list(
+                            pr.getImagesTifDirectory(true),
+                            NIOFileUtils.imageNameFilter)
+                    .stream()
                     .map(Path::of)
                     .toList();
         } catch (Exception e) {
@@ -389,8 +399,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             try (BufferedReader br = new BufferedReader(new InputStreamReader(StorageProvider.getInstance().newInputStream(manualF)))) {
                 this.pages = gson.fromJson(br, listType);
             }
-        // otherwise try to load automatic analysis results
         } else if (StorageProvider.getInstance().isFileExists(automaticF)) {
+            // otherwise try to load automatic analysis results
             try (BufferedReader fr = new BufferedReader(new InputStreamReader(StorageProvider.getInstance().newInputStream(automaticF)))) {
                 this.pages = gson.fromJson(new JsonReader(fr), listType);
             }
@@ -398,8 +408,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             this.pages.stream()
                     .filter(NewspaperPage::analysisIndicatesThisIsAnIssue)
                     .forEach(p -> p.setIssueTypeName(this.issueTypes.getFirst().label()));
-        // if all else fails, create blank data
         } else {
+            // if all else fails, create blank data
             List<Path> files = getImages(pr);
             pages = new ArrayList<>();
             for (Path p : files) {
