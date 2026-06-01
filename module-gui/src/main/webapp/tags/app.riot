@@ -747,13 +747,6 @@
 		    if (this.preventDuplicateSupplements && this.duplicateSupplementWarnings && this.duplicateSupplementWarnings.length > 0) {
 		        return;
 		    }
-		    // if(this.dataDirty) {
-			// 	this.data_el.value = this.createSaveData();
-			// 	this.saveButton.click();
-			// 	this.dataDirty = false;
-			// 	this.update();
-			// }
-		    // this.finish_button.click();
 			if(this.dataDirty) {
 				this.data_el.value = this.createSaveData();
 				this.pendingExit = true;   // ← Flag setzen
