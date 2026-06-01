@@ -521,6 +521,7 @@
 			this.data = JSON.parse(this.data_el.value);
 			this.defaultIssueType = this.issueTypes[0];
 			this.defaultSupplementType = this.supplementTypes[0];
+			this.pendigExit = false;
 
             console.log('Data loaded');
             console.log(this.data);
@@ -641,8 +642,11 @@
 	                    break;
 
 	                case "success": // This is called when ajax response is successfully processed.
-	                    // NOOP.
-	                    break;
+						if (this.pendingExit) {
+							this.pendingExit = false;
+							this.finish_button.click();  // ← erst NACH erfolgreichem AJAX navigieren
+						}
+						break;
 	            }
 	        });
 	    },
@@ -743,13 +747,24 @@
 		    if (this.preventDuplicateSupplements && this.duplicateSupplementWarnings && this.duplicateSupplementWarnings.length > 0) {
 		        return;
 		    }
-		    if(this.dataDirty) {
+		    // if(this.dataDirty) {
+			// 	this.data_el.value = this.createSaveData();
+			// 	this.saveButton.click();
+			// 	this.dataDirty = false;
+			// 	this.update();
+			// }
+		    // this.finish_button.click();
+			if(this.dataDirty) {
 				this.data_el.value = this.createSaveData();
-				this.saveButton.click();
+				this.pendingExit = true;   // ← Flag setzen
+				this.saveButton.click();   // ← AJAX startet
 				this.dataDirty = false;
 				this.update();
+				// finish_button wird jetzt im AJAX-success-Handler aufgerufen
+			} else {
+				this.finish_button.click();
 			}
-		    this.finish_button.click();
+
 		},
 
 
