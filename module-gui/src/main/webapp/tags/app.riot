@@ -3,7 +3,7 @@
 		<div class="box__content">
 			<div class="box__title">
 				<h2>
-					<span aria-hidden="true" class="fa fa-puzzle-piece" />
+					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('puzzle')}" /></svg></span>
 					{props.title}
 				</h2>
 			</div>
@@ -19,7 +19,7 @@
 		<div class="box__content">
 			<div class="box__title">
 				<h2>
-					<span aria-hidden="true" class="fa fa-puzzle-piece" />
+					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('puzzle')}" /></svg></span>
 					{props.title}
 				</h2>
 				<div class="actions d-flex">
@@ -29,7 +29,7 @@
 						onclick={exit}
 						title={translate_msg('pluginLeave')}
 						data-bs-toggle="tooltip">
-						<span aria-hidden="true" class="fa fa-times" />
+						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
 					</a>
 					<!-- Speicher-Button -->
 					<a
@@ -37,7 +37,7 @@
 						onclick={save}
 						title={translate_msg('save')}
 						data-bs-toggle="tooltip">
-						<span aria-hidden="true" class="fa fa-save" />
+						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('device-floppy')}" /></svg></span>
 					</a>
 					<!-- // Speicher-Button -->
 					<a
@@ -45,7 +45,7 @@
 						onclick={saveAndExit}
 						title="{translate_msg('pluginSaveAndLeave')}"
 						data-bs-toggle="tooltip">
-						<span aria-hidden="true" class="fa fa-sign-out" />
+						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('logout')}" /></svg></span>
 					</a>
 				</div>
 			</div>
@@ -105,7 +105,7 @@
 											{translate_msg('plugin_newspaperRecognizer_deleteManualResults')}
 										</h5>
 										<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-											<span aria-hidden="true" class="fa fa-times" />
+											<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
 										</button>
 									</div>
 									<div class="modal-body">
@@ -134,49 +134,49 @@
 							<!-- Wochentage als Checkboxen -->
 							<label class="check-week btn btn-{monday ? 'neutral-600' : 'blank'}" title="{monday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={monday} onclick={() => this.toggleDay('monday')}></input>
-								<span class="fa fa-lg {monday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(monday ? 'toggle-right' : 'toggle-left', monday)}" /></svg></span>
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_monday')}
 								</span>
 							</label>
 							<label class="check-week btn btn-{tuesday ? 'neutral-600' : 'blank'}" title="{tuesday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>
-								<span class="fa fa-lg {tuesday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(tuesday ? 'toggle-right' : 'toggle-left', tuesday)}" /></svg></span>
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_tuesday')}
 								</span>
 							</label>
 							<label class="check-week btn btn-{wednesday ? 'neutral-600' : 'blank'}" title="{wednesday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>
-								<span class="fa fa-lg {wednesday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(wednesday ? 'toggle-right' : 'toggle-left', wednesday)}" /></svg></span>
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_wednesday')}
 								</span>
 							</label>
 							<label class="check-week btn btn-{thursday ? 'neutral-600' : 'blank'}" title="{thursday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>
-								<span class="fa fa-lg {thursday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(thursday ? 'toggle-right' : 'toggle-left', thursday)}" /></svg></span>
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_thursday')}
 								</span>
 							</label>
 							<label class="check-week btn btn-{friday ? 'neutral-600' : 'blank'}" title="{friday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={friday} onclick={() => this.toggleDay('friday')}></input>
-								<span class="fa fa-lg {friday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(friday ? 'toggle-right' : 'toggle-left', friday)}" /></svg></span>
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_friday')}
 								</span>
 							</label>
 							<label class="check-week btn btn-{saturday ? 'neutral-600' : 'blank'}" title="{saturday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>
-								<span class="fa fa-lg {saturday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(saturday ? 'toggle-right' : 'toggle-left', saturday)}" /></svg></span>
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_saturday')}
 								</span>
 							</label>
 							<label class="check-week btn btn-{sunday ? 'neutral-600' : 'blank'}" title="{sunday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>
-								<span class="fa fa-lg {sunday ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(sunday ? 'toggle-right' : 'toggle-left', sunday)}" /></svg></span>
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_sunday')}
 								</span>
@@ -184,7 +184,7 @@
 							<!-- // Wochentage als Checkboxen -->
 							<label class="check-week btn btn-{biWeekly ? 'neutral-600' : 'blank'}" title="{biWeekly ? translate_msg('plugin_newspaperRecognizer_toggle_biweekly_false') : translate_msg('plugin_newspaperRecognizer_toggle_biweekly_true')}" data-bs-toggle="tooltip">
 								<input type="checkbox" class="checkbox-week btn-check" checked={biWeekly} onclick={toggleBiWeekly}></input>
-								<span class="fa fa-lg {biWeekly ? 'fa-toggle-on text-white' : 'fa-toggle-off'}" />
+								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(biWeekly ? 'toggle-right' : 'toggle-left', biWeekly)}" /></svg></span>
 								<span>
 									{translate_msg('plugin_newspaperRecognizer_biWeekly')}
 								</span>
@@ -214,7 +214,7 @@
 												{translate_msg('plugin_newspaperRecognizer_recompute')}
 											</h5>
 											<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-												<span aria-hidden="true" class="fa fa-times" />
+												<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
 											</button>
 										</div>
 										<div class="modal-body">
@@ -250,7 +250,7 @@
 												{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}
 											</h5>
 											<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-												<span aria-hidden="true" class="fa fa-times" />
+												<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
 											</button>
 										</div>
 										<div class="modal-body">
@@ -294,7 +294,7 @@
 													if={props.showDeletePageButton}
 													data-bs-toggle="modal"
 													data-bs-target="#deletePageModal">
-													<span aria-hidden="true" class="fa fa-trash" />
+													<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('trash')}" /></svg></span>
 												</button>
 												<div
 													class="modal modal-hot fade"
@@ -311,7 +311,7 @@
 																	{translate_msg('loeschen')}
 																</h5>
 																<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-																	<span aria-hidden="true" class="fa fa-times" />
+																	<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
 																</button>
 															</div>
 															<div class="modal-body">
@@ -421,7 +421,7 @@
 												if={props.showDeletePageButton}
 												data-bs-toggle="modal"
 												data-bs-target="#deleteSubPageModal">
-												<span aria-hidden="true" class="fa fa-trash" />
+												<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('trash')}" /></svg></span>
 											</div>
 											<div
 												class="modal modal-hot fade"
@@ -438,7 +438,7 @@
 																{translate_msg('loeschen')}
 															</h5>
 															<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-																<span aria-hidden="true" class="fa fa-times" />
+																<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
 															</button>
 														</div>
 														<div class="modal-body">
