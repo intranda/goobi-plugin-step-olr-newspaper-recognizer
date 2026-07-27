@@ -541,6 +541,11 @@
 			    page.duplicateSupplement = false;
 
 			    page.pos = i; // every page has a property `pos` valued as its order among all pages
+
+			    if (page.image) {
+			        page.image.thumbnailUrl = this.toSameOriginUrl(page.image.thumbnailUrl);
+			        page.image.largeThumbnailUrl = this.toSameOriginUrl(page.image.largeThumbnailUrl);
+			    }
 			}
 
 			this.duplicateIssueWarnings = [];
@@ -1091,6 +1096,26 @@
             }
 
             return newDate;
+        },
+
+        /* the backend may report the wrong scheme (e.g. http behind an https
+		   reverse proxy), which the img-src 'self' CSP then blocks as
+		   cross-origin. Stripping scheme/host/port avoids that regardless of
+		   proxy config. */
+        toSameOriginUrl(url) {
+            if (!url) {
+                return url;
+            }
+            try {
+                const parsed = new URL(url, window.location.href);
+				// no action if the hostname is different for any reason
+                if (parsed.hostname !== window.location.hostname) {
+                    return url;
+                }
+                return parsed.pathname + parsed.search + parsed.hash;
+            } catch (e) {
+                return url;
+            }
         },
 
         /* check if a given date string is valid (with respect to configured date pattern) */
