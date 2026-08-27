@@ -25,7 +25,7 @@
 				<div class="actions d-flex">
 					<!-- // verlassen-Button -->
 					<a
-						class="btn d-flex align-items-center btn--title-action"
+						class="btn d-flex align-items-center btn--title-action{saveInFlight ? ' disabled' : ''}"
 						onclick={exit}
 						title={translate_msg('pluginLeave')}
 						data-bs-toggle="tooltip">
@@ -33,7 +33,7 @@
 					</a>
 					<!-- Speicher-Button -->
 					<a
-						class="btn d-flex align-items-center btn--title-action{(dataDirty && !(preventDuplicateIssues && duplicateIssueWarnings && duplicateIssueWarnings.length > 0) && !(preventDuplicateSupplements && duplicateSupplementWarnings && duplicateSupplementWarnings.length > 0)) ? '' : ' disabled'}"
+						class="btn d-flex align-items-center btn--title-action{canSave() ? '' : ' disabled'}"
 						onclick={save}
 						title={translate_msg('save')}
 						data-bs-toggle="tooltip">
@@ -41,7 +41,7 @@
 					</a>
 					<!-- // Speicher-Button -->
 					<a
-						class="btn d-flex align-items-center btn--title-action{(dataDirty && !(preventDuplicateIssues && duplicateIssueWarnings && duplicateIssueWarnings.length > 0) && !(preventDuplicateSupplements && duplicateSupplementWarnings && duplicateSupplementWarnings.length > 0)) ? '' : ' disabled'}"
+						class="btn d-flex align-items-center btn--title-action{canSave() ? '' : ' disabled'}"
 						onclick={saveAndExit}
 						title="{translate_msg('pluginSaveAndLeave')}"
 						data-bs-toggle="tooltip">
@@ -476,11 +476,11 @@
 						<img src="template/img/goobi/ajaxloader2.gif" />
 					</span>
 					<!-- // verlassen-Button -->
-					<a class="btn btn-blank" onclick={exit}>{translate_msg('pluginLeave')}</a>
+					<a class="btn btn-blank{saveInFlight ? ' disabled' : ''}" onclick={exit}>{translate_msg('pluginLeave')}</a>
 					<!-- Speicher-Button -->
-					<a class="btn btn-blank{(dataDirty && !(preventDuplicateIssues && duplicateIssueWarnings && duplicateIssueWarnings.length > 0) && !(preventDuplicateSupplements && duplicateSupplementWarnings && duplicateSupplementWarnings.length > 0)) ? '' : ' disabled'}" onclick={save}>{translate_msg('save')}</a>
+					<a class="btn btn-blank{canSave() ? '' : ' disabled'}" onclick={save}>{translate_msg('save')}</a>
 					<!-- // Speicher-Button -->
-					<a class="btn btn-blank{(dataDirty && !(preventDuplicateIssues && duplicateIssueWarnings && duplicateIssueWarnings.length > 0) && !(preventDuplicateSupplements && duplicateSupplementWarnings && duplicateSupplementWarnings.length > 0)) ? '' : ' disabled'}" onclick={saveAndExit}>{translate_msg('pluginSaveAndLeave')}</a>
+					<a class="btn btn-blank{canSave() ? '' : ' disabled'}" onclick={saveAndExit}>{translate_msg('pluginSaveAndLeave')}</a>
 				</div>
 			</template>
 		</div>
@@ -499,6 +499,7 @@
 			// fields of props are defined in plugin_newspaperRecognizer.xhtml
 			this.data_el = props.data_el; // used in both save functions, and it has one key `value` which contains the data contents in the JSON format
 			this.saveButton = props.saveButton; // used only in the function "save"
+			this.saveResultEl = props.saveResultEl; // the backend reports the outcome of the last save in here
 			this.finish_button = props.finishButton; // used only in the function "exit"
 			this.restartAnalysisButton = props.restartAnalysisButton; // used only in the function "restartAnalysis"
 			this.deleteManualResultsButton = props.deleteManualResultsButton; // used only in the function "deleteManualResults"
@@ -521,7 +522,8 @@
 			this.data = JSON.parse(this.data_el.value);
 			this.defaultIssueType = this.issueTypes[0];
 			this.defaultSupplementType = this.supplementTypes[0];
-			this.pendigExit = false;
+			this.pendingExit = false; // set by saveAndExit, acted upon once the backend confirms the write
+			this.saveInFlight = false; // true while a save request is on its way; blocks everything that would abort it
 
             console.log('Data loaded');
             console.log(this.data);
@@ -631,10 +633,10 @@
 	    	faces.ajax.addOnEvent((data) => {
 	            var ajaxstatus = data.status; // Can be "begin", "complete" and "success"
 	            var ajaxloader = this.$("#ajaxloaderbottom");
+	            var isSaveRequest = this.isSaveRequest(data);
 
 	            switch (ajaxstatus) {
 	                case "begin": // This is called right before ajax request is been sent.
-	                	console.log("ajaxloader:", ajaxloader)
 	                	if(ajaxloader) {
 	                    	ajaxloader.style.display = 'inline';
 	                	}
@@ -644,20 +646,69 @@
 	                	if(ajaxloader) {
 	                    	ajaxloader.style.display = 'none';
 	                	}
+	                	if (isSaveRequest) {
+	                		// the request has been answered, whatever its outcome: allow interaction again
+	                		this.saveInFlight = false;
+	                		this.update();
+	                	}
 	                    break;
 
 	                case "success": // This is called when ajax response is successfully processed.
-						if (this.pendingExit) {
-							this.pendingExit = false;
-							this.finish_button.click();  // ← erst NACH erfolgreichem AJAX navigieren
+						if (isSaveRequest) {
+							this.applySaveResult();
 						}
 						break;
 	            }
 	        });
+
+	        // a save request that never reached the backend must leave the data dirty, so it can be sent again
+	        faces.ajax.addOnError((data) => {
+	        	if (this.isSaveRequest(data)) {
+	        		this.saveInFlight = false;
+	        		this.pendingExit = false;
+	        		this.update();
+	        	}
+	        });
+	    },
+
+	    /* whether an ajax event belongs to the save request we sent. faces.js resolves the source element by id,
+	       so compare ids instead of node identity */
+	    isSaveRequest(data) {
+	        return !!data.source && !!this.saveButton && data.source.id === this.saveButton.id;
+	    },
+
+	    /* the outcome the backend reported for the last save request. The partial response replaces the element
+	       (faces.js: parent.replaceChild), so re-resolve it by id instead of reading a detached node */
+	    readSaveResult() {
+	        if (!this.saveResultEl) {
+	            return '';
+	        }
+	        var el = document.getElementById(this.saveResultEl.id) || this.saveResultEl;
+	        return el.textContent.trim();
+	    },
+
+	    /* evaluate the answer to a save request: only a confirmed write means the data is persisted */
+	    applySaveResult() {
+	        if (this.readSaveResult() !== 'SUCCESS') {
+	            // the backend refused the write or it failed, and reports the reason itself.
+	            // keep the data dirty so it can be corrected and saved again
+	            this.pendingExit = false;
+	            this.update();
+	            return;
+	        }
+	        this.dataDirty = false;
+	        this.update();
+	        if (this.pendingExit) {
+	            this.pendingExit = false;
+	            this.finish_button.click(); // navigate only after the write has been confirmed
+	        }
 	    },
 
 	    /* triggered when the button `Plugin verlassen` is clicked */
 		exit() {
+		    if (this.saveInFlight) {
+		        return;
+		    }
 		    this.finish_button.click();
 		},
 
@@ -684,6 +735,9 @@
 
 		/* triggered when the `delete` buttonis clicked, which will remove the picture */
 		deletePage(e, page){
+			if (this.saveInFlight) {
+				return;
+			}
 
 			this.dataDirty = true;
 			// remove this page from data
@@ -695,7 +749,6 @@
 
 			// update the list data to update the rendering in the frontend
 			this.data.splice(position, 1);
-			this.saveButton.click();
 
 			// update indices of all pages after the deleted page
 			for (let i = 0; i < this.data.length; i++) {
@@ -718,9 +771,13 @@
 			}
 
 			this.regenerateSupplementNumbering(position);
+			this.validateDuplicateIssues();
 			this.validateDuplicateSupplements();
 
 			this.update();
+
+			// persist the deletion together with every correction made above
+			this.save();
 		},
 
 		/* used to transfer the location information of the file to the backend */
@@ -729,43 +786,46 @@
 			document.getElementById('delete_form:file_id_to_delete').value = fileId;
 		},
 
-		/* triggered when the button `METS schreiben` is clicked */
-		save() {
+		/* whether a save request may be sent right now */
+		canSave() {
+		    if (this.saveInFlight || !this.dataDirty) {
+		        return false;
+		    }
 		    if (this.preventDuplicateIssues && this.duplicateIssueWarnings && this.duplicateIssueWarnings.length > 0) {
-		        return;
+		        return false;
 		    }
 		    if (this.preventDuplicateSupplements && this.duplicateSupplementWarnings && this.duplicateSupplementWarnings.length > 0) {
+		        return false;
+		    }
+		    return true;
+		},
+
+		/* triggered when the button `METS schreiben` is clicked */
+		save() {
+		    if (!this.canSave()) {
 		        return;
 		    }
-		    if(this.dataDirty) {
-                this.data_el.value = this.createSaveData();
-                this.saveButton.click();
-                this.dataDirty = false;
-                this.update();
-            }
+		    this.saveInFlight = true;
+		    this.data_el.value = this.createSaveData();
+		    this.saveButton.click();
+		    // dataDirty stays true until the backend confirms the write in applySaveResult()
+		    this.update();
 		},
 
 		saveAndExit() {
-		    if (this.preventDuplicateIssues && this.duplicateIssueWarnings && this.duplicateIssueWarnings.length > 0) {
+		    if (this.saveInFlight) {
 		        return;
 		    }
-		    if (this.preventDuplicateSupplements && this.duplicateSupplementWarnings && this.duplicateSupplementWarnings.length > 0) {
-		        return;
-		    }
-			if(this.dataDirty) {
-				this.data_el.value = this.createSaveData();
-				this.pendingExit = true;   // ← Flag setzen
-				this.saveButton.click();   // ← AJAX startet
-				this.dataDirty = false;
-				this.update();
-				// finish_button wird jetzt im AJAX-success-Handler aufgerufen
-			} else {
+			if (!this.dataDirty) {
 				this.finish_button.click();
+				return;
 			}
-
+		    if (!this.canSave()) {
+		        return;
+		    }
+			this.pendingExit = true; // finish_button is clicked once the backend confirms the write
+			this.save();
 		},
-
-
 
 		/* used by save function */
 		createSaveData() {

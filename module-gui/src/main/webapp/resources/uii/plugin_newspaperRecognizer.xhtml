@@ -35,8 +35,9 @@
         </h:form>
         <h:form id="newspaper_form">
 			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
+			<h:outputText id="save_result" value="#{AktuelleSchritteForm.myPlugin.saveResult}" style="display:none" />
 			<h:commandLink id="save_button" action="#{AktuelleSchritteForm.myPlugin.save}">
-				<f:ajax execute="@form" />
+				<f:ajax execute="@form" render="save_result" />
 			</h:commandLink>
 			<h:commandLink id="finish_button" action="#{AktuelleSchritteForm.myPlugin.finish}"></h:commandLink>
 		</h:form>
@@ -62,6 +63,7 @@
            var opts = {
            		data_el: document.getElementById('newspaper_form:my_plugin_data'),
            		saveButton: document.getElementById('newspaper_form:save_button'),
+           		saveResultEl: document.getElementById('newspaper_form:save_result'),
            		finishButton: document.getElementById('newspaper_form:finish_button'),
            		restartAnalysisButton: document.getElementById('extra_form:delete_and_start_over_button'),
            		deleteManualResultsButton: document.getElementById('extra_form:delete_manual_results_button'),
