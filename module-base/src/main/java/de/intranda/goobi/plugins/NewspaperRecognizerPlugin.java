@@ -67,12 +67,26 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     private static final String ISSUE_RESULT_LOCATION = "/taskmanager/issues_result.json";
     private static final String ISSUE_RESULT_MANUAL_LOCATION = "/taskmanager/issues_result_manual.json";
 
+    /**
+     * Outcome of the last {@link #save()} call. The GUI reads it after the save request has been answered, because a
+     * refused or failed write is otherwise indistinguishable from a successful one.
+     */
+    public enum SaveResult {
+        NONE,
+        SUCCESS,
+        DUPLICATE_ISSUES,
+        DUPLICATE_SUPPLEMENTS,
+        ERROR
+    }
+
     private boolean loadAllImages;
     private boolean showDeletePageButton;
     private boolean preventDuplicateIssues;
     private boolean preventDuplicateSupplements;
     private String dateFormatPattern;
     private DateTimeFormatter dateFormat;
+
+    private SaveResult saveResult = SaveResult.NONE;
 
     private String fileNameToDelete = null;
     private int fileIdToDelete;
@@ -95,6 +109,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         try {
             this.returnPath = returnPath;
             this.myStep = step;
+            this.saveResult = SaveResult.NONE;
             XMLConfiguration config = ConfigPlugins.getPluginConfig(PLUGIN_NAME);
             loadAllImages = config.getBoolean("loadAllImages", true);
             showDeletePageButton = config.getBoolean("showDeletePageButton", false);
@@ -355,16 +370,21 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     public String save() {
         try {
             if (preventDuplicateIssues && DuplicateIssueValidator.hasDuplicates(pages)) {
+                saveResult = SaveResult.DUPLICATE_ISSUES;
                 Helper.setFehlerMeldung(Helper.getTranslation("plugin_newspaperRecognizer_duplicateIssueWarning"));
                 return "";
             }
             if (preventDuplicateSupplements && DuplicateIssueValidator.hasDuplicateSupplements(pages)) {
+                saveResult = SaveResult.DUPLICATE_SUPPLEMENTS;
                 Helper.setFehlerMeldung(Helper.getTranslation("plugin_newspaperRecognizer_duplicateSupplementWarning"));
                 return "";
             }
             metsWriter.write(pages);
+            saveResult = SaveResult.SUCCESS;
+            Helper.setMeldung(Helper.getTranslation("dataSavedSuccessfully"));
         } catch (TypeNotAllowedForParentException | TypeNotAllowedAsChildException | WriteException | SwapException | IOException
                 | PreferencesException | RuntimeException e) {
+            saveResult = SaveResult.ERROR;
             String message = "An error occurred while persisting data into the Mets file";
             log.error(message, e);
             Helper.setFehlerMeldung(message, e);
