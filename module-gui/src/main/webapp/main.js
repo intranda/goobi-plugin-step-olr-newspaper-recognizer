@@ -3,6 +3,10 @@ import App from './tags/app.riot'
 
 import './resources/css/newspapergrid.css'
 
+riot.install((component) => {
+  component.GoobiIcons = window.GoobiIcons;
+});
+
 const mountApp = riot.component(App)
 
 /* The goobiOpts look like this:
