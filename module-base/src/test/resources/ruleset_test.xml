@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Preferences>
+  <MetadataType><Name>physPageNumber</Name><language name="de">Physische Seitenzahl</language></MetadataType>
+  <MetadataType><Name>logicalPageNumber</Name><language name="de">Logische Seitenzahl</language></MetadataType>
+  <MetadataType><Name>DateIssued</Name><language name="de">Erscheinungsdatum</language><language name="en">Date issued</language></MetadataType>
+  <MetadataType><Name>CurrentNo</Name><language name="de">Nummer</language><language name="en">Number</language></MetadataType>
+  <MetadataType><Name>CurrentNoSorting</Name><language name="de">Nummer (Sortierung)</language></MetadataType>
+  <MetadataType><Name>PartNumber</Name><language name="de">Teilnummer</language></MetadataType>
+  <MetadataType><Name>TitleDocMain</Name><language name="de">Haupttitel</language><language name="en">Main title</language></MetadataType>
+  <MetadataType><Name>Note</Name><language name="de">Notiz</language><language name="en">Note</language></MetadataType>
+
+  <DocStrctType><Name>BoundBook</Name><allowedchildtype>page</allowedchildtype></DocStrctType>
+  <DocStrctType><Name>page</Name>
+    <metadata num="1m">physPageNumber</metadata>
+    <metadata num="1m">logicalPageNumber</metadata>
+  </DocStrctType>
+  <DocStrctType anchor="true"><Name>Newspaper</Name><language name="de">Zeitung</language>
+    <allowedchildtype>NewspaperVolume</allowedchildtype>
+    <metadata num="1o">TitleDocMain</metadata>
+  </DocStrctType>
+  <DocStrctType><Name>NewspaperVolume</Name><language name="de">Zeitungsband</language><language name="en">Newspaper volume</language>
+    <allowedchildtype>MorningIssue</allowedchildtype>
+    <allowedchildtype>EveningIssue</allowedchildtype>
+    <allowedchildtype>ExtraEdition</allowedchildtype>
+    <allowedchildtype>TableOfContents</allowedchildtype>
+    <metadata num="1o">TitleDocMain</metadata>
+  </DocStrctType>
+  <DocStrctType><Name>MorningIssue</Name><language name="de">Morgenausgabe</language><language name="en">Morning issue</language><language name="fr">Edition</language>
+    <allowedchildtype>NewspaperSupplement</allowedchildtype>
+    <allowedchildtype>TableOfContents</allowedchildtype>
+    <metadata num="1m">DateIssued</metadata>
+    <metadata num="*">CurrentNo</metadata>
+    <metadata num="1o">CurrentNoSorting</metadata>
+    <metadata num="1o">PartNumber</metadata>
+    <metadata num="1o">TitleDocMain</metadata>
+    <metadata num="*">Note</metadata>
+  </DocStrctType>
+  <DocStrctType><Name>EveningIssue</Name><language name="de">Abendausgabe</language><language name="en">Evening issue</language><language name="fr">Edition</language>
+    <allowedchildtype>NewspaperSupplement</allowedchildtype>
+    <metadata num="1o">DateIssued</metadata>
+    <metadata num="*">CurrentNo</metadata>
+    <metadata num="1o">CurrentNoSorting</metadata>
+    <metadata num="1o">PartNumber</metadata>
+    <metadata num="1o">TitleDocMain</metadata>
+  </DocStrctType>
+  <DocStrctType><Name>ExtraEdition</Name><language name="de">Extrablatt</language><language name="en">Extra edition</language>
+    <metadata num="1m">CurrentNo</metadata>
+    <metadata num="1o">TitleDocMain</metadata>
+  </DocStrctType>
+  <DocStrctType><Name>NewspaperSupplement</Name><language name="de">Beilage</language><language name="en">Supplement</language>
+    <allowedchildtype>Article</allowedchildtype>
+    <metadata num="1o">TitleDocMain</metadata>
+    <metadata num="*">Note</metadata>
+  </DocStrctType>
+  <DocStrctType><Name>TableOfContents</Name><language name="de">Inhaltsverzeichnis</language><language name="en">Table of contents</language>
+    <metadata num="1o">TitleDocMain</metadata>
+  </DocStrctType>
+  <DocStrctType><Name>Article</Name><language name="de">Artikel</language><language name="en">Article</language>
+    <metadata num="+">TitleDocMain</metadata>
+    <metadata num="*">Note</metadata>
+  </DocStrctType>
+</Preferences>
