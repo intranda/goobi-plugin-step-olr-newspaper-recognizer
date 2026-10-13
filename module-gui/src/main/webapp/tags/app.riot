@@ -145,13 +145,14 @@
 											handle-pattern={() => openDialog('pattern', row.node)}
 											handle-continue={isGeneratable(row.node) ? () => openDialog('continue', row.node) : null}></block-fields>
 
-										<div each={(child, childIndex) in row.node.children} class="ps-3 border-start" id={blockElementId(child)}>
+										<div if={row.node.children.length > 0} class="block-tree">
+										<div each={(child, childIndex) in row.node.children} class="block-tree__item" id={blockElementId(child)}
+											style="--branch-color: {childColor(childIndex + 1)};">
 											<block-fields
 												start={child.start}
 												info={catalog[child.start.type]}
 												type-options={typeOptions(row.node.start.type)}
 												flags={flagsFor(child)}
-												color={childColor(childIndex + 1)}
 												t={t}
 												date-format-pattern={dateFormatPattern}
 												handle-type={type => changeType(child, type)}
@@ -162,6 +163,7 @@
 												handle-remove-hidden={() => askRemoveHidden(child)}
 												handle-pattern={() => openDialog('pattern', child)}
 												handle-continue={isGeneratable(child) ? () => openDialog('continue', child) : null}></block-fields>
+										</div>
 										</div>
 
 										<span>{t('otherPages')}: {row.node.last - row.node.first}</span>

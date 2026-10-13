@@ -120,3 +120,57 @@ progress {
 .modal-hot .modal-header .btn {
 	color: var(--clr-white);
 }
+
+/* child blocks as a tree: a guide line per level and a branch with the colour of the block's page markers.
+   .block-tree can be nested inside .block-tree__item for deeper levels. */
+.block-tree {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin-left: 0.5rem;
+	padding-left: 1rem;
+}
+
+.block-tree__item {
+	position: relative;
+}
+
+/* vertical guide line, ending at the branch of the last item */
+.block-tree__item::before {
+	content: "";
+	position: absolute;
+	left: -1rem;
+	top: -0.5rem;
+	bottom: 0;
+	border-left: 1px solid var(--clr-neutral-400, #b8b8b8);
+}
+
+.block-tree__item:last-child::before {
+	bottom: auto;
+	height: calc(0.5rem + 1rem);
+}
+
+/* horizontal branch to the block, ending in the colour dot */
+.block-tree__item::after {
+	content: "";
+	position: absolute;
+	left: -1rem;
+	top: 1rem;
+	width: 0.6rem;
+	border-top: 1px solid var(--clr-neutral-400, #b8b8b8);
+}
+
+.block-tree__item > block-fields::before {
+	content: "";
+	position: absolute;
+	left: -0.5rem;
+	top: calc(1rem - 4px);
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--branch-color, var(--clr-neutral-400, #b8b8b8));
+}
+
+.block-tree .block-tree {
+	margin-top: 0.5rem;
+}
