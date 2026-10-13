@@ -100,3 +100,17 @@ test('applyTypePattern on a child block stays within its parent', () => {
   const result = applyTypePattern(list, { page: 0, level: 1 }, ['TableOfContents'], catalog);
   assert.deepEqual([result[0].starts[1].type, result[1].starts[0].type, result[2].starts[1].type], ['TableOfContents', 'TableOfContents', null]);
 });
+
+test('dateMode perIssue: every included dated block gets the next date', () => {
+  const result = continueFrom(sequence('MEME'), { page: 0, level: 0 }, options({ dateMode: 'perIssue', mode: 'perIssue' }), catalog);
+  assert.deepEqual(dates(result), ['1890-03-01', '1890-03-02', '1890-03-03', '1890-03-04']);
+  assert.deepEqual(numbers(result), ['1', '2', '3', '4']);
+  assert.deepEqual(result.preview.map(r => r.note), ['start', 'newDay', 'newDay', 'newDay']);
+});
+
+test('dateMode perIssue respects weekdays, and per-day numbers follow the new dates', () => {
+  const noSunday = [false, true, true, true, true, true, true];
+  const result = continueFrom(sequence('MEM'), { page: 0, level: 0 }, options({ dateMode: 'perIssue', weekdays: noSunday }), catalog);
+  assert.deepEqual(dates(result), ['1890-03-01', '1890-03-03', '1890-03-04']);
+  assert.deepEqual(numbers(result), ['1', '2', '3']);
+});

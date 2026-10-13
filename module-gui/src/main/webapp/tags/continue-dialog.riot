@@ -11,6 +11,17 @@
 					</div>
 				</fieldset>
 				<fieldset>
+					<legend class="fs-6 fw-bold">{props.t('plugin_newspaperRecognizer_continue_date')}</legend>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="continue-dateMode" id="continue-dateRepeat" checked={state.dateMode === 'perDay'} onchange={() => update({ dateMode: 'perDay' })} />
+						<label class="form-check-label" for="continue-dateRepeat">{props.t('plugin_newspaperRecognizer_continue_dateRepeat')}</label>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="radio" name="continue-dateMode" id="continue-datePerIssue" checked={state.dateMode === 'perIssue'} onchange={() => update({ dateMode: 'perIssue' })} />
+						<label class="form-check-label" for="continue-datePerIssue">{props.t('plugin_newspaperRecognizer_continue_datePerIssue')}</label>
+					</div>
+				</fieldset>
+				<fieldset>
 					<legend class="fs-6 fw-bold">{props.t('plugin_newspaperRecognizer_continue_number')}</legend>
 					<div class="form-check">
 						<input class="form-check-input" type="radio" name="continue-mode" id="continue-perDay" checked={state.mode === 'perDay'} onchange={() => update({ mode: 'perDay' })} />
@@ -99,6 +110,7 @@
 			this.state = {
 				include: [this.startType()],
 				mode: 'perDay',
+				dateMode: 'perDay',
 				weekdays: [true, true, true, true, true, true, true],
 				biweekly: false,
 			};
@@ -124,7 +136,7 @@
 		},
 		result() {
 			return continueFrom(this.props.pages, this.props.startRef, {
-				include: this.state.include, mode: this.state.mode, weekdays: this.state.weekdays, biweekly: this.state.biweekly,
+				include: this.state.include, mode: this.state.mode, dateMode: this.state.dateMode, weekdays: this.state.weekdays, biweekly: this.state.biweekly,
 			}, this.props.catalog);
 		},
 		thumb(index) {

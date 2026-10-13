@@ -46,7 +46,7 @@ The drop-down of a block offers exactly the types the ruleset allows at that pos
 Two tools fill many blocks at once:
 
 - **Apply type pattern** sets the types of a block and all following blocks on the same level in a repeating pattern, for example morning issue, evening issue. Date and number are kept where the new type has these fields.
-- **Continue from here** fills in dates and numbers from a block onwards. Only the selected types are included. A new day starts as soon as an included type repeats. Numbers count per day (morning 1, evening 1, morning 2 …) or per issue (morning 1, evening 2, morning 3 …). Weekdays and a biweekly rhythm control the dates. A preview shows the result before it is applied. Types are never changed.
+- **Continue from here** fills in dates and numbers from a block onwards. Only the selected types are included. A new day starts either as soon as an included type repeats, or with every included block (option "new date for every issue"). Numbers count per day (morning 1, evening 1, morning 2 …) or per issue (morning 1, evening 2, morning 3 …). Weekdays and a biweekly rhythm control the dates. A preview shows the result before it is applied. Types are never changed.
 
 ![Continue from here](screen5_en.png)
 

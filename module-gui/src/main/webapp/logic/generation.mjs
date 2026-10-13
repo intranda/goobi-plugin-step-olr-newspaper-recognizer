@@ -37,7 +37,8 @@ export function continueFrom(pages, startRef, options, catalog) {
     }
     let note = '';
     if (info.dated) {
-      if (seen.has(start.type)) {
+      // a new day starts when an included type repeats, or with every block in dateMode 'perIssue'
+      if (options.dateMode === 'perIssue' || seen.has(start.type)) {
         seen = new Set([start.type]);
         if (dayNumber !== null) {
           dayNumber++;
