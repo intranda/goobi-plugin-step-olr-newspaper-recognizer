@@ -1,0 +1,41 @@
+<plugin-modal>
+	<!-- the modal markup Goobi uses (e.g. institution_edit.xhtml): Bootstrap modal, primary header, footer buttons -->
+	<div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby={modalId + 'Title'} onkeydown={onKeyDown}>
+		<div class="modal-dialog modal-dialog-scrollable {props.size ? 'modal-' + props.size : ''}" role="document">
+			<div class="modal-content">
+				<div class="modal-header bg-primary text-white">
+					<h4 class="modal-title" id={modalId + 'Title'}>{props.title}</h4>
+					<button type="button" class="btn text-white" title={props.closeLabel} aria-label={props.closeLabel} onclick={() => props.handleClose()}>
+						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<slot />
+				</div>
+				<div class="modal-footer">
+					<slot name="footer" />
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal-backdrop fade show"></div>
+
+	<script>
+	let counter = 0;
+
+	export default {
+		onBeforeMount() {
+			this.modalId = 'newspaperRecognizerModal' + (++counter);
+		},
+		onMounted() {
+			// focus the dialog so that Escape works and screen readers announce it
+			this.root.querySelector('.modal').focus();
+		},
+		onKeyDown(e) {
+			if (e.key === 'Escape') {
+				this.props.handleClose();
+			}
+		},
+	}
+	</script>
+</plugin-modal>

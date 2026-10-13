@@ -63,7 +63,7 @@
 @media screen and (min-width: 1100px) {
 	.issues {
 		/* the controls need room for the type drop-down, the hidden data badge and the tool buttons */
-		grid-template-columns: auto minmax(360px, 1fr) 3fr;
+		grid-template-columns: auto minmax(420px, 1fr) 3fr;
 	}
 	.thumbnail-image {
 		justify-content: space-between;

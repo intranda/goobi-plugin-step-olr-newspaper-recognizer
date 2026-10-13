@@ -1,54 +1,52 @@
 <conflict-dialog>
-	<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="conflictTitle" style="background: rgba(0, 0, 0, 0.4);">
-		<div class="modal-dialog modal-lg" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="conflictTitle">{props.t('plugin_newspaperRecognizer_conflict_title')}</h5>
-				</div>
-				<div class="modal-body d-flex flex-column gap-3">
-					<p if={props.total} class="mb-0">{summary()}</p>
-					<fieldset each={group in groups()} class="d-flex flex-column gap-2">
-						<legend class="fs-6 fw-bold mb-0">{props.t('plugin_newspaperRecognizer_conflict_' + group.kind)}</legend>
-						<details>
-							<summary>{props.t('plugin_newspaperRecognizer_conflict_affected')}: {group.conflicts.length}</summary>
-							<ul class="mb-0">
-								<li each={conflict in group.conflicts}>
-									{blockLabel(conflict)}
-									<ul>
-										<li each={structure in conflict.structures}>{structure.label}{structure.title ? ' – ' + structure.title : ''}</li>
-										<li each={entry in conflict.metadata}>{entry.label}: {entry.value}</li>
-									</ul>
-								</li>
+	<plugin-modal title={props.t('plugin_newspaperRecognizer_conflict_title')} size="lg" close-label={props.t('cancel')} handle-close={() => props.handleCancel()}>
+		<div class="d-flex flex-column gap-3">
+			<p if={props.total} class="mb-0">{summary()}</p>
+			<fieldset each={group in groups()} class="d-flex flex-column gap-2">
+				<legend class="fs-6 fw-bold mb-0">{props.t('plugin_newspaperRecognizer_conflict_' + group.kind)}</legend>
+				<details>
+					<summary>{props.t('plugin_newspaperRecognizer_conflict_affected')}: {group.conflicts.length}</summary>
+					<ul class="mb-0">
+						<li each={conflict in group.conflicts}>
+							{blockLabel(conflict)}
+							<ul>
+								<li each={structure in conflict.structures}>{structure.label}{structure.title ? ' – ' + structure.title : ''}</li>
+								<li each={entry in conflict.metadata}>{entry.label}: {entry.value}</li>
 							</ul>
-						</details>
-						<p if={group.kind === 'DELETED' && group.conflicts.some(c => c.metadata.length > 0)} class="mb-0 text-muted">
-							{props.t('plugin_newspaperRecognizer_conflict_DELETED_metadataLost')}
-						</p>
-						<div each={option in group.options} class="form-check">
-							<input class="form-check-input" type="radio" name={'conflict-' + group.kind} id={'conflict-' + group.kind + '-' + option}
-								checked={state.choices[group.kind] === option} onchange={() => choose(group.kind, option)} />
-							<label class="form-check-label" for={'conflict-' + group.kind + '-' + option}>
-								{props.t('plugin_newspaperRecognizer_conflict_' + group.kind + '_' + option)}
-							</label>
-						</div>
-					</fieldset>
+						</li>
+					</ul>
+				</details>
+				<p if={group.kind === 'DELETED' && group.conflicts.some(c => c.metadata.length > 0)} class="mb-0 text-muted">
+					{props.t('plugin_newspaperRecognizer_conflict_DELETED_metadataLost')}
+				</p>
+				<div each={option in group.options} class="form-check">
+					<input class="form-check-input" type="radio" name={'conflict-' + group.kind} id={'conflict-' + group.kind + '-' + option}
+						checked={state.choices[group.kind] === option} onchange={() => choose(group.kind, option)} />
+					<label class="form-check-label" for={'conflict-' + group.kind + '-' + option}>
+						{props.t('plugin_newspaperRecognizer_conflict_' + group.kind + '_' + option)}
+					</label>
 				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-blank me-auto" onclick={() => props.handleCancel()}>{props.t('cancel')}</button>
-					<button type="button" class="btn btn-primary" disabled={!complete()} onclick={() => props.handleConfirm(state.choices)}>
-						{props.t('plugin_newspaperRecognizer_conflict_apply')}
-					</button>
-				</div>
-			</div>
+			</fieldset>
 		</div>
-	</div>
+		<template slot="footer">
+			<button type="button" class="btn btn-blank" onclick={() => props.handleCancel()}>{props.t('cancel')}</button>
+			<button type="button" class="btn btn-success" disabled={!complete()} onclick={() => props.handleConfirm(state.choices)}>
+				{props.t('plugin_newspaperRecognizer_conflict_apply')}
+			</button>
+		</template>
+	</plugin-modal>
 
 	<script>
 	import { commonOptions } from '../logic/hidden.mjs'
+	import PluginModal from './plugin-modal.riot'
 
 	const KINDS = ['DELETED', 'TYPE', 'BOUNDARY', 'EXPLICIT'];
 
+
 	export default {
+		components: {
+			PluginModal,
+		},
 		onBeforeMount() {
 			// a group with a single possible choice is preselected
 			const choices = {};

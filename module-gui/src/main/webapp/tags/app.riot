@@ -138,26 +138,12 @@
 											date-format-pattern={dateFormatPattern}
 											handle-type={type => changeType(row.node, type)}
 											handle-date={value => changeDate(row.node, value)}
-											handle-field={(name, value) => changeField(row.node, name, value)}>
-											<template slot="badge">
-												<div class="position-relative">
-													<hidden-badge summary={row.node.start.hidden} t={t} handle-open={() => toggleHidden(blockElementId(row.node))}></hidden-badge>
-													<hidden-popover if={openHidden === blockElementId(row.node)} summary={row.node.start.hidden} t={t}
-														handle-close={() => toggleHidden(blockElementId(row.node))}
-														handle-remove={() => askRemoveHidden(row.node)}></hidden-popover>
-												</div>
-											</template>
-											<template slot="actions">
-													<button type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('pattern', row.node)}
-														title={t('plugin_newspaperRecognizer_typePattern')} aria-label={t('plugin_newspaperRecognizer_typePattern')} data-bs-toggle="tooltip">
-														<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('repeat')}" /></svg></span>
-													</button>
-													<button if={isGeneratable(row.node)} type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('continue', row.node)}
-														title={t('plugin_newspaperRecognizer_continueFromHere')} aria-label={t('plugin_newspaperRecognizer_continueFromHere')} data-bs-toggle="tooltip">
-														<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('calendar-repeat')}" /></svg></span>
-													</button>
-												</template>
-										</block-fields>
+											handle-field={(name, value) => changeField(row.node, name, value)}
+											hidden-open={openHidden === blockElementId(row.node)}
+											handle-toggle-hidden={() => toggleHidden(blockElementId(row.node))}
+											handle-remove-hidden={() => askRemoveHidden(row.node)}
+											handle-pattern={() => openDialog('pattern', row.node)}
+											handle-continue={isGeneratable(row.node) ? () => openDialog('continue', row.node) : null}></block-fields>
 
 										<div each={(child, childIndex) in row.node.children} class="ps-3 border-start" id={blockElementId(child)}>
 											<block-fields
@@ -170,26 +156,12 @@
 												date-format-pattern={dateFormatPattern}
 												handle-type={type => changeType(child, type)}
 												handle-date={value => changeDate(child, value)}
-												handle-field={(name, value) => changeField(child, name, value)}>
-												<template slot="badge">
-												<div class="position-relative">
-													<hidden-badge summary={child.start.hidden} t={t} handle-open={() => toggleHidden(blockElementId(child))}></hidden-badge>
-													<hidden-popover if={openHidden === blockElementId(child)} summary={child.start.hidden} t={t}
-														handle-close={() => toggleHidden(blockElementId(child))}
-														handle-remove={() => askRemoveHidden(child)}></hidden-popover>
-												</div>
-											</template>
-												<template slot="actions">
-													<button type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('pattern', child)}
-														title={t('plugin_newspaperRecognizer_typePattern')} aria-label={t('plugin_newspaperRecognizer_typePattern')} data-bs-toggle="tooltip">
-														<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('repeat')}" /></svg></span>
-													</button>
-													<button if={isGeneratable(child)} type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('continue', child)}
-														title={t('plugin_newspaperRecognizer_continueFromHere')} aria-label={t('plugin_newspaperRecognizer_continueFromHere')} data-bs-toggle="tooltip">
-														<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('calendar-repeat')}" /></svg></span>
-													</button>
-												</template>
-											</block-fields>
+												handle-field={(name, value) => changeField(child, name, value)}
+												hidden-open={openHidden === blockElementId(child)}
+												handle-toggle-hidden={() => toggleHidden(blockElementId(child))}
+												handle-remove-hidden={() => askRemoveHidden(child)}
+												handle-pattern={() => openDialog('pattern', child)}
+												handle-continue={isGeneratable(child) ? () => openDialog('continue', child) : null}></block-fields>
 										</div>
 
 										<span>{t('otherPages')}: {row.node.last - row.node.first}</span>
@@ -240,27 +212,23 @@
 	<conflict-dialog if={pendingChange} conflicts={pendingChange.conflicts} total={pendingChange.options.total} catalog={catalog} t={t}
 		handle-confirm={resolveConflicts} handle-cancel={cancelConflicts}></conflict-dialog>
 
-	<div if={confirmation} class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle" style="background: rgba(0, 0, 0, 0.4);">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="confirmationTitle">{t(confirmation.title)}</h5>
-				</div>
-				<div class="modal-body">{t(confirmation.text)}</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-blank me-auto" onclick={cancelConfirmation}>{t('cancel')}</button>
-					<button type="button" class="btn btn-hot" onclick={runConfirmation}>{t(confirmation.button)}</button>
-				</div>
-			</div>
-		</div>
-	</div>
+	<plugin-modal if={confirmation} title={t(confirmation.title)} close-label={t('cancel')} handle-close={cancelConfirmation}>
+		<p class="mb-0">{t(confirmation.text)}</p>
+		<template slot="footer">
+			<button type="button" class="btn btn-blank" onclick={cancelConfirmation}>{t('abbrechen')}</button>
+			<button type="button" class="btn btn-danger" onclick={runConfirmation}>
+				<span if={confirmation.icon} aria-hidden="true" class="icon-wrapper me-2"><svg><use href="{GoobiIcons.iconHref(confirmation.icon)}" /></svg></span>
+				<span>{t(confirmation.button)}</span>
+			</button>
+		</template>
+	</plugin-modal>
 
 	<script>
 	import Thumbcanvas from './thumbcanvas.riot'
 	import BlockFields from './block-fields.riot'
-	import HiddenBadge from './hidden-badge.riot'
 	import HiddenPopover from './hidden-popover.riot'
 	import ConflictDialog from './conflict-dialog.riot'
+	import PluginModal from './plugin-modal.riot'
 	import {
 		buildTree, flatten, refOf, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
 		removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest, clonePages, siblingsFrom, syncDateInputs,
@@ -273,7 +241,7 @@
 	const CHILD_COLORS = ['#146abf', '#e00404', '#6300b5', '#ba5d06', '#467021'];
 
 	export default {
-		components: { Thumbcanvas, BlockFields, HiddenBadge, HiddenPopover, ConflictDialog, TypePatternDialog, ContinueDialog },
+		components: { Thumbcanvas, BlockFields, HiddenPopover, ConflictDialog, TypePatternDialog, ContinueDialog, PluginModal },
 
 		onBeforeMount(props) {
 			// fields of props are defined in plugin_newspaperRecognizer.xhtml
@@ -508,7 +476,7 @@
 					applyResolution(pages, explicitConflict(node.start, node.first), 'REMOVE_ALL', this.catalog, this.volumeType);
 					this.operations = upsertOperation(this.operations, node.start.id, 'EXPLICIT', 'REMOVE_ALL');
 					this.commit(pages);
-				});
+				}, 'trash');
 		},
 
 		hiddenBlocks() {
@@ -580,8 +548,9 @@
 			this.update();
 		},
 
-		askConfirmation(title, text, button, action) {
-			this.confirmation = { title, text, button, action };
+		/* every confirmation guards a destructive action; icon is optional (e.g. 'trash') */
+		askConfirmation(title, text, button, action, icon) {
+			this.confirmation = { title, text, button, action, icon };
 			this.update();
 		},
 
@@ -612,7 +581,7 @@
 
 		askRemoveAllBlocks() {
 			this.askConfirmation('plugin_newspaperRecognizer_removeAllBlocks', 'plugin_newspaperRecognizer_confirmAction',
-				'plugin_newspaperRecognizer_removeAllBlocks', () => this.applyChange(removeAllBlocks(this.pages), { bulk: true, total: flatten(this.tree.roots).length }));
+				'plugin_newspaperRecognizer_removeAllBlocks', () => this.applyChange(removeAllBlocks(this.pages), { bulk: true, total: flatten(this.tree.roots).length }), 'trash');
 		},
 
 		askRecompute() {
@@ -624,7 +593,7 @@
 			if (this.saveInFlight) {
 				return;
 			}
-			this.askConfirmation('loeschen', 'plugin_newspaperRecognizer_confirmDeleteImage', 'loeschen', () => this.deletePage(index));
+			this.askConfirmation('loeschen', 'plugin_newspaperRecognizer_confirmDeleteImage', 'loeschen', () => this.deletePage(index), 'trash');
 		},
 
 		/* once the change is accepted (Task 16 may ask about hidden data first): delete the image and save right away */
