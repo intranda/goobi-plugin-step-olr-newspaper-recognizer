@@ -1,0 +1,144 @@
+<continue-dialog>
+	<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="continueTitle" style="background: rgba(0, 0, 0, 0.4);">
+		<div class="modal-dialog modal-xl" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="continueTitle">{props.t('plugin_newspaperRecognizer_continue_title')}</h5>
+				</div>
+				<div class="modal-body d-flex flex-column gap-3">
+					<div class="d-flex flex-wrap gap-4">
+						<fieldset>
+							<legend class="fs-6 fw-bold">{props.t('plugin_newspaperRecognizer_continue_include')}</legend>
+							<div each={option in generatable()} class="form-check">
+								<input class="form-check-input" type="checkbox" id={'include-' + option.name} checked={state.include.includes(option.name)}
+									disabled={option.name === startType()} onchange={() => toggleInclude(option.name)} />
+								<label class="form-check-label" for={'include-' + option.name}>{option.label}</label>
+							</div>
+						</fieldset>
+						<fieldset>
+							<legend class="fs-6 fw-bold">{props.t('plugin_newspaperRecognizer_continue_number')}</legend>
+							<div class="form-check">
+								<input class="form-check-input" type="radio" name="continue-mode" id="continue-perDay" checked={state.mode === 'perDay'} onchange={() => update({ mode: 'perDay' })} />
+								<label class="form-check-label" for="continue-perDay">{props.t('plugin_newspaperRecognizer_continue_perDay')}</label>
+							</div>
+							<div class="form-check">
+								<input class="form-check-input" type="radio" name="continue-mode" id="continue-perIssue" checked={state.mode === 'perIssue'} onchange={() => update({ mode: 'perIssue' })} />
+								<label class="form-check-label" for="continue-perIssue">{props.t('plugin_newspaperRecognizer_continue_perIssue')}</label>
+							</div>
+						</fieldset>
+						<fieldset>
+							<legend class="fs-6 fw-bold">{props.t('plugin_newspaperRecognizer_continue_weekdays')}</legend>
+							<div class="d-flex flex-wrap gap-1">
+								<button each={day in DAYS} type="button" aria-pressed={state.weekdays[day.index] ? 'true' : 'false'}
+									class="btn btn-sm {state.weekdays[day.index] ? 'btn-primary' : 'btn-blank'}" onclick={() => toggleDay(day.index)}>
+									{props.t(day.key)}
+								</button>
+							</div>
+							<div class="form-check mt-2">
+								<input class="form-check-input" type="checkbox" id="continue-biweekly" checked={state.biweekly} onchange={() => update({ biweekly: !state.biweekly })} />
+								<label class="form-check-label" for="continue-biweekly">{props.t('plugin_newspaperRecognizer_biWeekly')}</label>
+							</div>
+						</fieldset>
+					</div>
+
+					<div if={result().error} class="alert alert-warning mb-0">{props.t('plugin_newspaperRecognizer_continue_error_' + result().error)}</div>
+
+					<table if={!result().error} class="table table-sm mb-0">
+						<thead>
+							<tr>
+								<th scope="col">{props.t('plugin_newspaperRecognizer_preview_block')}</th>
+								<th scope="col">{props.t('plugin_newspaperRecognizer_preview_type')}</th>
+								<th scope="col">{props.t('plugin_newspaperRecognizer_preview_date')}</th>
+								<th scope="col">{props.t('plugin_newspaperRecognizer_preview_number')}</th>
+								<th scope="col">{props.t('plugin_newspaperRecognizer_preview_note')}</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr each={row in result().preview.slice(0, 20)} class={row.note === 'notIncluded' ? 'text-muted' : ''}>
+								<td>{row.ref.page + 1}</td>
+								<td>{label(row.type)}</td>
+								<td>{formatDate(row.date)}</td>
+								<td>{row.number || '—'}</td>
+								<td>{row.note ? props.t('plugin_newspaperRecognizer_continue_note_' + row.note) : ''}</td>
+							</tr>
+						</tbody>
+					</table>
+					<p if={!result().error && result().preview.length > 20} class="mb-0 text-muted">
+						{props.t('plugin_newspaperRecognizer_preview_more').replace('{0}', result().preview.length - 20)}
+					</p>
+				</div>
+				<div class="modal-footer">
+					<span class="me-auto text-muted">{props.t('plugin_newspaperRecognizer_continue_footer')}</span>
+					<button type="button" class="btn btn-blank" onclick={() => props.handleCancel()}>{props.t('cancel')}</button>
+					<button type="button" class="btn btn-primary" disabled={!!result().error || result().count === 0} onclick={apply}>
+						{props.t('plugin_newspaperRecognizer_apply').replace('{0}', result().count || 0)}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+	import { buildTree, siblingsFrom } from '../logic/blocks.mjs'
+	import { continueFrom } from '../logic/generation.mjs'
+	import { fromIso, formatByPattern } from '../logic/dates.mjs'
+
+	export default {
+		// index = weekday() of logic/dates.mjs (0 = Sunday)
+		DAYS: [
+			{ index: 1, key: 'plugin_newspaperRecognizer_monday' },
+			{ index: 2, key: 'plugin_newspaperRecognizer_tuesday' },
+			{ index: 3, key: 'plugin_newspaperRecognizer_wednesday' },
+			{ index: 4, key: 'plugin_newspaperRecognizer_thursday' },
+			{ index: 5, key: 'plugin_newspaperRecognizer_friday' },
+			{ index: 6, key: 'plugin_newspaperRecognizer_saturday' },
+			{ index: 0, key: 'plugin_newspaperRecognizer_sunday' },
+		],
+		onBeforeMount(props) {
+			this.state = {
+				include: [this.startType()],
+				mode: 'perDay',
+				weekdays: [true, true, true, true, true, true, true],
+				biweekly: false,
+			};
+		},
+		startType() {
+			const first = siblingsFrom(buildTree(this.props.pages), this.props.startRef)[0];
+			return first ? first.start.type : null;
+		},
+		generatable() {
+			return this.props.typeOptions.filter(option => {
+				const info = this.props.catalog[option.name] || {};
+				return info.dated || info.numbered;
+			});
+		},
+		toggleInclude(type) {
+			const include = this.state.include.includes(type) ? this.state.include.filter(t => t !== type) : [...this.state.include, type];
+			this.update({ include });
+		},
+		toggleDay(index) {
+			const weekdays = [...this.state.weekdays];
+			weekdays[index] = !weekdays[index];
+			this.update({ weekdays });
+		},
+		result() {
+			return continueFrom(this.props.pages, this.props.startRef, {
+				include: this.state.include, mode: this.state.mode, weekdays: this.state.weekdays, biweekly: this.state.biweekly,
+			}, this.props.catalog);
+		},
+		label(type) {
+			return type ? (this.props.catalog[type] || {}).label || type : this.props.t('plugin_newspaperRecognizer_pleaseSelect');
+		},
+		formatDate(iso) {
+			const date = fromIso(iso);
+			return date ? formatByPattern(date, this.props.dateFormatPattern) : '—';
+		},
+		apply() {
+			const result = this.result();
+			if (!result.error) {
+				this.props.handleApply(result.pages);
+			}
+		},
+	}
+	</script>
+</continue-dialog>

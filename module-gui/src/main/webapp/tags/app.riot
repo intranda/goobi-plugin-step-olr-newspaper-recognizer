@@ -147,7 +147,16 @@
 														handle-remove={() => askRemoveHidden(row.node)}></hidden-popover>
 												</div>
 											</template>
-											<template slot="actions"><span data-slot="actions" data-block={blockElementId(row.node)}></span></template>
+											<template slot="actions">
+												<div class="d-flex flex-wrap justify-content-end gap-2">
+													<button type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('pattern', row.node)}>
+														{t('plugin_newspaperRecognizer_typePattern')}
+													</button>
+													<button if={isGeneratable(row.node)} type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('continue', row.node)}>
+														{t('plugin_newspaperRecognizer_continueFromHere')}
+													</button>
+												</div>
+											</template>
 										</block-fields>
 
 										<div each={(child, childIndex) in row.node.children} class="ps-3 border-start" id={blockElementId(child)}>
@@ -170,7 +179,16 @@
 														handle-remove={() => askRemoveHidden(child)}></hidden-popover>
 												</div>
 											</template>
-												<template slot="actions"><span data-slot="actions" data-block={blockElementId(child)}></span></template>
+												<template slot="actions">
+												<div class="d-flex flex-wrap justify-content-end gap-2">
+													<button type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('pattern', child)}>
+														{t('plugin_newspaperRecognizer_typePattern')}
+													</button>
+													<button if={isGeneratable(child)} type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('continue', child)}>
+														{t('plugin_newspaperRecognizer_continueFromHere')}
+													</button>
+												</div>
+											</template>
 											</block-fields>
 										</div>
 
@@ -214,7 +232,12 @@
 		</div>
 	</div>
 
-<conflict-dialog if={pendingChange} conflicts={pendingChange.conflicts} total={pendingChange.options.total} catalog={catalog} t={t}
+<type-pattern-dialog if={dialog && dialog.kind === 'pattern'} pages={pages} start-ref={dialog.ref} catalog={catalog}
+		type-options={dialog.typeOptions} t={t} handle-apply={applyPattern} handle-cancel={closeDialog}></type-pattern-dialog>
+	<continue-dialog if={dialog && dialog.kind === 'continue'} pages={pages} start-ref={dialog.ref} catalog={catalog}
+		type-options={dialog.typeOptions} t={t} date-format-pattern={dateFormatPattern}
+		handle-apply={applyGenerated} handle-cancel={closeDialog}></continue-dialog>
+	<conflict-dialog if={pendingChange} conflicts={pendingChange.conflicts} total={pendingChange.options.total} catalog={catalog} t={t}
 		handle-confirm={resolveConflicts} handle-cancel={cancelConflicts}></conflict-dialog>
 
 	<div if={confirmation} class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle" style="background: rgba(0, 0, 0, 0.4);">
@@ -240,14 +263,17 @@
 	import ConflictDialog from './conflict-dialog.riot'
 	import {
 		buildTree, flatten, refOf, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
-		removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest, clonePages,
+		removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest, clonePages, siblingsFrom, syncDateInputs,
 	} from '../logic/blocks.mjs'
+	import TypePatternDialog from './type-pattern-dialog.riot'
+	import ContinueDialog from './continue-dialog.riot'
+	import { applyTypePattern } from '../logic/generation.mjs'
 	import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from '../logic/hidden.mjs'
 
 	const CHILD_COLORS = ['#146abf', '#e00404', '#6300b5', '#ba5d06', '#467021'];
 
 	export default {
-		components: { Thumbcanvas, BlockFields, HiddenBadge, HiddenPopover, ConflictDialog },
+		components: { Thumbcanvas, BlockFields, HiddenBadge, HiddenPopover, ConflictDialog, TypePatternDialog, ContinueDialog },
 
 		onBeforeMount(props) {
 			// fields of props are defined in plugin_newspaperRecognizer.xhtml
@@ -273,6 +299,7 @@
 			this.openHidden = null; // element id of the block whose hidden data is listed, or 'volume'
 			this.pendingChange = null; // a change waiting for the user's decision about hidden data
 			this.hiddenCursor = -1;
+			this.dialog = null; // {kind: 'pattern' | 'continue', ref, typeOptions}
 			this.loadData(JSON.parse(this.data_el.value));
 
 			var path = window.location.pathname;
@@ -500,6 +527,34 @@
 			}
 		},
 
+		isGeneratable(node) {
+			const info = this.catalog[node.start.type] || {};
+			return !!(info.dated || info.numbered);
+		},
+
+		openDialog(kind, node) {
+			this.dialog = { kind, ref: refOf(node), typeOptions: this.typeOptions(node.parent ? node.parent.start.type : this.volumeType) };
+			this.update();
+		},
+
+		closeDialog() {
+			this.dialog = null;
+			this.update();
+		},
+
+		applyPattern(pattern) {
+			const ref = this.dialog.ref;
+			this.dialog = null;
+			const total = siblingsFrom(this.tree, ref).length;
+			this.applyChange(applyTypePattern(this.pages, ref, pattern, this.catalog), { bulk: true, total });
+		},
+
+		applyGenerated(newPages) {
+			this.dialog = null;
+			syncDateInputs(newPages, this.dateFormatPattern);
+			this.applyChange(newPages, { bulk: true });
+		},
+
 		onPageClick(e, index) {
 			if (e.shiftKey || this.saveInFlight) {
 				return; // shift is used for zooming
@@ -535,6 +590,7 @@
 			this.openHidden = null; // element id of the block whose hidden data is listed, or 'volume'
 			this.pendingChange = null; // a change waiting for the user's decision about hidden data
 			this.hiddenCursor = -1;
+			this.dialog = null; // {kind: 'pattern' | 'continue', ref, typeOptions}
 			this.update();
 		},
 
@@ -544,6 +600,7 @@
 			this.openHidden = null; // element id of the block whose hidden data is listed, or 'volume'
 			this.pendingChange = null; // a change waiting for the user's decision about hidden data
 			this.hiddenCursor = -1;
+			this.dialog = null; // {kind: 'pattern' | 'continue', ref, typeOptions}
 			this.update();
 			action();
 		},

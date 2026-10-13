@@ -1,0 +1,91 @@
+<type-pattern-dialog>
+	<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="typePatternTitle" style="background: rgba(0, 0, 0, 0.4);">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="typePatternTitle">{props.t('plugin_newspaperRecognizer_typePattern_title')}</h5>
+				</div>
+				<div class="modal-body d-flex flex-column gap-3">
+					<div class="d-flex flex-wrap align-items-center gap-2">
+						<template each={(type, index) in state.pattern}>
+							<span class="text-muted">{index + 1}.</span>
+							<select class="form-select w-auto" aria-label={props.t('plugin_newspaperRecognizer_typePattern_entry') + ' ' + (index + 1)}
+								onchange={e => setEntry(index, e.target.value)}>
+								<option each={option in props.typeOptions} value={option.name} selected={option.name === type}>{option.label}</option>
+							</select>
+							<button if={state.pattern.length > 1} type="button" class="btn btn-blank btn-sm" onclick={() => removeEntry(index)}
+								aria-label={props.t('plugin_newspaperRecognizer_typePattern_removeEntry')}>×</button>
+						</template>
+						<button type="button" class="btn btn-blank btn-sm" onclick={addEntry}>+ {props.t('plugin_newspaperRecognizer_typePattern_add')}</button>
+					</div>
+					<p class="mb-0 text-muted">{props.t('plugin_newspaperRecognizer_typePattern_hint')}</p>
+					<table class="table table-sm mb-0">
+						<thead>
+							<tr>
+								<th scope="col">{props.t('plugin_newspaperRecognizer_preview_block')}</th>
+								<th scope="col">{props.t('plugin_newspaperRecognizer_preview_before')}</th>
+								<th scope="col">{props.t('plugin_newspaperRecognizer_preview_after')}</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr each={row in rows()}>
+								<td>{row.page} ({row.filename})</td>
+								<td class="text-muted">{row.before}</td>
+								<td class={row.before !== row.after ? 'fw-bold' : ''}>{row.after}</td>
+							</tr>
+						</tbody>
+					</table>
+					<p if={siblings().length > 20} class="mb-0 text-muted">{props.t('plugin_newspaperRecognizer_preview_more').replace('{0}', siblings().length - 20)}</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-blank me-auto" onclick={() => props.handleCancel()}>{props.t('cancel')}</button>
+					<button type="button" class="btn btn-primary" onclick={() => props.handleApply(state.pattern)}>
+						{props.t('plugin_newspaperRecognizer_apply').replace('{0}', siblings().length)}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+	import { buildTree, siblingsFrom } from '../logic/blocks.mjs'
+
+	export default {
+		onBeforeMount(props) {
+			const first = siblingsFrom(buildTree(props.pages), props.startRef)[0];
+			const names = props.typeOptions.map(option => option.name);
+			const initial = first && names.includes(first.start.type) ? first.start.type : names[0];
+			this.state = { pattern: [initial] };
+		},
+		siblings() {
+			return siblingsFrom(buildTree(this.props.pages), this.props.startRef);
+		},
+		label(type) {
+			if (!type) {
+				return this.props.t('plugin_newspaperRecognizer_pleaseSelect');
+			}
+			return (this.props.catalog[type] || {}).label || type;
+		},
+		rows() {
+			const pattern = this.state.pattern;
+			return this.siblings().slice(0, 20).map((node, i) => ({
+				page: node.first + 1,
+				filename: this.props.pages[node.first].filename,
+				before: this.label(node.start.type),
+				after: this.label(pattern[i % pattern.length]),
+			}));
+		},
+		setEntry(index, type) {
+			const pattern = [...this.state.pattern];
+			pattern[index] = type;
+			this.update({ pattern });
+		},
+		addEntry() {
+			this.update({ pattern: [...this.state.pattern, this.state.pattern[this.state.pattern.length - 1]] });
+		},
+		removeEntry(index) {
+			this.update({ pattern: this.state.pattern.filter((type, i) => i !== index) });
+		},
+	}
+	</script>
+</type-pattern-dialog>
