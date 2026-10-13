@@ -77,8 +77,7 @@ public final class TestDocuments {
     }
     /** FIELDS plus a title template for MorningIssue. */
     public static PluginConfiguration config(boolean preventDuplicates) {
-        return new PluginConfiguration(true, false, preventDuplicates, new PaginationConfiguration(true, "1", false), FIELDS,
-                Map.of("MorningIssue", List.of(new MetadataTemplate("TitleDocMain", "Morgenausgabe {partNo}", false))), List.of());
+        return config(preventDuplicates, true);
     }
 
     public static List<String> filenames(int count) {
@@ -168,5 +167,9 @@ public final class TestDocuments {
     private static List<String> metadata(DocStruct ds) {
         return ds.getAllMetadata() == null ? List.of()
                 : ds.getAllMetadata().stream().map(m -> m.getType().getName() + "=" + m.getValue()).toList();
+    }
+    public static PluginConfiguration config(boolean preventDuplicates, boolean createNewPagination) {
+        return new PluginConfiguration(true, false, preventDuplicates, new PaginationConfiguration(createNewPagination, "1", false), FIELDS,
+                Map.of("MorningIssue", List.of(new MetadataTemplate("TitleDocMain", "Morgenausgabe {partNo}", false))), List.of());
     }
 }
