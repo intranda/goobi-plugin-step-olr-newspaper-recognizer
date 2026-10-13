@@ -156,7 +156,7 @@ public class RulesetTypes {
         return new TypeInfo(type, label(type, language), dated, numbered, isPartNumbered(type),
                 dated && isRequired(type, fields.dateMetadata()),
                 numbered && isRequired(type, fields.numberMetadata()),
-                allowedChildren(type), allowedMetadata(type));
+                allowedChildren(type), allowedMetadata(type), List.of());
     }
 
     public List<TypeInfo> catalog(String language) {

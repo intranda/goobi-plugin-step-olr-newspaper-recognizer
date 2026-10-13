@@ -106,6 +106,31 @@ public class MetsWriterTest {
     }
 
     @Test
+    public void unchangedSave_keepsPartNumberOfBlockWithoutNumber() throws Exception {
+        // review finding 2
+        DigitalDocument document = volume(strict, 1);
+        DocStruct evening = add(strict, document, volumeOf(document), "EveningIssue", 0);
+        addMetadata(strict, evening, "PartNumber", "Beilage A");
+        load(document, filenames(1));
+        write();
+        assertEquals(List.of("PartNumber=Beilage A"), metadata(evening));
+    }
+
+    @Test
+    public void unchangedSave_keepsPositionOfHiddenStructures() throws Exception {
+        // review finding 4: a table of contents with a gap is hidden data of the volume and keeps its place
+        DigitalDocument document = volume(strict, 4);
+        DocStruct volume = volumeOf(document);
+        add(strict, document, volume, "EveningIssue", 0, 1);
+        add(strict, document, volume, "TableOfContents", 2, 3);
+        add(strict, document, volume, "TableOfContents", 0, 2);
+        String before = snapshot(document);
+        load(document, filenames(4));
+        write();
+        assertEquals(before, snapshot(dd));
+    }
+
+    @Test
     public void newBlock_getsManagedMetadataInOrder() throws Exception {
         config = TestDocuments.config(false, true);
         load(volume(strict, 2), filenames(2));
@@ -297,8 +322,8 @@ public class MetsWriterTest {
         load(document, filenames(6));
         startOn(0, 0).setDate("1890-03-02");
         write();
-        assertEquals(List.of("MorningIssue", "Article"), types(volumeOf(dd)));
-        assertSame(article, volumeOf(dd).getAllChildren().get(1));
+        assertEquals(List.of("Article", "MorningIssue"), types(volumeOf(dd)));
+        assertSame(article, volumeOf(dd).getAllChildren().get(0));
         assertEquals(List.of("TitleDocMain=Fremd"), metadata(article));
         assertEquals(List.of("0006.tif"), images(article));
     }

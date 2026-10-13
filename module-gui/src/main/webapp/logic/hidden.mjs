@@ -53,13 +53,23 @@ export function findConflicts(oldPages, newPages, catalog, volumeType) {
       const info = catalog[type] || {};
       const badStructures = remaining.filter(s => !(info.children || []).includes(s.type));
       const badMetadata = metadataOf(start).filter(m => !(info.allowedMetadata || []).includes(m.type));
+      // hidden metadata the new type manages would be overwritten by the backend (first instance of each such type)
+      const loaded = catalog[start.originalType || start.type] || {};
+      for (const type of (info.managedMetadata || []).filter(t => !(loaded.managedMetadata || []).includes(t))) {
+        const first = metadataOf(start).find(m => m.type === type);
+        if (first && !badMetadata.includes(first)) {
+          badMetadata.push(first);
+        }
+      }
       if (badStructures.length || badMetadata.length) {
         conflicts.push({ blockId: start.id, kind: 'TYPE', type, page: node.first, structures: badStructures, metadata: badMetadata,
           options: ['KEEP_ALLOWED', 'REMOVE_ALL'] });
         remaining = remaining.filter(s => !badStructures.includes(s));
       }
     }
-    const outside = remaining.filter(s => s.firstPage >= 0 && (s.firstPage < node.first || s.lastPage > node.last));
+    // only structures that were inside the block before; structures already outside stay as they are
+    const outside = remaining.filter(s => s.firstPage >= old.first && s.lastPage <= old.last
+      && (s.firstPage < node.first || s.lastPage > node.last));
     if (outside.length) {
       const canRehome = outside.every(s => homeFor(s, newTree, catalog, volumeType));
       conflicts.push({ blockId: start.id, kind: 'BOUNDARY', type, page: node.first, structures: outside, metadata: [],

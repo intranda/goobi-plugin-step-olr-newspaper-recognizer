@@ -79,9 +79,9 @@ public class MetsWriter {
             }
         }
         Map<DocStruct, Integer> index = PageIndex.of(dd, filenames);
-        sortChildren(volume, index);
+        sortChildren(volume, kept, index);
         for (DocStruct ds : written.values()) {
-            sortChildren(ds, index);
+            sortChildren(ds, kept, index);
         }
         writePagination(roots, pages);
         log.info("Updated the METS structure for {} pages in {} ms", pages.size(), (System.nanoTime() - startTime) / 1_000_000);
@@ -172,10 +172,12 @@ public class MetsWriter {
             String date = node.date().map(d -> DateTimeFormatter.ofPattern(fields.storeFormat()).format(d)).orElse(null);
             MetadataAccess.setFirst(ds, ruleset.metadataType(fields.dateMetadata()), date);
         }
+        String storedNumber = fields.numberMetadata() == null ? null : StringUtils.trimToNull(MetadataAccess.firstValue(ds, fields.numberMetadata()));
         if (ruleset.isNumbered(type)) {
             MetadataAccess.setFirst(ds, ruleset.metadataType(fields.numberMetadata()), StringUtils.trimToNull(node.getStart().getNumber()));
         }
-        if (ruleset.isPartNumbered(type)) {
+        // the part number is derived from the number; without any number (now or stored) a part number from elsewhere stays
+        if (ruleset.isPartNumbered(type) && (StringUtils.isNotBlank(node.getStart().getNumber()) || storedNumber != null)) {
             MetadataAccess.setFirst(ds, ruleset.metadataType(fields.partNumberMetadata()), ValueGenerator.partNumber(node.getStart()));
         }
         for (MetadataTemplate template : config.templatesFor(type)) {
@@ -239,21 +241,27 @@ public class MetsWriter {
         PageIndex.children(ds).forEach(child -> shorten(child, allowed));
     }
 
-    /** Stable sort by first page; children without pages keep their place after their predecessor. */
-    private static void sortChildren(DocStruct parent, Map<DocStruct, Integer> index) {
+    /**
+     * Puts the blocks among the children into page order. Every other child (hidden data) keeps its position: the blocks are
+     * only redistributed over the positions blocks already occupy.
+     */
+    private static void sortChildren(DocStruct parent, Set<DocStruct> blocks, Map<DocStruct, Integer> index) {
         List<DocStruct> children = PageIndex.children(parent);
-        Map<DocStruct, Integer> keys = new IdentityHashMap<>();
-        int previous = -1;
-        for (DocStruct child : children) {
-            int[] range = PageIndex.subtreeRange(child, index);
-            previous = range == null ? previous : range[0];
-            keys.put(child, previous);
+        List<Integer> slots = new ArrayList<>();
+        List<DocStruct> sorted = new ArrayList<>();
+        for (int i = 0; i < children.size(); i++) {
+            if (blocks.contains(children.get(i))) {
+                slots.add(i);
+                sorted.add(children.get(i));
+            }
         }
-        List<DocStruct> sorted = new ArrayList<>(children);
-        sorted.sort(Comparator.comparingInt(keys::get));
+        sorted.sort(Comparator.comparingInt(block -> {
+            int[] range = PageIndex.subtreeRange(block, index);
+            return range == null ? Integer.MAX_VALUE : range[0];
+        }));
         for (int i = 0; i < sorted.size(); i++) {
-            if (parent.getPositionofChild(sorted.get(i)) != i) {
-                parent.moveChild(sorted.get(i), i);
+            if (parent.getPositionofChild(sorted.get(i)) != slots.get(i)) {
+                parent.moveChild(sorted.get(i), slots.get(i));
             }
         }
     }

@@ -3,9 +3,11 @@ package de.intranda.goobi.plugins.newspaperRecognizer.mets;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeSet;
 
 import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
@@ -76,7 +78,13 @@ public class HiddenDataResolver {
             List<DocStruct> remaining = new ArrayList<>(structures);
             if (node.type() != null && !node.type().equals(oldType)) {
                 List<DocStruct> badStructures = structures.stream().filter(s -> !ruleset.isAllowedChild(node.type(), s.getType().getName())).toList();
-                List<Object> badMetadata = metadata.stream().filter(m -> !ruleset.allowsEntry(node.type(), m)).toList();
+                List<Object> badMetadata = new ArrayList<>(metadata.stream().filter(m -> !ruleset.allowsEntry(node.type(), m)).toList());
+                // hidden metadata the new type manages would be overwritten (or removed) by the writer
+                for (Object entry : managedByNewType(ds, oldType, node.type())) {
+                    if (badMetadata.stream().noneMatch(b -> b == entry)) {
+                        badMetadata.add(entry);
+                    }
+                }
                 if (!badStructures.isEmpty() || !badMetadata.isEmpty()) {
                     HiddenAction action = ops.get(HiddenConflictKind.TYPE);
                     if (action == HiddenAction.REMOVE_ALL) {
@@ -92,9 +100,13 @@ public class HiddenDataResolver {
                     remaining.removeIf(s -> badStructures.stream().anyMatch(b -> b == s));
                 }
             }
+            // only structures that were inside the block as loaded; structures already outside stay as they are
+            List<Integer> loadedPages = PageIndex.ownPages(ds, pageIndex);
             List<DocStruct> outside = remaining.stream().filter(s -> {
                 int[] range = PageIndex.subtreeRange(s, pageIndex);
-                return range != null && !node.contains(range[0], range[1]);
+                boolean wasInside = range != null && !loadedPages.isEmpty() && loadedPages.get(0) <= range[0]
+                        && range[1] <= loadedPages.get(loadedPages.size() - 1);
+                return wasInside && !node.contains(range[0], range[1]);
             }).toList();
             if (outside.isEmpty()) {
                 continue;
@@ -119,6 +131,17 @@ public class HiddenDataResolver {
             throw new UnresolvedHiddenDataException(problems);
         }
         return new Resolution(steps);
+    }
+
+    /** The first instance of every metadata type the new type manages but the old one did not: the writer replaces it. */
+    private List<Object> managedByNewType(DocStruct ds, String oldType, String newType) {
+        Set<String> types = new LinkedHashSet<>(config.managedMetadata(newType, ruleset));
+        types.removeAll(config.managedMetadata(oldType, ruleset));
+        List<Object> result = new ArrayList<>();
+        for (String type : types) {
+            MetadataAccess.first(ds, type).ifPresent(result::add);
+        }
+        return result;
     }
 
     private static void removeAll(DocStruct ds, List<DocStruct> structures, List<Object> metadata, List<HiddenStep> steps) {

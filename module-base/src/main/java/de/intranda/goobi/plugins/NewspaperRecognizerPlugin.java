@@ -168,7 +168,13 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     public String getTypeCatalogJson() {
-        return ruleset == null ? "[]" : gson.toJson(ruleset.catalog(language));
+        if (ruleset == null) {
+            return "[]";
+        }
+        return gson.toJson(ruleset.catalog(language)
+                .stream()
+                .map(type -> type.withManagedMetadata(configuration.managedMetadata(type.name(), ruleset)))
+                .toList());
     }
 
     public String getConfigErrorsJson() {

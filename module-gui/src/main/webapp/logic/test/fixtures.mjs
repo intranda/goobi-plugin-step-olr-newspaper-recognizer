@@ -1,17 +1,19 @@
 export const VOLUME = 'NewspaperVolume';
 
-const type = (name, label, flags, children, allowedMetadata) => ({
+const type = (name, label, flags, children, allowedMetadata, managedMetadata = []) => ({
   name, label, dated: false, numbered: false, partNumbered: false, dateRequired: false, numberRequired: false,
-  ...flags, children, allowedMetadata,
+  ...flags, children, allowedMetadata, managedMetadata,
 });
 
 export const catalog = {
   NewspaperVolume: type('NewspaperVolume', 'Zeitungsband', {}, ['MorningIssue', 'EveningIssue', 'ExtraEdition', 'TableOfContents'], ['TitleDocMain']),
   MorningIssue: type('MorningIssue', 'Morgenausgabe', { dated: true, numbered: true, partNumbered: true, dateRequired: true },
-    ['NewspaperSupplement', 'TableOfContents'], ['DateIssued', 'CurrentNo', 'CurrentNoSorting', 'PartNumber', 'TitleDocMain', 'Note']),
+    ['NewspaperSupplement', 'TableOfContents'], ['DateIssued', 'CurrentNo', 'CurrentNoSorting', 'PartNumber', 'TitleDocMain', 'Note'],
+    ['DateIssued', 'CurrentNo', 'PartNumber', 'TitleDocMain']),
   EveningIssue: type('EveningIssue', 'Abendausgabe', { dated: true, numbered: true, partNumbered: true },
-    ['NewspaperSupplement'], ['DateIssued', 'CurrentNo', 'CurrentNoSorting', 'PartNumber', 'TitleDocMain']),
-  ExtraEdition: type('ExtraEdition', 'Extrablatt', { numbered: true, numberRequired: true }, [], ['CurrentNo', 'TitleDocMain']),
+    ['NewspaperSupplement'], ['DateIssued', 'CurrentNo', 'CurrentNoSorting', 'PartNumber', 'TitleDocMain'],
+    ['DateIssued', 'CurrentNo', 'PartNumber']),
+  ExtraEdition: type('ExtraEdition', 'Extrablatt', { numbered: true, numberRequired: true }, [], ['CurrentNo', 'TitleDocMain'], ['CurrentNo']),
   NewspaperSupplement: type('NewspaperSupplement', 'Beilage', {}, ['Article'], ['TitleDocMain', 'Note']),
   TableOfContents: type('TableOfContents', 'Inhaltsverzeichnis', {}, [], ['TitleDocMain']),
   Article: type('Article', 'Artikel', {}, [], ['TitleDocMain', 'Note']),

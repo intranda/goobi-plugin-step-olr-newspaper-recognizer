@@ -150,6 +150,30 @@ public class HiddenDataResolverTest {
     }
 
     @Test
+    public void typeChange_newTypeManagesHiddenMetadata_isConflict() throws Exception {
+        // review finding 1: the new type's template would overwrite a foreign title
+        DigitalDocument document = volume(strict, 1);
+        DocStruct evening = add(strict, document, volumeOf(document), "EveningIssue", 0);
+        addMetadata(strict, evening, "TitleDocMain", "Sonderausgabe zum Kaisergeburtstag");
+        load(document, 1);
+        pages.get(0).getStarts().get(0).setType("MorningIssue");
+        assertThrows(UnresolvedHiddenDataException.class, this::resolve);
+        assertEquals(List.of("remove metadata TitleDocMain=Sonderausgabe zum Kaisergeburtstag"),
+                resolve(op(id(0, 0), HiddenConflictKind.TYPE, HiddenAction.KEEP_ALLOWED)));
+    }
+
+    @Test
+    public void boundary_structureAlreadyOutsideWhenLoaded_isLeftAlone() throws Exception {
+        // review finding 3: METS from another tool, a table of contents of issue 1 reaches into issue 2
+        DigitalDocument document = volume(strict, 4);
+        DocStruct morning = add(strict, document, volumeOf(document), "MorningIssue", 0, 1);
+        add(strict, document, morning, "TableOfContents", 1, 2);
+        add(strict, document, volumeOf(document), "EveningIssue", 2, 3);
+        load(document, 4);
+        assertEquals(List.of(), resolve());
+    }
+
+    @Test
     public void typeChange_withoutOperation_unresolved() {
         issueWithHiddenData();
         pages.get(0).getStarts().get(0).setType("EveningIssue");

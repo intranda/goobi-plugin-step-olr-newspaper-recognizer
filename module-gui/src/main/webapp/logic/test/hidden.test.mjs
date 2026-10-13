@@ -105,3 +105,22 @@ test('commonOptions intersects the options of all conflicts', () => {
   assert.deepEqual(commonOptions([{ options: ['REHOME', 'REMOVE_ALL'] }, { options: ['REMOVE_ALL'] }]), ['REMOVE_ALL']);
   assert.deepEqual(commonOptions([]), []);
 });
+
+test('TYPE: a hidden metadata the new type manages (and would overwrite) is a conflict', () => {
+  // review finding 1: an evening issue with a foreign title becomes a morning issue whose template writes the title
+  const before = pages({ depth: 1, starts: [start('EveningIssue', { id: 'b1', hidden: { structures: [], metadata: [{ key: 'm1', type: 'TitleDocMain', label: 'Haupttitel', value: 'Sonderausgabe' }] } })] });
+  const [conflict] = findConflicts(before, setType(before, { page: 0, level: 0 }, 'MorningIssue', catalog), catalog, VOLUME);
+  assert.deepEqual([conflict.kind, conflict.metadata.map(m => m.key)], ['TYPE', ['m1']]);
+});
+
+test('BOUNDARY: a hidden structure that was already outside its block is left alone', () => {
+  // review finding 3: no conflict for data loaded that way, also after unrelated changes
+  const before = pages(
+    { depth: 1, starts: [start('MorningIssue', { id: 'b1', hidden: { structures: [{ ...toc, firstPage: 1, lastPage: 2 }], metadata: [] } })] },
+    { depth: 1 },
+    { depth: 1, starts: [start('EveningIssue', { id: 'b2' })] },
+    { depth: 1 },
+  );
+  assert.deepEqual(findConflicts(before, before, catalog, VOLUME), []);
+  assert.deepEqual(findConflicts(before, toggleBlock(before, 3), catalog, VOLUME), []);
+});
