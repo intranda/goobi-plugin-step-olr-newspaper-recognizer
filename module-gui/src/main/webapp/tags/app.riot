@@ -63,7 +63,17 @@
 
 				<template if={imagesLoaded}>
 					<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 border-bottom">
-						<div class="d-flex align-items-center gap-2" data-slot="toolbar-start"></div>
+						<div class="d-flex align-items-center gap-2 position-relative">
+							<span if={hiddenBlocks().length > 0}>{t('plugin_newspaperRecognizer_hidden_overview').replace('{0}', hiddenBlocks().length)}</span>
+							<button if={hiddenBlocks().length > 0} type="button" class="btn btn-blank btn-sm" onclick={jumpToNextHidden}>
+								{t('plugin_newspaperRecognizer_hidden_next')}
+							</button>
+							<button if={volumeHidden.structures.length > 0} type="button" class="btn btn-blank btn-sm" onclick={() => toggleHidden('volume')}>
+								{t('plugin_newspaperRecognizer_hidden_volume').replace('{0}', volumeHidden.structures.length)}
+							</button>
+							<hidden-popover if={openHidden === 'volume'} hidden={volumeHidden} align="left" t={t}
+								handle-close={() => toggleHidden('volume')}></hidden-popover>
+						</div>
 						<div class="d-flex gap-2">
 							<button type="button" class="btn btn-blank" onclick={askResetToAnalysis}>{t('plugin_newspaperRecognizer_resetToAnalysis')}</button>
 							<button type="button" class="btn btn-hot" onclick={askRemoveAllBlocks}>{t('plugin_newspaperRecognizer_removeAllBlocks')}</button>
@@ -129,7 +139,14 @@
 											handle-type={type => changeType(row.node, type)}
 											handle-date={value => changeDate(row.node, value)}
 											handle-field={(name, value) => changeField(row.node, name, value)}>
-											<template slot="badge"><span data-slot="badge" data-block={blockElementId(row.node)}></span></template>
+											<template slot="badge">
+												<div class="position-relative">
+													<hidden-badge hidden={row.node.start.hidden} t={t} handle-open={() => toggleHidden(blockElementId(row.node))}></hidden-badge>
+													<hidden-popover if={openHidden === blockElementId(row.node)} hidden={row.node.start.hidden} t={t}
+														handle-close={() => toggleHidden(blockElementId(row.node))}
+														handle-remove={() => askRemoveHidden(row.node)}></hidden-popover>
+												</div>
+											</template>
 											<template slot="actions"><span data-slot="actions" data-block={blockElementId(row.node)}></span></template>
 										</block-fields>
 
@@ -145,7 +162,14 @@
 												handle-type={type => changeType(child, type)}
 												handle-date={value => changeDate(child, value)}
 												handle-field={(name, value) => changeField(child, name, value)}>
-												<template slot="badge"><span data-slot="badge" data-block={blockElementId(child)}></span></template>
+												<template slot="badge">
+												<div class="position-relative">
+													<hidden-badge hidden={child.start.hidden} t={t} handle-open={() => toggleHidden(blockElementId(child))}></hidden-badge>
+													<hidden-popover if={openHidden === blockElementId(child)} hidden={child.start.hidden} t={t}
+														handle-close={() => toggleHidden(blockElementId(child))}
+														handle-remove={() => askRemoveHidden(child)}></hidden-popover>
+												</div>
+											</template>
 												<template slot="actions"><span data-slot="actions" data-block={blockElementId(child)}></span></template>
 											</block-fields>
 										</div>
@@ -190,6 +214,9 @@
 		</div>
 	</div>
 
+<conflict-dialog if={pendingChange} conflicts={pendingChange.conflicts} total={pendingChange.options.total} catalog={catalog} t={t}
+		handle-confirm={resolveConflicts} handle-cancel={cancelConflicts}></conflict-dialog>
+
 	<div if={confirmation} class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle" style="background: rgba(0, 0, 0, 0.4);">
 		<div class="modal-dialog" role="document">
 			<div class="modal-content">
@@ -208,18 +235,19 @@
 	<script>
 	import Thumbcanvas from './thumbcanvas.riot'
 	import BlockFields from './block-fields.riot'
+	import HiddenBadge from './hidden-badge.riot'
+	import HiddenPopover from './hidden-popover.riot'
+	import ConflictDialog from './conflict-dialog.riot'
 	import {
-		buildTree, refOf, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
-		removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest,
+		buildTree, flatten, refOf, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
+		removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest, clonePages,
 	} from '../logic/blocks.mjs'
+	import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from '../logic/hidden.mjs'
 
 	const CHILD_COLORS = ['#146abf', '#e00404', '#6300b5', '#ba5d06', '#467021'];
 
 	export default {
-		components: {
-			Thumbcanvas,
-			BlockFields,
-		},
+		components: { Thumbcanvas, BlockFields, HiddenBadge, HiddenPopover, ConflictDialog },
 
 		onBeforeMount(props) {
 			// fields of props are defined in plugin_newspaperRecognizer.xhtml
@@ -242,6 +270,9 @@
 			this.pendingExit = false; // set by saveAndExit, acted upon once the backend confirms the write
 			this.saveInFlight = false; // true while a save request is on its way; blocks everything that would abort it
 			this.confirmation = null;
+			this.openHidden = null; // element id of the block whose hidden data is listed, or 'volume'
+			this.pendingChange = null; // a change waiting for the user's decision about hidden data
+			this.hiddenCursor = -1;
 			this.loadData(JSON.parse(this.data_el.value));
 
 			var path = window.location.pathname;
@@ -396,12 +427,18 @@
 			return this.t(notice.key).replace(/\{(\d+)\}/g, (match, i) => (notice.params && notice.params[i] !== undefined ? notice.params[i] : match));
 		},
 
-		/* the single entry point for every change of the page list; Task 16 adds the conflict dialog here */
-		applyChange(newPages, options) {
-			this.commit(newPages);
-			if (options && options.afterCommit) {
-				options.afterCommit();
+		/* the single entry point for every change of the page list: asks about hidden data before committing */
+		applyChange(newPages, options = {}) {
+			const conflicts = findConflicts(this.pages, newPages, this.catalog, this.volumeType);
+			if (conflicts.length === 0) {
+				this.commit(newPages);
+				if (options.afterCommit) {
+					options.afterCommit();
+				}
+				return;
 			}
+			this.pendingChange = { pages: newPages, conflicts, options };
+			this.update();
 		},
 
 		commit(newPages) {
@@ -409,6 +446,58 @@
 			this.dataDirty = true;
 			this.refresh();
 			this.update();
+		},
+
+		resolveConflicts(choices) {
+			const { pages, conflicts, options } = this.pendingChange;
+			this.pendingChange = null;
+			for (const conflict of conflicts) {
+				const action = choices[conflict.kind];
+				const { volumeAdditions } = applyResolution(pages, conflict, action, this.catalog, this.volumeType);
+				this.volumeHidden.structures.push(...volumeAdditions);
+				this.operations = upsertOperation(this.operations, conflict.blockId, conflict.kind, action);
+			}
+			this.commit(pages);
+			if (options.afterCommit) {
+				options.afterCommit();
+			}
+		},
+
+		cancelConflicts() {
+			this.pendingChange = null;
+			this.update();
+		},
+
+		toggleHidden(key) {
+			this.openHidden = this.openHidden === key ? null : key;
+			this.update();
+		},
+
+		askRemoveHidden(node) {
+			this.openHidden = null;
+			this.askConfirmation('plugin_newspaperRecognizer_hidden_remove', 'plugin_newspaperRecognizer_hidden_confirmRemove',
+				'plugin_newspaperRecognizer_hidden_remove', () => {
+					const pages = clonePages(this.pages);
+					applyResolution(pages, explicitConflict(node.start, node.first), 'REMOVE_ALL', this.catalog, this.volumeType);
+					this.operations = upsertOperation(this.operations, node.start.id, 'EXPLICIT', 'REMOVE_ALL');
+					this.commit(pages);
+				});
+		},
+
+		hiddenBlocks() {
+			return flatten(this.tree.roots).filter(node => hasHidden(node.start));
+		},
+
+		jumpToNextHidden() {
+			const blocks = this.hiddenBlocks();
+			if (blocks.length === 0) {
+				return;
+			}
+			this.hiddenCursor = (this.hiddenCursor + 1) % blocks.length;
+			const element = document.getElementById(this.blockElementId(blocks[this.hiddenCursor]));
+			if (element) {
+				element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}
 		},
 
 		onPageClick(e, index) {
@@ -443,24 +532,30 @@
 
 		cancelConfirmation() {
 			this.confirmation = null;
+			this.openHidden = null; // element id of the block whose hidden data is listed, or 'volume'
+			this.pendingChange = null; // a change waiting for the user's decision about hidden data
+			this.hiddenCursor = -1;
 			this.update();
 		},
 
 		runConfirmation() {
 			const action = this.confirmation.action;
 			this.confirmation = null;
+			this.openHidden = null; // element id of the block whose hidden data is listed, or 'volume'
+			this.pendingChange = null; // a change waiting for the user's decision about hidden data
+			this.hiddenCursor = -1;
 			this.update();
 			action();
 		},
 
 		askResetToAnalysis() {
 			this.askConfirmation('plugin_newspaperRecognizer_resetToAnalysis', 'plugin_newspaperRecognizer_confirmResetToAnalysis',
-				'plugin_newspaperRecognizer_resetToAnalysis', () => this.applyChange(resetToAnalysis(this.pages), { bulk: true }));
+				'plugin_newspaperRecognizer_resetToAnalysis', () => this.applyChange(resetToAnalysis(this.pages), { bulk: true, total: flatten(this.tree.roots).length }));
 		},
 
 		askRemoveAllBlocks() {
 			this.askConfirmation('plugin_newspaperRecognizer_removeAllBlocks', 'plugin_newspaperRecognizer_confirmAction',
-				'plugin_newspaperRecognizer_removeAllBlocks', () => this.applyChange(removeAllBlocks(this.pages), { bulk: true }));
+				'plugin_newspaperRecognizer_removeAllBlocks', () => this.applyChange(removeAllBlocks(this.pages), { bulk: true, total: flatten(this.tree.roots).length }));
 		},
 
 		askRecompute() {

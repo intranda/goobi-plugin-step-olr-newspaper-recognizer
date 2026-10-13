@@ -1,0 +1,87 @@
+<conflict-dialog>
+	<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="conflictTitle" style="background: rgba(0, 0, 0, 0.4);">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="conflictTitle">{props.t('plugin_newspaperRecognizer_conflict_title')}</h5>
+				</div>
+				<div class="modal-body d-flex flex-column gap-3">
+					<p if={props.total} class="mb-0">{summary()}</p>
+					<fieldset each={group in groups()} class="d-flex flex-column gap-2">
+						<legend class="fs-6 fw-bold mb-0">{props.t('plugin_newspaperRecognizer_conflict_' + group.kind)}</legend>
+						<details>
+							<summary>{props.t('plugin_newspaperRecognizer_conflict_affected')}: {group.conflicts.length}</summary>
+							<ul class="mb-0">
+								<li each={conflict in group.conflicts}>
+									{blockLabel(conflict)}
+									<ul>
+										<li each={structure in conflict.structures}>{structure.label}{structure.title ? ' – ' + structure.title : ''}</li>
+										<li each={entry in conflict.metadata}>{entry.label}: {entry.value}</li>
+									</ul>
+								</li>
+							</ul>
+						</details>
+						<p if={group.kind === 'DELETED' && group.conflicts.some(c => c.metadata.length > 0)} class="mb-0 text-muted">
+							{props.t('plugin_newspaperRecognizer_conflict_DELETED_metadataLost')}
+						</p>
+						<div each={option in group.options} class="form-check">
+							<input class="form-check-input" type="radio" name={'conflict-' + group.kind} id={'conflict-' + group.kind + '-' + option}
+								checked={state.choices[group.kind] === option} onchange={() => choose(group.kind, option)} />
+							<label class="form-check-label" for={'conflict-' + group.kind + '-' + option}>
+								{props.t('plugin_newspaperRecognizer_conflict_' + group.kind + '_' + option)}
+							</label>
+						</div>
+					</fieldset>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-blank me-auto" onclick={() => props.handleCancel()}>{props.t('cancel')}</button>
+					<button type="button" class="btn btn-primary" disabled={!complete()} onclick={() => props.handleConfirm(state.choices)}>
+						{props.t('plugin_newspaperRecognizer_conflict_apply')}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+	import { commonOptions } from '../logic/hidden.mjs'
+
+	const KINDS = ['DELETED', 'TYPE', 'BOUNDARY', 'EXPLICIT'];
+
+	export default {
+		onBeforeMount() {
+			// a group with a single possible choice is preselected
+			const choices = {};
+			for (const group of this.groups()) {
+				if (group.options.length === 1) {
+					choices[group.kind] = group.options[0];
+				}
+			}
+			this.state = { choices };
+		},
+		groups() {
+			return KINDS
+				.map(kind => {
+					const conflicts = this.props.conflicts.filter(c => c.kind === kind);
+					return { kind, conflicts, options: commonOptions(conflicts) };
+				})
+				.filter(group => group.conflicts.length > 0);
+		},
+		choose(kind, option) {
+			this.update({ choices: { ...this.state.choices, [kind]: option } });
+		},
+		complete() {
+			return this.groups().every(group => this.state.choices[group.kind]);
+		},
+		blockLabel(conflict) {
+			const info = this.props.catalog[conflict.type];
+			const type = info ? info.label : (conflict.type || this.props.t('plugin_newspaperRecognizer_pleaseSelect'));
+			return this.props.t('plugin_newspaperRecognizer_conflict_block').replace('{0}', type).replace('{1}', conflict.page + 1);
+		},
+		summary() {
+			const blocks = new Set(this.props.conflicts.map(c => c.blockId)).size;
+			return this.props.t('plugin_newspaperRecognizer_conflict_summary').replace('{0}', blocks).replace('{1}', this.props.total);
+		},
+	}
+	</script>
+</conflict-dialog>

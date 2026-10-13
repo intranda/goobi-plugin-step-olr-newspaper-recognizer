@@ -1,0 +1,48 @@
+<hidden-popover>
+	<div class="card shadow-sm" role="dialog" aria-label={props.t('plugin_newspaperRecognizer_hidden_title')}
+		style="position: absolute; top: 100%; z-index: 20; min-width: 320px; max-width: 480px; {props.align === 'left' ? 'left: 0;' : 'right: 0;'}">
+		<div class="card-header d-flex justify-content-between align-items-center">
+			<strong>{props.t('plugin_newspaperRecognizer_hidden_title')}</strong>
+			<button type="button" class="btn btn-blank btn-sm" onclick={() => props.handleClose()} aria-label={props.t('plugin_newspaperRecognizer_close')}>
+				<span aria-hidden="true">×</span>
+			</button>
+		</div>
+		<div class="card-body d-flex flex-column gap-2">
+			<p class="mb-0 text-muted">{props.t('plugin_newspaperRecognizer_hidden_hint')}</p>
+			<div if={structures().length > 0}>
+				<strong>{props.t('plugin_newspaperRecognizer_hidden_structures')}</strong>
+				<ul class="mb-0">
+					<li each={structure in structures()}>{structure.label}{structure.title ? ' – ' + structure.title : ''} ({pages(structure)})</li>
+				</ul>
+			</div>
+			<div if={metadata().length > 0}>
+				<strong>{props.t('plugin_newspaperRecognizer_hidden_metadata')}</strong>
+				<ul class="mb-0">
+					<li each={entry in metadata()}>{entry.label}: {entry.value}</li>
+				</ul>
+			</div>
+		</div>
+		<div if={props.handleRemove} class="card-footer text-end">
+			<button type="button" class="btn btn-hot btn-sm" onclick={() => props.handleRemove()}>{props.t('plugin_newspaperRecognizer_hidden_remove')}</button>
+		</div>
+	</div>
+
+	<script>
+	export default {
+		structures() {
+			return (this.props.hidden && this.props.hidden.structures) || [];
+		},
+		metadata() {
+			return (this.props.hidden && this.props.hidden.metadata) || [];
+		},
+		pages(structure) {
+			if (structure.firstPage < 0) {
+				return this.props.t('plugin_newspaperRecognizer_hidden_noPages');
+			}
+			return this.props.t('plugin_newspaperRecognizer_hidden_pages')
+				.replace('{0}', structure.firstPage + 1)
+				.replace('{1}', structure.lastPage + 1);
+		},
+	}
+	</script>
+</hidden-popover>

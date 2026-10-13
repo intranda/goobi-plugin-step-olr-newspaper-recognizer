@@ -1,0 +1,26 @@
+<hidden-badge>
+	<button if={count() > 0} type="button" class="btn btn-blank btn-sm d-flex align-items-center gap-2 text-nowrap"
+		onclick={() => props.handleOpen()} title={title()} aria-label={title()}>
+		<span if={structures().length > 0} aria-hidden="true">⧉ {structures().length}</span>
+		<span if={metadata().length > 0} aria-hidden="true">✎ {metadata().length}</span>
+	</button>
+
+	<script>
+	export default {
+		structures() {
+			return (this.props.hidden && this.props.hidden.structures) || [];
+		},
+		metadata() {
+			return (this.props.hidden && this.props.hidden.metadata) || [];
+		},
+		count() {
+			return this.structures().length + this.metadata().length;
+		},
+		title() {
+			return this.props.t('plugin_newspaperRecognizer_hidden_badgeTitle')
+				.replace('{0}', this.structures().length)
+				.replace('{1}', this.metadata().length);
+		},
+	}
+	</script>
+</hidden-badge>
