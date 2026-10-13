@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldConfiguration;
-import de.intranda.goobi.plugins.newspaperRecognizer.config.MetadataTemplate;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDefinition;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.PaginationConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.BlockStart;
@@ -170,6 +170,6 @@ public final class TestDocuments {
     }
     public static PluginConfiguration config(boolean preventDuplicates, boolean createNewPagination) {
         return new PluginConfiguration(true, false, preventDuplicates, new PaginationConfiguration(createNewPagination, "1", false), FIELDS,
-                Map.of("MorningIssue", List.of(new MetadataTemplate("TitleDocMain", "Morgenausgabe {partNo}", false))), List.of());
+                List.of(), Map.of("MorningIssue", List.of(FieldDefinition.of("TitleDocMain", "Morgenausgabe {partNo}", true, false))), List.of());
     }
 }

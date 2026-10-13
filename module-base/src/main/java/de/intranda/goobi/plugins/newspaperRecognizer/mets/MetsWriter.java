@@ -180,7 +180,7 @@ public class MetsWriter {
         if (ruleset.isPartNumbered(type) && (StringUtils.isNotBlank(node.getStart().getNumber()) || storedNumber != null)) {
             MetadataAccess.setFirst(ds, ruleset.metadataType(fields.partNumberMetadata()), ValueGenerator.partNumber(node.getStart()));
         }
-        for (MetadataTemplate template : config.templatesFor(type)) {
+        for (MetadataTemplate template : config.templatesFor(type, ruleset)) {
             MetadataAccess.setFirst(ds, ruleset.metadataType(template.key()), values.generate(template, node).orElse(null));
         }
     }

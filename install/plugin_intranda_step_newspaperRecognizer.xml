@@ -16,32 +16,35 @@
 
     <!--
         Structure types, their labels, their hierarchy and their metadata come from the ruleset.
-        A type gets a date field if it allows the date metadata below, and a number field if it allows the number metadata.
+        Fields: <defaults> applies to every type that allows the metadata, <type docstruct> adds fields or overrides a default
+        field of the same key in place.
+        - role="date" / role="number" (only in <defaults>): the date and number field of a block. A type gets the field if it
+          allows the metadata. format: input format in the plugin, storeFormat: format of the metadata value (DEFAULT yyyy-MM-dd),
+          partKey: prefix + number + suffix (without it the plugin offers no prefix and suffix fields).
+        - without value: an editable field. With value: the generated value is shown and can be changed.
+        - hidden="true": generated on save and not shown (requires value).
+        Placeholders in value: {date:FORMAT}, {no}, {partNo}, {label} take the value of the block or of the nearest enclosing
+        block; {parent.date:FORMAT}, {parent.no}, {parent.partNo}, {parent.label} only that of the direct parent. An empty
+        placeholder writes [MISSING], or nothing with skipIfEmpty="true". Visible fields support the date tokens d, dd, M, MM,
+        yy and yyyy.
+        Label, input type and selection values of a field come from the metadata display rules of the project.
     -->
-    <fields>
-        <!-- format: input format in the plugin, storeFormat: format of the metadata value (DEFAULT yyyy-MM-dd) -->
-        <date metadata="DateIssued" format="dd.MM.yyyy" storeFormat="yyyy-MM-dd" />
-        <!-- partMetadata: prefix + number + suffix; without it the plugin offers no prefix and suffix fields -->
-        <number metadata="CurrentNo" partMetadata="PartNumber" />
-    </fields>
-
-    <!--
-        Additional metadata per ruleset type. Placeholders: {date:FORMAT}, {no}, {partNo}, {label} take the value of the block
-        or of the nearest enclosing block; {parent.date:FORMAT}, {parent.no}, {parent.partNo}, {parent.label} only that of the
-        direct parent. An empty placeholder writes [MISSING], or nothing with skipIfEmpty="true".
-    -->
-    <generate docstruct="MorningIssue">
-        <metadata key="CurrentNoSorting" value="{no}" skipIfEmpty="true" />
-        <metadata key="TitleDocMain" value="Morgenausgabe {partNo} vom {date:dd.MM.yyyy}" />
-    </generate>
-    <generate docstruct="EveningIssue">
-        <metadata key="CurrentNoSorting" value="{no}" skipIfEmpty="true" />
-        <metadata key="TitleDocMain" value="Abendausgabe {partNo} vom {date:dd.MM.yyyy}" />
-    </generate>
-    <generate docstruct="NewspaperSupplement">
-        <metadata key="TitleDocMain" value="Beilage zur {parent.no}. Ausgabe vom {date:dd.MM.yyyy}" />
-    </generate>
-    <generate docstruct="TableOfContents">
-        <metadata key="TitleDocMain" value="Inhaltsverzeichnis" />
-    </generate>
+    <defaults>
+        <field key="DateIssued" role="date" format="dd.MM.yyyy" storeFormat="yyyy-MM-dd" />
+        <field key="CurrentNo" role="number" partKey="PartNumber" />
+        <field key="TitleDocMain" />
+        <field key="CurrentNoSorting" value="{no}" hidden="true" skipIfEmpty="true" />
+    </defaults>
+    <type docstruct="MorningIssue">
+        <field key="TitleDocMain" value="Morgenausgabe {partNo} vom {date:dd.MM.yyyy}" />
+    </type>
+    <type docstruct="EveningIssue">
+        <field key="TitleDocMain" value="Abendausgabe {partNo} vom {date:dd.MM.yyyy}" />
+    </type>
+    <type docstruct="NewspaperSupplement">
+        <field key="TitleDocMain" value="Beilage zur {parent.no}. Ausgabe vom {date:dd.MM.yyyy}" />
+    </type>
+    <type docstruct="TableOfContents">
+        <field key="TitleDocMain" value="Inhaltsverzeichnis" />
+    </type>
 </config_plugin>

@@ -150,7 +150,7 @@ public class MetsWriterTest {
     @Test
     public void storeFormat_usedForDate() throws Exception {
         FieldConfiguration fields = new FieldConfiguration("DateIssued", "dd.MM.yyyy", "dd.MM.yyyy", "CurrentNo", "PartNumber");
-        config = new PluginConfiguration(true, false, false, new PaginationConfiguration(false, "1", false), fields, Map.of(), List.of());
+        config = new PluginConfiguration(true, false, false, new PaginationConfiguration(false, "1", false), fields, List.of(), Map.of(), List.of());
         load(volume(strict, 1), filenames(1));
         BlockStart start = start(null, "EveningIssue");
         start.setDate("1890-03-02");
