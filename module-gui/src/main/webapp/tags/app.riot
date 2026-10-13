@@ -26,18 +26,19 @@
 					<span id="ajaxloaderbottom" class="me-2" style="display: none;">
 						<img src="template/img/goobi/ajaxloader2.gif" alt="" style="height: 20px;" />
 					</span>
-					<div class="position-relative">
-						<a class="btn d-flex align-items-center btn--title-action{saveInFlight ? ' disabled' : ''}" onclick={toggleActions}
-							title={t('plugin_newspaperRecognizer_actions_more')} aria-label={t('plugin_newspaperRecognizer_actions_more')}
-							aria-haspopup="true" aria-expanded={actionsOpen ? 'true' : 'false'}>
-							<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('dots-vertical')}" /></svg></span>
-						</a>
+					<!-- the menu comes first: the button must stay the last child, else Goobi's :not(:last-child) margin moves it -->
+					<div class="position-relative me-2">
 						<ul if={actionsOpen} class="dropdown-menu dropdown-menu-end show" style="position: absolute; right: 0; top: 100%;">
 							<li><button type="button" class="dropdown-item" onclick={() => runAction(askResetToAnalysis)}>{t('plugin_newspaperRecognizer_action_takeAnalysis')}</button></li>
 							<li><button type="button" class="dropdown-item" onclick={() => runAction(askRemoveAllBlocks)}>{t('plugin_newspaperRecognizer_removeAllBlocks')}</button></li>
 							<li><hr class="dropdown-divider" /></li>
 							<li><button type="button" class="dropdown-item" onclick={() => runAction(askRecompute)}>{t('plugin_newspaperRecognizer_action_restartAnalysis')}</button></li>
 						</ul>
+						<a class="btn d-flex align-items-center btn--title-action{saveInFlight ? ' disabled' : ''}" onclick={toggleActions}
+							title={t('plugin_newspaperRecognizer_actions_more')} aria-label={t('plugin_newspaperRecognizer_actions_more')}
+							aria-haspopup="true" aria-expanded={actionsOpen ? 'true' : 'false'}>
+							<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('dots-vertical')}" /></svg></span>
+						</a>
 					</div>
 					<a class="btn d-flex align-items-center btn--title-action{saveInFlight ? ' disabled' : ''}" onclick={exit} title={t('pluginLeave')} data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
