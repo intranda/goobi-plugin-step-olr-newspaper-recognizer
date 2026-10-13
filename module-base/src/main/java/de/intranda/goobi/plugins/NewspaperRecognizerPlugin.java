@@ -23,6 +23,9 @@ import com.google.gson.Gson;
 import de.intranda.goobi.plugins.newspaperRecognizer.LoadedState;
 import de.intranda.goobi.plugins.newspaperRecognizer.PluginDataLoader;
 import de.intranda.goobi.plugins.newspaperRecognizer.SaveResult;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.DisplayRulesLookup;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldCatalog;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.GoobiDisplayRules;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperPage;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.PluginData;
@@ -74,6 +77,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
 
     private transient Gson gson = new Gson();
     private transient RulesetTypes ruleset;
+    private transient DisplayRulesLookup displayRules = DisplayRulesLookup.INPUT_ONLY;
+    private transient FieldCatalog fieldCatalog;
     private transient MetsWriter metsWriter;
     private transient MetsStore metsStore;
     private transient PluginDataLoader loader;
@@ -98,7 +103,10 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             metsWriter = new MetsWriter(ruleset, configuration);
             loader = new PluginDataLoader(step.getProzess(), metsStore, new MetsReader(ruleset, configuration, language), ruleset, configuration);
             state = loader.load(registry);
-            configErrors = configuration.validate(ruleset, state.volumeType());
+            displayRules = new GoobiDisplayRules(step.getProzess().getProjekt().getTitel());
+            fieldCatalog = new FieldCatalog(configuration, ruleset, displayRules, language);
+            configErrors = new ArrayList<>(configuration.validate(ruleset, state.volumeType()));
+            configErrors.addAll(fieldCatalog.validate());
             for (String error : configErrors) {
                 log.error("Configuration error in {}: {}", PLUGIN_NAME, error);
             }
@@ -168,12 +176,12 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
     }
 
     public String getTypeCatalogJson() {
-        if (ruleset == null) {
+        if (ruleset == null || fieldCatalog == null) {
             return "[]";
         }
         return gson.toJson(ruleset.catalog(language)
                 .stream()
-                .map(type -> type.withManagedMetadata(configuration.managedMetadata(type.name(), ruleset)))
+                .map(type -> type.withConfiguration(configuration.managedMetadata(type.name(), ruleset), fieldCatalog.fieldsFor(type.name())))
                 .toList());
     }
 
@@ -217,7 +225,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
         try {
             List<BlockNode> roots = BlockTree.build(saveRequest.getPages());
-            ValidationReport report = new BlockValidator(ruleset, state.volumeType(), configuration).validate(roots);
+            ValidationReport report = new BlockValidator(ruleset, state.volumeType(), configuration, displayRules).validate(roots);
             if (!report.isValid()) {
                 saveResult = report.result();
                 report.details().forEach(detail -> log.info("Save refused: {}", detail));

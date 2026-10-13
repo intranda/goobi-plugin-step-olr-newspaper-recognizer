@@ -1,5 +1,7 @@
 package de.intranda.goobi.plugins.newspaperRecognizer.validation;
 
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDisplay;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldCatalogTest;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDefinition;
 import java.util.Map;
@@ -123,5 +125,16 @@ public class BlockValidatorTest {
         BlockStart morning = block("MorningIssue", "1890-03-01", "1");
         morning.getValues().put("TitleDocMain", "");
         assertTrue(validateFields(page("1", 3, morning, block("NewspaperSupplement", null, null), block("Article", null, null))).isValid());
+    }
+
+    @Test
+    public void requiredReadonlyField_notChecked() throws Exception {
+        PluginConfiguration config = TestDocuments.config(List.of(FieldDefinition.of("TitleDocMain", null, false, false)), Map.of());
+        BlockStart article = block("Article", null, null);
+        article.getValues().put("TitleDocMain", "");
+        assertTrue(new BlockValidator(TestDocuments.ruleset(), "NewspaperVolume", config,
+                FieldCatalogTest.display(Map.of("TitleDocMain", FieldDisplay.READONLY)))
+                .validate(BlockTree.build(List.of(page("1", 3, block("MorningIssue", "1890-03-01", "1"), block("NewspaperSupplement", null, null), article))))
+                .isValid());
     }
 }

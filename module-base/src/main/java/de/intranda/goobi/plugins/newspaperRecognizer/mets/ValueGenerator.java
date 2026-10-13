@@ -17,7 +17,6 @@ import de.intranda.goobi.plugins.newspaperRecognizer.ruleset.RulesetTypes;
 /** Fills the placeholders of a {@code <generate>} value for one block. */
 public class ValueGenerator {
     public static final String MISSING_PLACEHOLDER_VALUE = "[MISSING]";
-    static final String METADATA_LANGUAGE = "de";
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{(parent\\.)?(date:([^}]*)|no|partNo|label)\\}");
 
     private final RulesetTypes ruleset;
@@ -74,7 +73,7 @@ public class ValueGenerator {
         return switch (name) {
             case "no" -> node -> ruleset.isNumbered(node.type()) ? StringUtils.trimToNull(node.getStart().getNumber()) : null;
             case "partNo" -> node -> ruleset.isNumbered(node.type()) ? partNumber(node.getStart()) : null;
-            default -> node -> node.type() == null ? null : ruleset.label(node.type(), METADATA_LANGUAGE);
+            default -> node -> node.type() == null ? null : ruleset.label(node.type(), RulesetTypes.GENERATOR_LANGUAGE);
         };
     }
 

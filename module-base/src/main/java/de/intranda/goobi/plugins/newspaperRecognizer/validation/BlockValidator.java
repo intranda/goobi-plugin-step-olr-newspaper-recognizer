@@ -8,7 +8,9 @@ import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 
+import de.intranda.goobi.plugins.newspaperRecognizer.config.DisplayRulesLookup;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDefinition;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDisplay;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.BlockStart;
 import de.intranda.goobi.plugins.newspaperRecognizer.model.BlockNode;
@@ -27,7 +29,15 @@ public class BlockValidator {
     }
 
     public BlockValidator(RulesetTypes ruleset, String volumeType, PluginConfiguration config) {
-        this(ruleset, volumeType, config.preventDuplicates(), type -> config.visibleFieldsFor(type, ruleset));
+        this(ruleset, volumeType, config, DisplayRulesLookup.INPUT_ONLY);
+    }
+
+    /** Readonly fields are not checked, the user cannot fill them. */
+    public BlockValidator(RulesetTypes ruleset, String volumeType, PluginConfiguration config, DisplayRulesLookup display) {
+        this(ruleset, volumeType, config.preventDuplicates(), type -> config.visibleFieldsFor(type, ruleset)
+                .stream()
+                .filter(f -> display.displayType(f.key()) != FieldDisplay.READONLY)
+                .toList());
     }
 
     private BlockValidator(RulesetTypes ruleset, String volumeType, boolean preventDuplicates,

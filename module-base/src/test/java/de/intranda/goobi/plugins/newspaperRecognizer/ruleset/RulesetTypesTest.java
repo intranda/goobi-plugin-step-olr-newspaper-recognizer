@@ -111,4 +111,10 @@ public class RulesetTypesTest {
                 "NewspaperSupplement", "TableOfContents", "Article"),
                 ruleset.catalog("de").stream().map(TypeInfo::name).collect(toSet()));
     }
+
+    @Test
+    public void info_generatorLabel_isTheGermanLabelUsedForTheLabelPlaceholder() {
+        assertEquals("Morgenausgabe", ruleset.info("MorningIssue", "en").generatorLabel());
+        assertEquals(List.of(), ruleset.info("MorningIssue", "en").fields());
+    }
 }

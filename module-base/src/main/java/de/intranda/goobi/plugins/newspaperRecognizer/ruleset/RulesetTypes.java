@@ -21,6 +21,9 @@ import ugh.dl.Prefs;
  * allow. Date and number fields exist for a type exactly when the type allows the metadata configured in {@code <fields>}.
  */
 public class RulesetTypes {
+    /** The language of generated values ({@code {label}}). */
+    public static final String GENERATOR_LANGUAGE = "de";
+
     private static final String NOT_ALLOWED = "0";
     private static final String REQUIRED_ONE = "1m";
     private static final String REQUIRED_MANY = "+";
@@ -153,10 +156,10 @@ public class RulesetTypes {
     public TypeInfo info(String type, String language) {
         boolean dated = isDated(type);
         boolean numbered = isNumbered(type);
-        return new TypeInfo(type, label(type, language), dated, numbered, isPartNumbered(type),
+        return new TypeInfo(type, label(type, language), label(type, GENERATOR_LANGUAGE), dated, numbered, isPartNumbered(type),
                 dated && isRequired(type, fields.dateMetadata()),
                 numbered && isRequired(type, fields.numberMetadata()),
-                allowedChildren(type), allowedMetadata(type), List.of());
+                allowedChildren(type), allowedMetadata(type), List.of(), List.of());
     }
 
     public List<TypeInfo> catalog(String language) {
