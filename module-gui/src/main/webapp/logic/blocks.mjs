@@ -1,13 +1,14 @@
 // Pure operations on the page list in the transfer format (NewspaperPage / BlockStart on the Java side).
 // A page with k starts and depth d opens blocks on the levels d-k … d-1; rules mirror BlockTree.java and BlockValidator.java.
 import { parseByPattern, formatByPattern, toIso, fromIso } from './dates.mjs';
+import { fieldStates } from './fields.mjs';
 
 export const ANALYSIS_THRESHOLD = -0.8;
 
 export function newStart(type = null) {
   return {
     id: null, type, date: null, dateRaw: null, dateInput: '', prefix: null, number: null, suffix: null,
-    hidden: { structures: [], metadata: [] }, originalType: null,
+    hidden: { structures: [], metadata: [] }, values: {}, originalType: null,
   };
 }
 
@@ -19,7 +20,7 @@ export function clonePages(pages) {
   return pages.map(page => ({
     ...page,
     depth: page.depth || 0,
-    starts: (page.starts || []).map(s => ({ ...s, hidden: cloneHidden(s.hidden) })),
+    starts: (page.starts || []).map(s => ({ ...s, hidden: cloneHidden(s.hidden), values: { ...(s.values || {}) } })),
   }));
 }
 
@@ -214,6 +215,7 @@ export function initStarts(pages, pattern) {
     page.starts = page.starts || [];
     for (const start of page.starts) {
       start.hidden = start.hidden || { structures: [], metadata: [] };
+      start.values = start.values || {};
       start.originalType = start.id ? start.type : null;
     }
   }
@@ -240,6 +242,9 @@ export function validateBlocks(pages, catalog, volumeType, preventDuplicates) {
           result.missingRequired.push(ref);
         }
         if (info.numbered && info.numberRequired && !(start.number || '').trim()) {
+          result.missingRequired.push(ref);
+        }
+        if (fieldStates(node, catalog).some(field => field.required && !String(field.value).trim())) {
           result.missingRequired.push(ref);
         }
         const date = start.date || '';
@@ -316,7 +321,10 @@ export function removePage(pages, index) {
   return out;
 }
 
-export function toSaveRequest(pages, operations) {
+/** With the catalog, every start sends the value shown for each visible field of its type (BlockStart.values). */
+export function toSaveRequest(pages, operations, catalog = null) {
+  const nodes = catalog ? new Map(flatten(buildTree(pages).roots).map(node => [node.start, node])) : null;
+  const values = start => Object.fromEntries(fieldStates(nodes.get(start), catalog).map(field => [field.key, field.value]));
   return JSON.stringify({
     pages: pages.map(page => ({
       filename: page.filename,
@@ -324,6 +332,7 @@ export function toSaveRequest(pages, operations) {
       starts: (page.starts || []).map(s => ({
         id: s.id || null, type: s.type || null, date: s.date || null, dateRaw: s.dateRaw || null,
         prefix: s.prefix || null, number: s.number || null, suffix: s.suffix || null,
+        ...(catalog ? { values: values(s) } : {}),
       })),
     })),
     operations,
