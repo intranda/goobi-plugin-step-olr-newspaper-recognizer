@@ -61,6 +61,32 @@
 			</div>
 			<span if={props.flags.missingNumber} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_validation_missingRequired')}</span>
 		</div>
+		<!-- the visible metadata fields of the type (plugin configuration), see logic/fields.mjs -->
+		<div each={field in fieldList()} class="form-group p-0 m-0 {isMissing(field) ? 'has-validation-error' : ''}">
+			<div class="input-group flex-nowrap">
+				<label class="input-group-text" style={LABEL_STYLE} for={fieldId('field-' + field.key)}>
+					<span aria-hidden="true" class="icon-wrapper me-2"><svg><use href="{GoobiIcons.iconHref(fieldIcon(field))}" /></svg></span>
+					{field.label}{field.required ? ' *' : ''}
+				</label>
+				<div class="newspaper-field {field.display === 'textarea' ? 'grow-wrap' : ''} {field.overwritten ? 'newspaper-field--overwritten' : ''}" data-content={field.value}>
+					<select if={field.display === 'select1'} class="form-select" id={fieldId('field-' + field.key)} onchange={e => props.handleValue(field.key, e.target.value)}>
+						<option value="" selected={!field.value}>{props.t('plugin_newspaperRecognizer_pleaseSelect')}</option>
+						<option if={field.value && !field.items.some(item => item.value === field.value)} value={field.value} selected>{field.value}</option>
+						<option each={item in field.items} value={item.value} selected={item.value === field.value}>{item.label}</option>
+					</select>
+					<textarea if={field.display === 'textarea'} class="form-control" rows="1" id={fieldId('field-' + field.key)} value={field.value}
+						oninput={e => props.handleValue(field.key, e.target.value)}></textarea>
+					<input if={field.display === 'input' || field.display === 'readonly'} type="text" class="form-control" id={fieldId('field-' + field.key)}
+						value={field.value} readonly={field.display === 'readonly'} oninput={e => props.handleValue(field.key, e.target.value)} />
+					<button if={field.overwritten && field.display !== 'readonly'} type="button" class="btn btn-blank newspaper-field__reset"
+						title={props.t('plugin_newspaperRecognizer_field_reset')} aria-label={props.t('plugin_newspaperRecognizer_field_reset')}
+						onclick={() => props.handleReset(field.key)}>
+						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('arrow-back-up')}" /></svg></span>
+					</button>
+				</div>
+			</div>
+			<span if={isMissing(field)} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_validation_missingRequired')}</span>
+		</div>
 		<div if={props.pageFirst || hiddenCount() > 0} class="d-flex justify-content-between align-items-center gap-3 small border-top pt-2 position-relative">
 			<span class="text-muted">{props.pageFirst ? pagesText() : ''}</span>
 			<button if={hiddenCount() > 0} type="button" class="btn btn-link btn-sm p-0 d-flex align-items-center gap-1 text-decoration-none"
@@ -89,6 +115,15 @@
 		},
 		fieldId(name) {
 			return this.fieldPrefix + '-' + name;
+		},
+		fieldList() {
+			return this.props.fields || [];
+		},
+		fieldIcon(field) {
+			return { textarea: 'align-left', select1: 'selector', readonly: 'lock' }[field.display] || 'letter-case';
+		},
+		isMissing(field) {
+			return field.required && !String(field.value).trim();
 		},
 		structures() {
 			return (this.props.start.hidden && this.props.start.hidden.structures) || [];

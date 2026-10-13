@@ -164,6 +164,9 @@
 											handle-type={type => changeType(row.node, type)}
 											handle-date={value => changeDate(row.node, value)}
 											handle-field={(name, value) => changeField(row.node, name, value)}
+											fields={fieldsOf(row.node)}
+											handle-value={(key, value) => changeValue(row.node, key, value)}
+											handle-reset={key => resetValue(row.node, key)}
 											hidden-open={openHidden === blockElementId(row.node)}
 											handle-toggle-hidden={() => toggleHidden(blockElementId(row.node))}
 											handle-remove-hidden={() => askRemoveHidden(row.node)}
@@ -184,6 +187,9 @@
 												handle-type={type => changeType(child, type)}
 												handle-date={value => changeDate(child, value)}
 												handle-field={(name, value) => changeField(child, name, value)}
+												fields={fieldsOf(child)}
+												handle-value={(key, value) => changeValue(child, key, value)}
+												handle-reset={key => resetValue(child, key)}
 												hidden-open={openHidden === blockElementId(child)}
 												handle-toggle-hidden={() => toggleHidden(blockElementId(child))}
 												handle-remove-hidden={() => askRemoveHidden(child)}
@@ -252,6 +258,7 @@
 	import TypePatternDialog from './type-pattern-dialog.riot'
 	import ContinueDialog from './continue-dialog.riot'
 	import { applyTypePattern } from '../logic/generation.mjs'
+	import { fieldStates, initFieldStates } from '../logic/fields.mjs'
 	import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from '../logic/hidden.mjs'
 
 	const CHILD_COLORS = ['#146abf', '#e00404', '#6300b5', '#ba5d06', '#467021'];
@@ -358,6 +365,7 @@
 				}
 			}
 			initStarts(this.pages, this.dateFormatPattern);
+			initFieldStates(this.pages, this.catalog);
 			this.refresh();
 		},
 
@@ -625,6 +633,30 @@
 			this.update();
 		},
 
+		/* a value equal to the generated one is no overwrite: it keeps following the date and number */
+		changeValue(node, key, value) {
+			const field = fieldStates(node, this.catalog).find(f => f.key === key);
+			if (field && field.pattern != null && value === (field.generated ?? '')) {
+				delete node.start.values[key];
+			} else {
+				node.start.values[key] = value;
+			}
+			this.dataDirty = true;
+			this.refresh();
+			this.update();
+		},
+
+		fieldsOf(node) {
+			return fieldStates(node, this.catalog);
+		},
+
+		resetValue(node, key) {
+			delete node.start.values[key];
+			this.dataDirty = true;
+			this.refresh();
+			this.update();
+		},
+
 		/* every confirmation guards a destructive action; icon is optional (e.g. 'trash') */
 		askConfirmation(title, text, button, action, icon) {
 			this.confirmation = { title, text, button, action, icon };
@@ -768,7 +800,7 @@
 				return;
 			}
 			this.saveInFlight = true;
-			this.data_el.value = toSaveRequest(this.pages, this.operations);
+			this.data_el.value = toSaveRequest(this.pages, this.operations, this.catalog);
 			this.saveButton.click();
 			this.update();
 		},

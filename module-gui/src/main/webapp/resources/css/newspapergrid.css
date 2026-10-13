@@ -171,3 +171,53 @@ progress {
 	width: auto;
 	border: 1px solid var(--clr-neutral-400, #ccc);
 }
+
+/* a metadata field inside an input group: the wrapper takes the place of the form control */
+.input-group > .newspaper-field {
+	position: relative;
+	flex: 1 1 auto;
+	width: 1%;
+	min-width: 0;
+}
+
+.input-group > .newspaper-field:not(:first-child) > .form-control,
+.input-group > .newspaper-field:not(:first-child) > .form-select {
+	margin-left: calc(-1 * var(--bs-border-width));
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+.input-group > .newspaper-field:not(:last-child) > .form-control,
+.input-group > .newspaper-field:not(:last-child) > .form-select {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.newspaper-field > .form-control,
+.newspaper-field > .form-select {
+	width: 100%;
+	height: 100%;
+}
+
+/* an overwritten generated value: highlighted, with the reset button inside the field */
+.newspaper-field--overwritten > .form-control {
+	border-color: var(--clr-action);
+	background-color: color-mix(in srgb, var(--clr-action) 8%, var(--bs-body-bg));
+	padding-right: 2.25rem;
+}
+
+.newspaper-field--overwritten.grow-wrap::after {
+	padding-right: 2.25rem;
+}
+
+.newspaper-field__reset {
+	position: absolute;
+	z-index: 5;
+	top: 0;
+	right: 0;
+	display: flex;
+	align-items: center;
+	height: calc(1lh + 0.75rem + 2 * var(--bs-border-width));
+	padding: 0 0.5rem;
+	color: var(--clr-action);
+}
