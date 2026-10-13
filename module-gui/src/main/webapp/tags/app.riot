@@ -1120,8 +1120,9 @@
 	            var page = this.data[i];
 	            if (page.issueTypeName) {
 	            	issueCounter++
-	                currentNumber++;
 	            	if(issueCounter % skip == 0) {
+		                // skipped issues must not consume a number
+		                currentNumber++;
 		                currentDate = this.getNextDate(currentDate);
 		                page.issueTypeName = startPage.issueTypeName;
 						page.metadata.dateStr = currentDate.toString(this.dateFormatPattern);
