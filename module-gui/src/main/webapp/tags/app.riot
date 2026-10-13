@@ -7,7 +7,7 @@
 					{props.title}
 				</h2>
 			</div>
-			<div class="section-body-padded" style="background-color:#eee;" >
+			<div class="section-body-padded" style="background-color:#eee;">
 				<div class="text-center">
 					<img src="template/img/goobi/ajaxloader2.gif" style="max-height: 140px;"></img>
 				</div>
@@ -23,446 +23,154 @@
 					{props.title}
 				</h2>
 				<div class="actions d-flex">
-					<!-- // verlassen-Button -->
-					<a
-						class="btn d-flex align-items-center btn--title-action{saveInFlight ? ' disabled' : ''}"
-						onclick={exit}
-						title={translate_msg('pluginLeave')}
-						data-bs-toggle="tooltip">
+					<a class="btn d-flex align-items-center btn--title-action{saveInFlight ? ' disabled' : ''}" onclick={exit} title={t('pluginLeave')} data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
 					</a>
-					<!-- Speicher-Button -->
-					<a
-						class="btn d-flex align-items-center btn--title-action{canSave() ? '' : ' disabled'}"
-						onclick={save}
-						title={translate_msg('save')}
-						data-bs-toggle="tooltip">
+					<a class="btn d-flex align-items-center btn--title-action{canSave() ? '' : ' disabled'}" onclick={save} title={t('save')} data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('device-floppy')}" /></svg></span>
 					</a>
-					<!-- // Speicher-Button -->
-					<a
-						class="btn d-flex align-items-center btn--title-action{canSave() ? '' : ' disabled'}"
-						onclick={saveAndExit}
-						title="{translate_msg('pluginSaveAndLeave')}"
-						data-bs-toggle="tooltip">
+					<a class="btn d-flex align-items-center btn--title-action{canSave() ? '' : ' disabled'}" onclick={saveAndExit} title={t('pluginSaveAndLeave')} data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('logout')}" /></svg></span>
 					</a>
 				</div>
 			</div>
 
 			<div>
-				<div if={this.duplicateIssueWarnings && this.duplicateIssueWarnings.length > 0}>
-					<div class="p-3">
-						<div class="alert alert-danger">
-							{translate_msg('plugin_newspaperRecognizer_duplicateIssueWarning')}
-							<ul>
-								<li each={warning in this.duplicateIssueWarnings}>
-									{translate_msg(warning.type)}: {warning.date} ({warning.count}x)
-								</li>
-							</ul>
-						</div>
+				<div if={configErrors.length > 0} class="p-3">
+					<div class="alert alert-danger">
+						{t('plugin_newspaperRecognizer_configError')}
+						<ul class="mb-0"><li each={error in configErrors}>{error}</li></ul>
 					</div>
 				</div>
-				<div if={this.duplicateSupplementWarnings && this.duplicateSupplementWarnings.length > 0}>
-					<div class="p-3">
-						<div class="alert alert-danger">
-							{translate_msg('plugin_newspaperRecognizer_duplicateSupplementWarning')}
-							<ul>
-								<li each={warning in this.duplicateSupplementWarnings}>
-									{translate_msg(warning.type)} ({warning.count}x) — {translate_msg('plugin_newspaperRecognizer_date')}: {warning.issueDate}
-								</li>
-							</ul>
-						</div>
+				<div if={notices.length > 0} class="p-3">
+					<div class="alert alert-warning">
+						<ul class="mb-0"><li each={notice in notices}>{formatNotice(notice)}</li></ul>
 					</div>
 				</div>
-				<div if={!props.pagenumCorrect}>
-					<div class="p-3">
-						<div class="alert alert-danger">{translate_msg('plugin_newspaperRecognizer_pagenumWarning')}</div>
+				<div if={!validation.valid} class="p-3">
+					<div class="alert alert-danger">
+						{t('plugin_newspaperRecognizer_validation_title')}
+						<ul class="mb-0"><li each={problem in validationProblems()}>{t(problem.key)}: {problem.count}</li></ul>
 					</div>
-					<div class="section-footer">
-						<a class="btn btn-hot " onclick={restartAnalysis}>{translate_msg('plugin_newspaperRecognizer_recompute')}</a>
+				</div>
 
-						<button
-							type="button"
-							class="btn btn-image position-absolute top-0"
-							if={props.showDeletePageButton}
-							data-bs-toggle="modal"
-							data-bs-target="#deleteManualResultsModal">
-							{translate_msg('plugin_newspaperRecognizer_deleteManualResults')}
-						</div>
-						<div
-							class="modal modal-hot fade"
-							id="deleteManualResultsModal"
-							tabindex="-1"
-							role="dialog"
-							aria-labelledby="deleteManualResultsModalLabel">
-							<div
-								class="modal-dialog"
-								role="document">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h5 class="modal-title" id="deleteManualResultsModalLabel">
-											{translate_msg('plugin_newspaperRecognizer_deleteManualResults')}
-										</h5>
-										<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-											<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
-										</button>
-									</div>
-									<div class="modal-body">
-										{translate_msg('plugin_newspaperRecognizer_confirmAction')}
-									</div>
-									<div class="modal-footer">
-										<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
-										<!-- Button, um dieses Bild zu löschen -->
-										<button type="button" class="btn btn-hot" onclick={deleteManualResults}>{translate_msg('plugin_newspaperRecognizer_deleteManualResults')}</button>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<!-- Formular für Wochentage -->
-				<div if={!imagesLoaded && props.pagenumCorrect} class="row">
+				<div if={!imagesLoaded} class="row">
 					<div class="section-body-padded">
-						<h3>{translate_msg('plugin_newspaperRecognizer_loadingImages')}...</h3>
-						<progress max={data.length} value={loadedImages}></progress>
+						<h3>{t('plugin_newspaperRecognizer_loadingImages')}...</h3>
+						<progress max={pages.length} value={loadedImages}></progress>
 					</div>
 				</div>
-				<template if={imagesLoaded && props.pagenumCorrect}>
-					<div class="d-flex justify-content-between gap-2 p-3 border-bottom">
-						<div class="d-flex gap-2 flex-nowrap">
-							<!-- Wochentage als Checkboxen -->
-							<label class="check-week btn btn-{monday ? 'neutral-600' : 'blank'}" title="{monday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
-								<input type="checkbox" class="checkbox-week btn-check" checked={monday} onclick={() => this.toggleDay('monday')}></input>
-								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(monday ? 'toggle-right' : 'toggle-left', monday)}" /></svg></span>
-								<span>
-									{translate_msg('plugin_newspaperRecognizer_monday')}
-								</span>
-							</label>
-							<label class="check-week btn btn-{tuesday ? 'neutral-600' : 'blank'}" title="{tuesday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
-								<input type="checkbox" class="checkbox-week btn-check" checked={tuesday} onclick={() => this.toggleDay('tuesday')}></input>
-								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(tuesday ? 'toggle-right' : 'toggle-left', tuesday)}" /></svg></span>
-								<span>
-									{translate_msg('plugin_newspaperRecognizer_tuesday')}
-								</span>
-							</label>
-							<label class="check-week btn btn-{wednesday ? 'neutral-600' : 'blank'}" title="{wednesday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
-								<input type="checkbox" class="checkbox-week btn-check" checked={wednesday} onclick={() => this.toggleDay('wednesday')}></input>
-								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(wednesday ? 'toggle-right' : 'toggle-left', wednesday)}" /></svg></span>
-								<span>
-									{translate_msg('plugin_newspaperRecognizer_wednesday')}
-								</span>
-							</label>
-							<label class="check-week btn btn-{thursday ? 'neutral-600' : 'blank'}" title="{thursday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
-								<input type="checkbox" class="checkbox-week btn-check" checked={thursday} onclick={() => this.toggleDay('thursday')}></input>
-								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(thursday ? 'toggle-right' : 'toggle-left', thursday)}" /></svg></span>
-								<span>
-									{translate_msg('plugin_newspaperRecognizer_thursday')}
-								</span>
-							</label>
-							<label class="check-week btn btn-{friday ? 'neutral-600' : 'blank'}" title="{friday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
-								<input type="checkbox" class="checkbox-week btn-check" checked={friday} onclick={() => this.toggleDay('friday')}></input>
-								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(friday ? 'toggle-right' : 'toggle-left', friday)}" /></svg></span>
-								<span>
-									{translate_msg('plugin_newspaperRecognizer_friday')}
-								</span>
-							</label>
-							<label class="check-week btn btn-{saturday ? 'neutral-600' : 'blank'}" title="{saturday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
-								<input type="checkbox" class="checkbox-week btn-check" checked={saturday} onclick={() => this.toggleDay('saturday')}></input>
-								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(saturday ? 'toggle-right' : 'toggle-left', saturday)}" /></svg></span>
-								<span>
-									{translate_msg('plugin_newspaperRecognizer_saturday')}
-								</span>
-							</label>
-							<label class="check-week btn btn-{sunday ? 'neutral-600' : 'blank'}" title="{sunday ? translate_msg('plugin_newspaperRecognizer_toggle_weekday_false') : translate_msg('plugin_newspaperRecognizer_toggle_weekday_true')}" data-bs-toggle="tooltip">
-								<input type="checkbox" class="checkbox-week btn-check" checked={sunday} onclick={() => this.toggleDay('sunday')}></input>
-								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(sunday ? 'toggle-right' : 'toggle-left', sunday)}" /></svg></span>
-								<span>
-									{translate_msg('plugin_newspaperRecognizer_sunday')}
-								</span>
-							</label>
-							<!-- // Wochentage als Checkboxen -->
-							<label class="check-week btn btn-{biWeekly ? 'neutral-600' : 'blank'}" title="{biWeekly ? translate_msg('plugin_newspaperRecognizer_toggle_biweekly_false') : translate_msg('plugin_newspaperRecognizer_toggle_biweekly_true')}" data-bs-toggle="tooltip">
-								<input type="checkbox" class="checkbox-week btn-check" checked={biWeekly} onclick={toggleBiWeekly}></input>
-								<span class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(biWeekly ? 'toggle-right' : 'toggle-left', biWeekly)}" /></svg></span>
-								<span>
-									{translate_msg('plugin_newspaperRecognizer_biWeekly')}
-								</span>
-							</label>
-							<!-- <label class="check-week"><input type="checkbox" class="checkbox-week btn-check btn-check" checked={monthly} onclick={this.monthly = !this.monthly}></input>Monatlich</label> -->
-						</div>
+
+				<template if={imagesLoaded}>
+					<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 border-bottom">
+						<div class="d-flex align-items-center gap-2" data-slot="toolbar-start"></div>
 						<div class="d-flex gap-2">
-							<button
-								type="button"
-								class="btn btn-hot"
-								data-bs-toggle="modal"
-								data-bs-target="#confirmRecomputeModal">
-								{translate_msg('plugin_newspaperRecognizer_recompute')}
-							</div>
-							<div
-								class="modal modal-hot fade"
-								id="confirmRecomputeModal"
-								tabindex="-1"
-								role="dialog"
-								aria-labelledby="confirmRecomputeModalLabel">
-								<div
-									class="modal-dialog"
-									role="document">
-									<div class="modal-content">
-										<div class="modal-header">
-											<h5 class="modal-title" id="confirmRecomputeModalLabel">
-												{translate_msg('plugin_newspaperRecognizer_recompute')}
-											</h5>
-											<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-												<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
-											</button>
-										</div>
-										<div class="modal-body">
-											{translate_msg('plugin_newspaperRecognizer_confirmAction')}
-										</div>
-										<div class="modal-footer">
-											<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
-											<button type="button" class="btn btn-hot" onclick={restartAnalysis} data-bs-dismiss="modal">{translate_msg('plugin_newspaperRecognizer_recompute')}</button>
-										</div>
-									</div>
-								</div>
-							</div>
-							<button
-								type="button"
-								class="btn btn-hot"
-								data-bs-toggle="modal"
-								data-bs-target="#resetAllIssuesModal">
-								{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}
-							</button>
-							<!-- Modal -->
-							<div
-								class="modal modal-hot fade"
-								id="resetAllIssuesModal"
-								tabindex="-1"
-								role="dialog"
-								aria-labelledby="resetAllIssuesModalLabel">
-								<div
-									class="modal-dialog"
-									role="document">
-									<div class="modal-content">
-										<div class="modal-header">
-											<h5 class="modal-title" id="resetAllIssuesModalLabel">
-												{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}
-											</h5>
-											<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-												<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
-											</button>
-										</div>
-										<div class="modal-body">
-											{translate_msg('plugin_newspaperRecognizer_confirmAction')}
-										</div>
-										<div class="modal-footer">
-											<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
-											<button type="button" class="btn btn-hot" onclick={resetAllIssues} data-bs-dismiss="modal">{translate_msg('plugin_newspaperRecognizer_removeAllIssues')}</button>
-										</div>
-									</div>
-								</div>
-							</div>
+							<button type="button" class="btn btn-blank" onclick={askResetToAnalysis}>{t('plugin_newspaperRecognizer_resetToAnalysis')}</button>
+							<button type="button" class="btn btn-hot" onclick={askRemoveAllBlocks}>{t('plugin_newspaperRecognizer_removeAllBlocks')}</button>
+							<button type="button" class="btn btn-hot" onclick={askRecompute}>{t('plugin_newspaperRecognizer_recompute')}</button>
 						</div>
 					</div>
-					<!-- // Formular für Wochentage -->
-					<!-- Bereich für Ausgaben -->
+
 					<div class="section-body">
-						<!-- Auflistung aller Ausgaben -->
 						<div class="issues">
-							<template each={page in data} if={page.issueTypeName}>
-
-								<div class="thumbnail-image px-3 pb-3">
-
-									<!-- Bild der Ausgabe -->
-									<div class="goobi-thumbnail font-light">
-										<div class="goobi-thumbnail-image">
-											<div class="thumb position-relative" style="min-height: {thumb_height}px;">
-
-												<a onclick="{(e) => onPageClick(e, page, page.pos)}">
-													<thumbcanvas width={thumb_height} height={thumb_height} image_small={page.image.thumbnailUrl}
-															image_large={page.image.largeThumbnailUrl}
-															title={page.image.tooltip}
-															page_id={page.pos}
-															loadallimages={loadallimages}
-															preload_large={true}>
+							<template each={row in rows}>
+								<template if={row.loose}>
+									<div class="thumbnail-image px-3 pb-3"></div>
+									<div class="issue-controls d-flex flex-column gap-2 px-3 pb-3">
+										<strong>{t('plugin_newspaperRecognizer_pagesWithoutStructure')}</strong>
+										<span>{t('otherPages')}: {row.pages.length}</span>
+									</div>
+									<div class="thumbnails px-3 pb-3" style="--thumb-size: {thumb_height / 2.5}px;">
+										<div each={index in row.pages} key={pages[index].filename} class="newspaper-thumbnail">
+											<div class="newspaper-thumbnail__image position-relative" style="min-height: {thumb_height / 2}px;">
+												<a onclick={e => onPageClick(e, index)}>
+													<thumbcanvas width={thumb_height / 2} height={thumb_height / 2}
+														image_small={pages[index].image.thumbnailUrl} image_large={pages[index].image.largeThumbnailUrl}
+														title={pages[index].image.tooltip} page_id={index} loadallimages={loadallimages} preload_large={false}>
 													</thumbcanvas>
 												</a>
-												<button
-													type="button"
-													class="btn btn-image position-absolute top-0"
-													if={props.showDeletePageButton}
-													data-bs-toggle="modal"
-													data-bs-target="#deletePageModal">
+												<button type="button" class="btn btn-image position-absolute top-0" if={props.showDeletePageButton} onclick={() => askDeletePage(index)}
+													aria-label={t('loeschen')}>
 													<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('trash')}" /></svg></span>
 												</button>
-												<div
-													class="modal modal-hot fade"
-													id="deletePageModal"
-													tabindex="-1"
-													role="dialog"
-													aria-labelledby="deletePageModalLabel">
-													<div
-														class="modal-dialog"
-														role="document">
-														<div class="modal-content">
-															<div class="modal-header">
-																<h5 class="modal-title" id="deletePageModalLabel">
-																	{translate_msg('loeschen')}
-																</h5>
-																<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-																	<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
-																</button>
-															</div>
-															<div class="modal-body">
-																{translate_msg('plugin_newspaperRecognizer_confirmAction')}
-															</div>
-															<div class="modal-footer">
-																<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
-																<!-- Button, um dieses Bild zu löschen -->
-																<button
-																	class="btn btn-hot"
-																	onclick="{(e) => deletePage(e, page)}"
-																	data-bs-dismiss="modal">
-																	{translate_msg('loeschen')}
-																</button>
-															</div>
-														</div>
-													</div>
-												</div>
-
 											</div>
 										</div>
 									</div>
-									<!-- // Bild der Ausgabe -->
+								</template>
 
-								</div>
-								<div class="issue-controls d-flex flex-column gap-2 px-3 pb-3" style="min-height: {thumb_height}px;">
-									<!-- Datum der Ausgabe -->
-									<div class="form-group px-0 {(page.dateValid && !page.duplicateIssue) ? '' : 'has-validation-error'}">
-										<input type="text" value={page.metadata?.dateStr} onblur={e => validateDateField(e, page)} onkeyup={e => validateDateField(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_date')}" class="form-control"></input>
-										<span if={!page.dateValid} class="help-inline">{translate_msg('plugin_newspaperRecognizer_wrongDateFormat')} {this.dateFormatPattern}</span>
-										<span if={page.dateValid && page.duplicateIssue} class="help-inline text-danger">{translate_msg('plugin_newspaperRecognizer_duplicateIssue')}</span>
-									</div>
-
-									<!-- Nummer der Ausgabe -->
-									<div class="form-group px-0">
-										<div class="input-group">
-											<input type="text" value={page.metadata?.prefix} onkeyup={e => changePrefix(e, page)} placeholder="{translate_msg('prefix')}" class="form-control" style="width:33%"></input>
-											<input type="text" value={page.metadata?.number} onkeyup={e => changeNumber(e, page)} placeholder="{translate_msg('plugin_newspaperRecognizer_nro')}" class="form-control" style="width:34%"></input>
-											<input type="text" value={page.metadata?.suffix} onkeyup={e => changeSuffix(e, page)} placeholder="{translate_msg('suffix')}" class="form-control" style="width:33%"></input>
-										</div>
-									</div>
-
-									<!-- "Typ" der Ausgabe -->
-									<div class="form-group px-0 {page.duplicateIssue ? 'has-validation-error' : ''}">
-										<select class="form-select" onchange={e => changeIssueType(e, page)}>
-											<option each={type in issueTypes} selected="{type == page.issueTypeName ? 'selected' : ''}" data-translation-id="{type}">{translate_msg(type)}</option>
-										</select>
-										<span if={page.duplicateIssue} class="help-inline text-danger">{translate_msg('plugin_newspaperRecognizer_duplicateIssue')}</span>
-									</div>
-
-									<!-- "Typ" der Beilage -->
-									<div each={(subPage, subPageIndex) in this.getSubPages(page.pos)} if={subPage.supplementTypeName} class="d-flex align-items-center gap-2">
-										<svg height="30" width="40" xmlns="http://www.w3.org/2000/svg">
-											<circle r="15" cx="15" cy="15" fill="{suppl_colors[(subPage.supplementNumber-1)%5]}" />
-										</svg>
-										<div class="form-group px-0 flex-grow-1 {subPage.duplicateSupplement ? 'has-validation-error' : ''}">
-											<select class="form-select" onchange={e => changeSupplementType(e, subPage)}>
-												<option each={type in supplementTypes} selected="{type == subPage.supplementTypeName ? 'selected' : ''}" data-translation-id="{type}">{translate_msg(type)}</option>
-											</select>
-											<span if={subPage.duplicateSupplement} class="help-inline text-danger">{translate_msg('plugin_newspaperRecognizer_duplicateSupplement')}</span>
-										</div>
-									</div>
-
-									<div class="d-flex flex-column gap-2">
-										<!-- Details über zugehörige Seiten -->
-										<span>
-											{translate_msg('otherPages')}: {this.getSubPages(page.pos).length}
-										</span>
-										<!-- Button für Datumsgenerierung -->
-										<a onclick={e => generateFollowingIssueMetadata(e, page, 1)} class="btn btn-blank align-self-end">
-											{translate_msg('plugin_newspaperRecognizer_applyEveryIssue')}
-										</a>
-
-										<a onclick={e => generateFollowingIssueMetadata(e, page, 2)} class="btn btn-blank align-self-end">
-											{translate_msg('plugin_newspaperRecognizer_applyEverySecondIssue')}
-										</a>
-
-										<a onclick={e => generateFollowingIssueMetadata(e, page, 3)} class="btn btn-blank align-self-end">
-											{translate_msg('plugin_newspaperRecognizer_applyEveryThirdIssue')}
-										</a>
-									</div>
-								</div>
-								<!-- Auflistung aller zugehörigen Seiten der Ausgabe -->
-								<div class="thumbnails px-3 pb-3" style="--thumb-size: {thumb_height / 2.5}px;">
-									<!-- THUMBNAIL -->
-									<!-- Having a subPageIndex here would not work, as the real index over all pages is required -->
-									<div each={subPage in this.getSubPages(page.pos)} class="newspaper-thumbnail">
-										<div class="newspaper-thumbnail__image position-relative" style="min-height: {thumb_height/2}px;">
-											<a onclick={(e) => onPageClick(e, subPage, subPage.pos)}>
-												<thumbcanvas
-														width={thumb_height/2}
-														height={thumb_height/2}
-														render_text={subPage.supplementNumber ? subPage.supplementNumber : null}
-														render_size="24"
-														render_bg_color={subPage.supplementNumber ? suppl_colors[(subPage.supplementNumber-1)%5] : null}
-														image_small={subPage.image.thumbnailUrl}
-														image_large={subPage.image.largeThumbnailUrl}
-														title={subPage.image.tooltip}
-														page_id={subPage.pos}
-														loadallimages={loadallimages}
-														preload_large={false}>
-												</thumbcanvas>
-											</a>
-											<button
-												type="button"
-												class="btn btn-image position-absolute top-0"
-												if={props.showDeletePageButton}
-												data-bs-toggle="modal"
-												data-bs-target="#deleteSubPageModal">
-												<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('trash')}" /></svg></span>
-											</div>
-											<div
-												class="modal modal-hot fade"
-												id="deleteSubPageModal"
-												tabindex="-1"
-												role="dialog"
-												aria-labelledby="deleteSubPageModalLabel">
-												<div
-													class="modal-dialog"
-													role="document">
-													<div class="modal-content">
-														<div class="modal-header">
-															<h5 class="modal-title" id="deleteSubPageModalLabel">
-																{translate_msg('loeschen')}
-															</h5>
-															<button type="button" class="btn" data-bs-dismiss="modal" aria-label="Close">
-																<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
-															</button>
-														</div>
-														<div class="modal-body">
-															{translate_msg('plugin_newspaperRecognizer_confirmAction')}
-														</div>
-														<div class="modal-footer">
-															<button type="button" class="btn btn-blank me-auto" data-bs-dismiss="modal">{translate_msg('cancel')}</button>
-															<!-- Button, um dieses Bild zu löschen -->
-															<button
-																class="btn btn-hot"
-																if={props.showDeletePageButton}
-																onclick="{(e) => deletePage(e, subPage)}"
-																data-bs-dismiss="modal">
-																{translate_msg('loeschen')}
-															</button>
-														</div>
-													</div>
+								<template if={!row.loose}>
+									<div class="thumbnail-image px-3 pb-3" id={blockElementId(row.node)}>
+										<div class="goobi-thumbnail font-light">
+											<div class="goobi-thumbnail-image">
+												<div class="thumb position-relative" style="min-height: {thumb_height}px;">
+													<a onclick={e => onPageClick(e, row.node.first)}>
+														<thumbcanvas key={pages[row.node.first].filename} width={thumb_height} height={thumb_height}
+															image_small={pages[row.node.first].image.thumbnailUrl} image_large={pages[row.node.first].image.largeThumbnailUrl}
+															title={pages[row.node.first].image.tooltip} page_id={row.node.first} loadallimages={loadallimages} preload_large={true}>
+														</thumbcanvas>
+													</a>
+													<button type="button" class="btn btn-image position-absolute top-0" if={props.showDeletePageButton} onclick={() => askDeletePage(row.node.first)}
+														aria-label={t('loeschen')}>
+														<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('trash')}" /></svg></span>
+													</button>
 												</div>
 											</div>
-											<!-- // Button, um dieses Bild zu löschen -->
 										</div>
 									</div>
 
-								</div>
+									<div class="issue-controls d-flex flex-column gap-3 px-3 pb-3" style="min-height: {thumb_height}px;">
+										<block-fields
+											start={row.node.start}
+											info={catalog[row.node.start.type]}
+											type-options={typeOptions(volumeType)}
+											flags={flagsFor(row.node)}
+											t={t}
+											date-format-pattern={dateFormatPattern}
+											handle-type={type => changeType(row.node, type)}
+											handle-date={value => changeDate(row.node, value)}
+											handle-field={(name, value) => changeField(row.node, name, value)}>
+											<template slot="badge"><span data-slot="badge" data-block={blockElementId(row.node)}></span></template>
+											<template slot="actions"><span data-slot="actions" data-block={blockElementId(row.node)}></span></template>
+										</block-fields>
+
+										<div each={(child, childIndex) in row.node.children} class="ps-3 border-start" id={blockElementId(child)}>
+											<block-fields
+												start={child.start}
+												info={catalog[child.start.type]}
+												type-options={typeOptions(row.node.start.type)}
+												flags={flagsFor(child)}
+												color={childColor(childIndex + 1)}
+												t={t}
+												date-format-pattern={dateFormatPattern}
+												handle-type={type => changeType(child, type)}
+												handle-date={value => changeDate(child, value)}
+												handle-field={(name, value) => changeField(child, name, value)}>
+												<template slot="badge"><span data-slot="badge" data-block={blockElementId(child)}></span></template>
+												<template slot="actions"><span data-slot="actions" data-block={blockElementId(child)}></span></template>
+											</block-fields>
+										</div>
+
+										<span>{t('otherPages')}: {row.node.last - row.node.first}</span>
+									</div>
+
+									<div class="thumbnails px-3 pb-3" style="--thumb-size: {thumb_height / 2.5}px;">
+										<div each={entry in pagesOf(row.node)} key={pages[entry.index].filename + ':' + entry.child} class="newspaper-thumbnail">
+											<div class="newspaper-thumbnail__image position-relative" style="min-height: {thumb_height / 2}px;">
+												<a onclick={e => onPageClick(e, entry.index)}>
+													<thumbcanvas width={thumb_height / 2} height={thumb_height / 2}
+														render_text={entry.child || null} render_size="24" render_bg_color={entry.child ? childColor(entry.child) : null}
+														image_small={pages[entry.index].image.thumbnailUrl} image_large={pages[entry.index].image.largeThumbnailUrl}
+														title={pages[entry.index].image.tooltip} page_id={entry.index} loadallimages={loadallimages} preload_large={false}>
+													</thumbcanvas>
+												</a>
+												<button type="button" class="btn btn-image position-absolute top-0" if={props.showDeletePageButton} onclick={() => askDeletePage(entry.index)}
+													aria-label={t('loeschen')}>
+													<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('trash')}" /></svg></span>
+												</button>
+											</div>
+										</div>
+									</div>
+								</template>
 							</template>
 						</div>
 					</div>
@@ -470,778 +178,445 @@
 			</div>
 
 			<template if={imagesLoaded}>
-
 				<div class="section-footer">
-					<span id="ajaxloaderbottom" style="margin-right: 15px; display:none;">
+					<span id="ajaxloaderbottom" style="margin-right: 15px; display: none;">
 						<img src="template/img/goobi/ajaxloader2.gif" />
 					</span>
-					<!-- // verlassen-Button -->
-					<a class="btn btn-blank{saveInFlight ? ' disabled' : ''}" onclick={exit}>{translate_msg('pluginLeave')}</a>
-					<!-- Speicher-Button -->
-					<a class="btn btn-blank{canSave() ? '' : ' disabled'}" onclick={save}>{translate_msg('save')}</a>
-					<!-- // Speicher-Button -->
-					<a class="btn btn-blank{canSave() ? '' : ' disabled'}" onclick={saveAndExit}>{translate_msg('pluginSaveAndLeave')}</a>
+					<a class="btn btn-blank{saveInFlight ? ' disabled' : ''}" onclick={exit}>{t('pluginLeave')}</a>
+					<a class="btn btn-blank{canSave() ? '' : ' disabled'}" onclick={save}>{t('save')}</a>
+					<a class="btn btn-blank{canSave() ? '' : ' disabled'}" onclick={saveAndExit}>{t('pluginSaveAndLeave')}</a>
 				</div>
 			</template>
 		</div>
 	</div>
 
+	<div if={confirmation} class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle" style="background: rgba(0, 0, 0, 0.4);">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="confirmationTitle">{t(confirmation.title)}</h5>
+				</div>
+				<div class="modal-body">{t(confirmation.text)}</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-blank me-auto" onclick={cancelConfirmation}>{t('cancel')}</button>
+					<button type="button" class="btn btn-hot" onclick={runConfirmation}>{t(confirmation.button)}</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<script>
 	import Thumbcanvas from './thumbcanvas.riot'
+	import BlockFields from './block-fields.riot'
+	import {
+		buildTree, refOf, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
+		removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest,
+	} from '../logic/blocks.mjs'
+
+	const CHILD_COLORS = ['#146abf', '#e00404', '#6300b5', '#ba5d06', '#467021'];
 
 	export default {
 		components: {
-			Thumbcanvas
+			Thumbcanvas,
+			BlockFields,
 		},
 
-		/* preparations before mounting the components, used to initialize some fields */
-	    onBeforeMount(props, state) {
+		onBeforeMount(props) {
 			// fields of props are defined in plugin_newspaperRecognizer.xhtml
-			this.data_el = props.data_el; // used in both save functions, and it has one key `value` which contains the data contents in the JSON format
-			this.saveButton = props.saveButton; // used only in the function "save"
-			this.saveResultEl = props.saveResultEl; // the backend reports the outcome of the last save in here
-			this.finish_button = props.finishButton; // used only in the function "exit"
-			this.restartAnalysisButton = props.restartAnalysisButton; // used only in the function "restartAnalysis"
-			this.deleteManualResultsButton = props.deleteManualResultsButton; // used only in the function "deleteManualResults"
-			this.delete_file_button = props.deleteFileButton; // used to delete an image
-			this.thumb_height = props.thumbHeight; // used in the frontend
+			this.data_el = props.data_el;
+			this.saveButton = props.saveButton;
+			this.saveResultEl = props.saveResultEl;
+			this.finish_button = props.finishButton;
+			this.restartAnalysisButton = props.restartAnalysisButton;
+			this.delete_file_button = props.deleteFileButton;
+			this.thumb_height = props.thumbHeight;
+			this.loadallimages = props.loadallimages;
+			this.dateFormatPattern = props.dateFormatPattern;
+			this.volumeType = props.volumeType;
+			this.preventDuplicates = props.preventDuplicates;
+			this.configErrors = props.configErrors || [];
+			this.catalog = Object.fromEntries((props.typeCatalog || []).map(type => [type.name, type]));
 
-			this.loadallimages = props.loadallimages; // used in the function onMounted and in the frontend to communicate with the component defined by thumbcanvas.riot
-			this.dateFormatPattern = props.dateFormatPattern; // used to customize date parsing
-			this.issueTypes = props.issueTypes;
-			this.supplementTypes = props.supplementTypes;
-			this.preventDuplicateIssues = props.preventDuplicateIssues;
-			this.preventDuplicateSupplements = props.preventDuplicateSupplements;
-
-	        // additional initialization
-			this.suppl_colors = ["#146abf", "#e00404", "#6300b5", "#ba5d06", "#467021"];
-			this.biWeekly = false;
-			this.dataDirty = false; // will be set to true if any modification of the data is made or any new data is created, used as a flag for `Save`
-			this.msgs = {}; // object used to maintain the messages that is to be rendered in the frontend
-			this.deletingIssues = false; // used only in the function "resetAllIssues"
-			this.data = JSON.parse(this.data_el.value);
-			this.defaultIssueType = this.issueTypes[0];
-			this.defaultSupplementType = this.supplementTypes[0];
+			this.msgs = {};
+			this.dataDirty = false; // true after any change, cleared only when the backend confirms a write
 			this.pendingExit = false; // set by saveAndExit, acted upon once the backend confirms the write
 			this.saveInFlight = false; // true while a save request is on its way; blocks everything that would abort it
+			this.confirmation = null;
+			this.loadData(JSON.parse(this.data_el.value));
 
-            console.log('Data loaded');
-            console.log(this.data);
-
-            // read page data and initialize frontend logic accordingly
-			for(var i=0;i < this.data.length; i++) {
-			    var page = this.data[i];
-
-			    if (!page.hasOwnProperty('metadata')) {
-			        page.metadata = {};
-			    }
-
-                // initialize date validations
-			    var dateStr = page.metadata?.dateStr;
-			    page.dateValid = this.validateDate(page.metadata?.dateStr);
-			    page.duplicateIssue = false;
-			    page.duplicateSupplement = false;
-
-			    page.pos = i; // every page has a property `pos` valued as its order among all pages
-
-			    if (page.image) {
-			        page.image.thumbnailUrl = this.toSameOriginUrl(page.image.thumbnailUrl);
-			        page.image.largeThumbnailUrl = this.toSameOriginUrl(page.image.largeThumbnailUrl);
-			    }
-			}
-
-			this.duplicateIssueWarnings = [];
-			this.validateDuplicateIssues();
-
-			this.duplicateSupplementWarnings = [];
-			this.validateDuplicateSupplements();
-
-			this.monday = true;
-			this.tuesday = true;
-			this.wednesday = true;
-			this.thursday = true;
-			this.friday = true;
-			this.saturday = true;
-			this.sunday = true;
 			var path = window.location.pathname;
 			path = path.substring(0, path.indexOf("/uii/"));
-
 			fetch(`${path}/api/messages/${props.language}`, {
-		          method: 'GET',
-		          credentials: 'same-origin'
-		      }).then(resp => {
-		        resp.json().then(json => {
-		          for(let key of Object.keys(json)) {
-		        	  this.msgs[key] = json[key].replace(" zzz", ""); // initialization of the object msgs
-		          }
-		          this.msgsLoaded = true; // used in the frontend
-		          this.update();
-		        })
-		      });
-	    },
+				method: 'GET',
+				credentials: 'same-origin'
+			}).then(resp => {
+				resp.json().then(json => {
+					for (let key of Object.keys(json)) {
+						this.msgs[key] = json[key].replace(" zzz", "");
+					}
+					this.msgsLoaded = true;
+					this.update();
+				})
+			});
+		},
 
-	    /* triggered at mounting */
-	    onMounted(props, state) {
-	      this.addAjaxEvent();
-	      console.log("mounted");
-	      if(this.loadallimages && props.pagenumCorrect) {
-	    	  this.loadedImages = 0; // used in the frontend to show the progress of loading
-	    	  window.npImages = {};
-	    	  for(var i=0;i < this.data.length; i++) {
-	    		  let dataImage = this.data[i];
-	    		  let image = new Image()
-	    		  image.onload = () => {
-	    			  window.npImages[dataImage.image.thumbnailUrl] = image;
-	    		  }
-	    		  image.src = dataImage.image.thumbnailUrl;
-	    	  }
-	    	  this.downloadChecker = setInterval(() => {
-	    		  this.loadedImages = Object.keys(window.npImages).length;
-	    		  if(this.loadedImages == this.data.length) {
-	    			  this.update();
-	    			  setTimeout(() => {
-	        			  this.imagesLoaded = true; // used as control condition in the frontend
-	        			  clearInterval(this.downloadChecker);
-	        			  this.update();
-	    			  },100)
-	    		  }
-				  this.update();
-	    	  }, 500)
-	      } else {
-	    	  this.imagesLoaded = true;
-	    	  this.update();
-	      }
-	    },
+		onMounted(props) {
+			this.addAjaxEvent();
+			if (this.loadallimages) {
+				this.loadedImages = 0;
+				window.npImages = {};
+				for (const page of this.pages) {
+					const image = new Image();
+					image.onload = () => {
+						window.npImages[page.image.thumbnailUrl] = image;
+					};
+					image.src = page.image.thumbnailUrl;
+				}
+				this.downloadChecker = setInterval(() => {
+					this.loadedImages = Object.keys(window.npImages).length;
+					if (this.loadedImages == this.pages.length) {
+						setTimeout(() => {
+							this.imagesLoaded = true;
+							clearInterval(this.downloadChecker);
+							this.update();
+						}, 100);
+					}
+					this.update();
+				}, 500);
+			} else {
+				this.imagesLoaded = true;
+				this.update();
+			}
+		},
 
-	    onBeforeUpdate(props, state) {
-	    },
+		/* replace the whole state with what the backend sent */
+		loadData(data) {
+			this.pages = data.pages || [];
+			this.notices = data.notices || [];
+			this.volumeHidden = data.volumeHidden || { structures: [], metadata: [] };
+			this.operations = [];
+			for (const page of this.pages) {
+				if (page.image) {
+					page.image.thumbnailUrl = this.toSameOriginUrl(page.image.thumbnailUrl);
+					page.image.largeThumbnailUrl = this.toSameOriginUrl(page.image.largeThumbnailUrl);
+				}
+			}
+			initStarts(this.pages, this.dateFormatPattern);
+			this.refresh();
+		},
 
-	    onUpdated(props, state) {
-	    },
+		refresh() {
+			this.tree = buildTree(this.pages);
+			this.validation = validateBlocks(this.pages, this.catalog, this.volumeType, this.preventDuplicates);
+			this.flags = this.indexFlags(this.validation);
+			this.rows = this.buildRows(this.tree);
+		},
 
-        /* translation lookup (because otherwise missing keys would not remain as they are) */
-        translate_msg(key) {
-            if (key in this.msgs) {
-                return this.msgs[key];
-            } else {
-                return key;
-            }
-        },
+		/* level-0 blocks and runs of pages without structure, in page order */
+		buildRows(tree) {
+			const rows = [];
+			let next = 0;
+			for (let i = 0; i < this.pages.length;) {
+				const root = tree.roots[next];
+				if (root && root.first === i) {
+					rows.push({ loose: false, node: root });
+					i = root.last + 1;
+					next++;
+				} else {
+					const run = [];
+					while (i < this.pages.length && !(tree.roots[next] && tree.roots[next].first === i)) {
+						run.push(i++);
+					}
+					rows.push({ loose: true, pages: run });
+				}
+			}
+			return rows;
+		},
 
-	    /* used at mounting by the function onMounted */
-	    addAjaxEvent() {
-	    	faces.ajax.addOnEvent((data) => {
-	            var ajaxstatus = data.status; // Can be "begin", "complete" and "success"
-	            var ajaxloader = this.$("#ajaxloaderbottom");
-	            var isSaveRequest = this.isSaveRequest(data);
+		indexFlags(validation) {
+			const flags = {};
+			const mark = (refs, name) => refs.forEach(ref => {
+				const key = `${ref.page}:${ref.level}`;
+				flags[key] = flags[key] || {};
+				flags[key][name] = true;
+			});
+			mark(validation.missingType, 'missingType');
+			mark(validation.notAllowed, 'notAllowed');
+			mark(validation.invalidDate, 'invalidDate');
+			mark(validation.missingRequired, 'missingRequired');
+			mark(validation.duplicates, 'duplicate');
+			return flags;
+		},
 
-	            switch (ajaxstatus) {
-	                case "begin": // This is called right before ajax request is been sent.
-	                	if(ajaxloader) {
-	                    	ajaxloader.style.display = 'inline';
-	                	}
-	                    break;
+		flagsFor(node) {
+			const flags = { ...(this.flags[`${node.first}:${node.level}`] || {}) };
+			const info = this.catalog[node.start.type] || {};
+			flags.missingDate = flags.missingRequired && info.dated && info.dateRequired && !node.start.date && !node.start.dateRaw;
+			flags.missingNumber = flags.missingRequired && info.numbered && info.numberRequired && !(node.start.number || '').trim();
+			return flags;
+		},
 
-	                case "complete": // This is called right after ajax response is received.
-	                	if(ajaxloader) {
-	                    	ajaxloader.style.display = 'none';
-	                	}
-	                	if (isSaveRequest) {
-	                		// the request has been answered, whatever its outcome: allow interaction again
-	                		this.saveInFlight = false;
-	                		this.update();
-	                	}
-	                    break;
+		validationProblems() {
+			return [
+				['missingType', 'plugin_newspaperRecognizer_validation_missingType'],
+				['notAllowed', 'plugin_newspaperRecognizer_validation_notAllowed'],
+				['invalidDate', 'plugin_newspaperRecognizer_wrongDateFormat'],
+				['missingRequired', 'plugin_newspaperRecognizer_validation_missingRequired'],
+				['duplicates', 'plugin_newspaperRecognizer_validation_duplicate'],
+			].filter(([name]) => this.validation[name].length > 0).map(([name, key]) => ({ key, count: this.validation[name].length }));
+		},
 
-	                case "success": // This is called when ajax response is successfully processed.
+		typeOptions(parentType) {
+			return ((this.catalog[parentType] || {}).children || []).map(name => ({ name, label: (this.catalog[name] || {}).label || name }));
+		},
+
+		childColor(number) {
+			return CHILD_COLORS[(number - 1) % CHILD_COLORS.length];
+		},
+
+		blockElementId(node) {
+			return `block-${node.first}-${node.level}`;
+		},
+
+		/* the pages of a block after its first page, with the number of the child block they belong to (0 = none) */
+		pagesOf(node) {
+			const result = [];
+			for (let i = node.first + 1; i <= node.last; i++) {
+				const child = node.children.findIndex(c => c.first <= i && i <= c.last);
+				result.push({ index: i, child: child + 1 });
+			}
+			return result;
+		},
+
+		t(key) {
+			return key in this.msgs ? this.msgs[key] : key;
+		},
+
+		formatNotice(notice) {
+			return this.t(notice.key).replace(/\{(\d+)\}/g, (match, i) => (notice.params && notice.params[i] !== undefined ? notice.params[i] : match));
+		},
+
+		/* the single entry point for every change of the page list; Task 16 adds the conflict dialog here */
+		applyChange(newPages, options) {
+			this.commit(newPages);
+			if (options && options.afterCommit) {
+				options.afterCommit();
+			}
+		},
+
+		commit(newPages) {
+			this.pages = newPages;
+			this.dataDirty = true;
+			this.refresh();
+			this.update();
+		},
+
+		onPageClick(e, index) {
+			if (e.shiftKey || this.saveInFlight) {
+				return; // shift is used for zooming
+			}
+			this.applyChange((e.altKey || e.ctrlKey) ? toggleChild(this.pages, index) : toggleBlock(this.pages, index), { bulk: false });
+		},
+
+		changeType(node, type) {
+			this.applyChange(setType(this.pages, refOf(node), type, this.catalog), { bulk: false });
+		},
+
+		changeDate(node, value) {
+			setDateInput(node.start, value, this.dateFormatPattern);
+			this.dataDirty = true;
+			this.refresh();
+			this.update();
+		},
+
+		changeField(node, name, value) {
+			node.start[name] = value === '' ? null : value;
+			this.dataDirty = true;
+			this.refresh();
+			this.update();
+		},
+
+		askConfirmation(title, text, button, action) {
+			this.confirmation = { title, text, button, action };
+			this.update();
+		},
+
+		cancelConfirmation() {
+			this.confirmation = null;
+			this.update();
+		},
+
+		runConfirmation() {
+			const action = this.confirmation.action;
+			this.confirmation = null;
+			this.update();
+			action();
+		},
+
+		askResetToAnalysis() {
+			this.askConfirmation('plugin_newspaperRecognizer_resetToAnalysis', 'plugin_newspaperRecognizer_confirmResetToAnalysis',
+				'plugin_newspaperRecognizer_resetToAnalysis', () => this.applyChange(resetToAnalysis(this.pages), { bulk: true }));
+		},
+
+		askRemoveAllBlocks() {
+			this.askConfirmation('plugin_newspaperRecognizer_removeAllBlocks', 'plugin_newspaperRecognizer_confirmAction',
+				'plugin_newspaperRecognizer_removeAllBlocks', () => this.applyChange(removeAllBlocks(this.pages), { bulk: true }));
+		},
+
+		askRecompute() {
+			this.askConfirmation('plugin_newspaperRecognizer_recompute', 'plugin_newspaperRecognizer_confirmRecompute',
+				'plugin_newspaperRecognizer_recompute', () => this.restartAnalysisButton.click());
+		},
+
+		askDeletePage(index) {
+			if (this.saveInFlight) {
+				return;
+			}
+			this.askConfirmation('loeschen', 'plugin_newspaperRecognizer_confirmDeleteImage', 'loeschen', () => this.deletePage(index));
+		},
+
+		/* once the change is accepted (Task 16 may ask about hidden data first): delete the image and save right away */
+		deletePage(index) {
+			const page = this.pages[index];
+			this.applyChange(removePage(this.pages, index), {
+				bulk: false,
+				afterCommit: () => {
+					shiftStructures(this.volumeHidden.structures, index);
+					document.getElementById('delete_form:file_name_to_delete').value = page.filename;
+					document.getElementById('delete_form:file_id_to_delete').value = index;
+					this.delete_file_button.click();
+					this.save();
+				},
+			});
+		},
+
+		addAjaxEvent() {
+			faces.ajax.addOnEvent((data) => {
+				var ajaxloader = this.$("#ajaxloaderbottom");
+				var isSaveRequest = this.isSaveRequest(data);
+				switch (data.status) {
+					case "begin":
+						if (ajaxloader) {
+							ajaxloader.style.display = 'inline';
+						}
+						break;
+					case "complete":
+						if (ajaxloader) {
+							ajaxloader.style.display = 'none';
+						}
+						if (isSaveRequest) {
+							// the request has been answered, whatever its outcome: allow interaction again
+							this.saveInFlight = false;
+							this.update();
+						}
+						break;
+					case "success":
 						if (isSaveRequest) {
 							this.applySaveResult();
 						}
 						break;
-	            }
-	        });
-
-	        // a save request that never reached the backend must leave the data dirty, so it can be sent again
-	        faces.ajax.addOnError((data) => {
-	        	if (this.isSaveRequest(data)) {
-	        		this.saveInFlight = false;
-	        		this.pendingExit = false;
-	        		this.update();
-	        	}
-	        });
-	    },
-
-	    /* whether an ajax event belongs to the save request we sent. faces.js resolves the source element by id,
-	       so compare ids instead of node identity */
-	    isSaveRequest(data) {
-	        return !!data.source && !!this.saveButton && data.source.id === this.saveButton.id;
-	    },
-
-	    /* the outcome the backend reported for the last save request. The partial response replaces the element
-	       (faces.js: parent.replaceChild), so re-resolve it by id instead of reading a detached node */
-	    readSaveResult() {
-	        if (!this.saveResultEl) {
-	            return '';
-	        }
-	        var el = document.getElementById(this.saveResultEl.id) || this.saveResultEl;
-	        return el.textContent.trim();
-	    },
-
-	    /* evaluate the answer to a save request: only a confirmed write means the data is persisted */
-	    applySaveResult() {
-	        if (this.readSaveResult() !== 'SUCCESS') {
-	            // the backend refused the write or it failed, and reports the reason itself.
-	            // keep the data dirty so it can be corrected and saved again
-	            this.pendingExit = false;
-	            this.update();
-	            return;
-	        }
-	        this.dataDirty = false;
-	        this.update();
-	        if (this.pendingExit) {
-	            this.pendingExit = false;
-	            this.finish_button.click(); // navigate only after the write has been confirmed
-	        }
-	    },
-
-	    /* triggered when the button `Plugin verlassen` is clicked */
-		exit() {
-		    if (this.saveInFlight) {
-		        return;
-		    }
-		    this.finish_button.click();
+				}
+			});
+			// a save request that never reached the backend must leave the data dirty, so it can be sent again
+			faces.ajax.addOnError((data) => {
+				if (this.isSaveRequest(data)) {
+					this.saveInFlight = false;
+					this.pendingExit = false;
+					this.update();
+				}
+			});
 		},
 
-        /* determine all non-issue pages beginning from the given pageIndex's next page */
-		getSubPages(pageIndex) {
-		    var result = [];
-		    pageIndex++;
-		    while (pageIndex < this.data.length && !this.data[pageIndex]?.issueTypeName) {
-		        result.push(this.data[pageIndex++]);
-		    }
-		    //console.log(result);
-		    return result;
+		/* faces.js resolves the source element by id, so compare ids instead of node identity */
+		isSaveRequest(data) {
+			return !!data.source && !!this.saveButton && data.source.id === this.saveButton.id;
 		},
 
-		/* triggered when the button `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met */
-		restartAnalysis() {
-			this.restartAnalysisButton.click();
+		/* the partial response replaces the elements, so re-resolve them by id instead of reading detached nodes */
+		readSaveResult() {
+			if (!this.saveResultEl) {
+				return '';
+			}
+			var el = document.getElementById(this.saveResultEl.id) || this.saveResultEl;
+			return el.textContent.trim();
 		},
 
-		/* triggered when some button under the `Neu berechnen`(?) is clicked, which will only happen when the condition "props.pagenumCorrect == false" is met. */
-		deleteManualResults() {
-			this.deleteManualResultsButton.click();
-		},
-
-		/* triggered when the `delete` buttonis clicked, which will remove the picture */
-		deletePage(e, page){
-			if (this.saveInFlight) {
+		/* only a confirmed write means the data is persisted; then take over the freshly read state (new ids, hidden data) */
+		applySaveResult() {
+			if (this.readSaveResult() !== 'SUCCESS') {
+				this.pendingExit = false;
+				this.update();
 				return;
 			}
-
-			this.dataDirty = true;
-			// remove this page from data
-			let position = page.pos;
-
-			// delete file from the backend
-			this.setFileToDelete(page.filename, position);
-			this.delete_file_button.click();
-
-			// update the list data to update the rendering in the frontend
-			this.data.splice(position, 1);
-
-			// update indices of all pages after the deleted page
-			for (let i = 0; i < this.data.length; i++) {
-				this.data[i].pos = i;
-			}
-			// make first image an issue if it isn't
-			if (this.data.length > 0 || !this.data[0].issueTypeName) {
-				this.data[0].issueTypeName = this.defaultIssueType;
-			}
-
-			if (this.data[0].supplementTypeName || this.data[0].supplementNumber > 0) {
-				const supplementTypeName = this.data[0].supplementTypeName;
-				const supplementNumber = this.data[0].supplementNumber;
-				this.data[0].supplementTypeName = null;
-				this.data[0].supplementNumber = 0;
-				// if the next page belongs to the same supplement as the current one originally did, move head page to next page
-				if (this.data.length >= 2 && !this.data[1].issueTypeName && this.data[1].supplementNumber == supplementNumber) {
-					this.data[1].supplementTypeName = supplementTypeName;
-				}
-			}
-
-			this.regenerateSupplementNumbering(position);
-			this.validateDuplicateIssues();
-			this.validateDuplicateSupplements();
-
+			this.data_el = document.getElementById(this.data_el.id) || this.data_el;
+			this.dataDirty = false;
+			this.loadData(JSON.parse(this.data_el.value));
 			this.update();
-
-			// persist the deletion together with every correction made above
-			this.save();
+			if (this.pendingExit) {
+				this.pendingExit = false;
+				this.finish_button.click();
+			}
 		},
 
-		/* used to transfer the location information of the file to the backend */
-		setFileToDelete(fileName, fileId) {
-			document.getElementById('delete_form:file_name_to_delete').value = fileName;
-			document.getElementById('delete_form:file_id_to_delete').value = fileId;
-		},
-
-		/* whether a save request may be sent right now */
 		canSave() {
-		    if (this.saveInFlight || !this.dataDirty) {
-		        return false;
-		    }
-		    if (this.preventDuplicateIssues && this.duplicateIssueWarnings && this.duplicateIssueWarnings.length > 0) {
-		        return false;
-		    }
-		    if (this.preventDuplicateSupplements && this.duplicateSupplementWarnings && this.duplicateSupplementWarnings.length > 0) {
-		        return false;
-		    }
-		    return true;
+			if (this.saveInFlight || !this.dataDirty || this.configErrors.length > 0) {
+				return false;
+			}
+			return this.validation.valid;
 		},
 
-		/* triggered when the button `METS schreiben` is clicked */
 		save() {
-		    if (!this.canSave()) {
-		        return;
-		    }
-		    this.saveInFlight = true;
-		    this.data_el.value = this.createSaveData();
-		    this.saveButton.click();
-		    // dataDirty stays true until the backend confirms the write in applySaveResult()
-		    this.update();
+			if (!this.canSave()) {
+				return;
+			}
+			this.saveInFlight = true;
+			this.data_el.value = toSaveRequest(this.pages, this.operations);
+			this.saveButton.click();
+			this.update();
 		},
 
 		saveAndExit() {
-		    if (this.saveInFlight) {
-		        return;
-		    }
+			if (this.saveInFlight) {
+				return;
+			}
 			if (!this.dataDirty) {
 				this.finish_button.click();
 				return;
 			}
-		    if (!this.canSave()) {
-		        return;
-		    }
-			this.pendingExit = true; // finish_button is clicked once the backend confirms the write
+			if (!this.canSave()) {
+				return;
+			}
+			this.pendingExit = true;
 			this.save();
 		},
 
-		/* used by save function */
-		createSaveData() {
-			var saveData = [];
-	        for(var i=0;i<this.data.length;i++) {
-	            var page = this.data[i];
-	            saveData.push({
-	                filename: page.filename,
-	                metadata: {
-                        dateStr: page.metadata?.dateStr,
-                        prefix: page.metadata?.prefix,
-                        number: page.metadata?.number,
-                        suffix: page.metadata?.suffix
-	                },
-	                issueTypeName: page.issueTypeName,
-	                supplementTypeName: page.supplementTypeName,
-	                supplementNumber: page.supplementNumber
-	            });
-	        }
-	        return JSON.stringify(saveData);
-		},
-
-		/* triggered when the checkbox option `Zweiwöchentlich` is clicked */
-		toggleBiWeekly() {
-		    this.biWeekly = !this.biWeekly;
-			this.update();
-		},
-
-		/* triggered when any checkbox option for days is clicked */
-		toggleDay(day) {
-		    this[day] = !this[day];
-			this.update();
-		},
-
-		/* triggered when the button `Alle Ausgaben entfernen` is clicked */
-		resetAllIssues(e) {
-			this.deletingIssues = true;
-			this.update();
-		    this.dataDirty = true;
-		    for(let i=1;i<this.data.length;i++) {
-		        this.wipePageData(this.data[i]);
-		    }
-		    this.data[0].issueTypeName = this.defaultIssueType;
-		    this.deletingIssues = false;
-		    this.validateDuplicateIssues();
-		    this.validateDuplicateSupplements();
-			this.update();
-		},
-
-        /* reset page data */
-        wipePageData(page) {
-            page.metadata = {};
-            page.issueTypeName = null;
-            page.supplementTypeName = null;
-            page.supplementNumber = 0;
-		    page.dateValid = true;
-        },
-
-		/* triggered when a page is clicked */
-		onPageClick(e, page, pageIndex) {
-			debugger;
-
-	    	/* if shift is pressed, zooming is happening */
-	    	if (e.shiftKey){
+		exit() {
+			if (this.saveInFlight) {
 				return;
 			}
-
-		    this.dataDirty = true;
-
-		    /* supplement-mode */
-		    if(e.altKey || e.ctrlKey) {
-		        this.toggleSupplement(page, pageIndex);
-		    } else { // issue-mode
-		        this.toggleIssue(page, pageIndex);
-		    }
-
-		    this.update();
-		},
-
-		/* called when an issue page should toggle its issue state */
-		toggleIssue(page) {
-		    // never process first page
-		    if (page.pos == 0) {
-		        return;
-		    }
-
-		    if (!page.issueTypeName) {
-                this.wipePageData(page);
-		        page.issueTypeName = this.defaultIssueType;
-		    } else {
-                this.wipePageData(page);
-		    }
-
-            this.getSubPages(page.pos).forEach(sp => {
-                this.wipePageData(sp);
-            });
-
-            if (page.pos > 0 && !this.data[page.pos-1].issueTypeName && this.data[page.pos-1].supplementNumber > 0) {
-                this.applySupplementNumberForFollowingPages(page.pos, 0, this.data[page.pos-1].supplementNumber);
-		        this.regenerateSupplementNumbering(page.pos);
-            }
-            this.validateDuplicateIssues();
-            this.validateDuplicateSupplements();
-		},
-
-		/* called when a non-issue page should toggle its supplement state */
-		toggleSupplement(page) {
-            if (page.supplementNumber > 0) {
-                if (page.supplementTypeName) {
-                    page.supplementTypeName = null;
-                    this.applySupplementNumberForFollowingPages(page.pos, page.supplementNumber, 0);
-                } else {
-                    page.supplementTypeName = this.defaultSupplementType;
-                    this.applySupplementNumberForFollowingPages(page.pos, page.supplementNumber, page.supplementNumber + 1);
-                }
-            } else { // if not a supplement, join prior supplement or create a new one
-                if (page.pos > 0 && !this.data[page.pos-1].issueTypeName && this.data[page.pos-1].supplementNumber > 0) {
-                    this.applySupplementNumberForFollowingPages(page.pos, 0, this.data[page.pos-1].supplementNumber);
-                } else {
-                    page.supplementTypeName = this.defaultSupplementType;
-                    this.applySupplementNumberForFollowingPages(page.pos, 0, 999); // number will be corrected during renumbering
-                }
-            }
-		    this.regenerateSupplementNumbering(page.pos);
-		    this.validateDuplicateSupplements();
-		},
-
-        /* apply supplement number on following pages with a given supplement number value */
-        applySupplementNumberForFollowingPages(pageIndex, currentNumber, newNumber) {
-            while (pageIndex < this.data.length && !this.data[pageIndex]?.issueTypeName && this.data[pageIndex]?.supplementNumber == currentNumber) {
-                this.data[pageIndex++].supplementNumber = newNumber;
-            }
-        },
-
-        /* regenerate supplement numbers from scratch */
-		regenerateSupplementNumbering(pageIndex) {
-		    // find first following page of the current issue
-		    while (pageIndex > 0 && !this.data[pageIndex]?.issueTypeName) {
-		        pageIndex--;
-		    }
-
-		   var currentNumber = 0;
-		   // process all
-		   for (const page of this.getSubPages(pageIndex)) {
-		       // increase counter for supplement head pages
-		       if (page.supplementTypeName) {
-		           currentNumber++;
-		           page.supplementNumber = currentNumber;
-		       } else if (page.supplementNumber > 0) { // process all supplement pages
-		           page.supplementNumber = currentNumber;
-		       }
-		   }
-		},
-
-		validateDuplicateIssues() {
-			this.data.forEach(p => p.duplicateIssue = false);
-			this.duplicateIssueWarnings = [];
-
-			if (!this.preventDuplicateIssues) return;
-
-			var issuePages = this.data.filter(p => p.issueTypeName && p.metadata?.dateStr);
-			var groups = {};
-			issuePages.forEach(p => {
-				var key = p.issueTypeName + '|' + p.metadata.dateStr;
-				if (!groups[key]) groups[key] = [];
-				groups[key].push(p);
-			});
-
-			for (var key in groups) {
-				if (groups[key].length >= 2) {
-					groups[key].forEach(p => p.duplicateIssue = true);
-					var parts = key.split('|');
-					this.duplicateIssueWarnings.push({
-						type: parts[0],
-						date: parts[1],
-						count: groups[key].length
-					});
-				}
-			}
-		},
-
-		validateDuplicateSupplements() {
-			this.data.forEach(p => p.duplicateSupplement = false);
-			this.duplicateSupplementWarnings = [];
-
-			if (!this.preventDuplicateSupplements) return;
-
-			var currentIssueIndex = -1;
-			var groups = {};
-			for (var i = 0; i < this.data.length; i++) {
-				var page = this.data[i];
-				if (page.issueTypeName) {
-					currentIssueIndex = i;
-				}
-				if (page.supplementTypeName && currentIssueIndex >= 0) {
-					var key = currentIssueIndex + '|' + page.supplementTypeName;
-					if (!groups[key]) groups[key] = [];
-					groups[key].push(page);
-				}
-			}
-
-			for (var key in groups) {
-				if (groups[key].length >= 2) {
-					groups[key].forEach(p => p.duplicateSupplement = true);
-					var parts = key.split('|');
-					var issuePage = this.data[parseInt(parts[0])];
-					this.duplicateSupplementWarnings.push({
-						type: parts[1],
-						issueDate: issuePage.metadata?.dateStr || '?',
-						count: groups[key].length
-					});
-				}
-			}
-		},
-
-		// revalidate the date input, only if it is not valid
-		validateDateField(e, page) {
-			this.dataDirty = true;
-			page.metadata.dateStr = e.target.value;
-			page.dateValid = this.validateDate(page.metadata?.dateStr);
-			this.validateDuplicateIssues();
-			this.update();
-			if (e.type === "blur" && !page.dateValid) {
-				e.target.nextElementSibling.classList.add('text-danger');
-			}
-		},
-
-		/* triggered when the text input `Nr.` gets an input */
-		changeNumber(e, page) {
-		    this.dataDirty = true;
-		    page.metadata.number = e.target.value;
-			this.update();
-		},
-
-		/* triggered when the text input `Präfix` gets an input */
-		changePrefix(e, page) {
-		    this.dataDirty = true;
-		    page.metadata.prefix = e.target.value;
-			this.update();
-		},
-
-		/* triggered when the text input `Suffix` gets an input */
-		changeSuffix(e, page) {
-		    this.dataDirty = true;
-		    page.metadata.suffix = e.target.value;
-			this.update();
-		},
-
-		/* triggered when the selector `Ausgabe` gets an input */
-		changeIssueType(e, page) {
-		    this.dataDirty = true;
-		    page.issueTypeName = e.target.selectedOptions[0].getAttribute("data-translation-id");
-			this.validateDuplicateIssues();
-			this.update();
-			//console.log("Issue: " + page.issueTypeName);
-		},
-
-		/* triggered when the selector `Beilage` gets an input */
-		changeSupplementType(e, otherPage) {
-            this.dataDirty = true;
-            var page = null;
-            for(var i=0;i<this.data.length;i++) {
-                if (this.data[i].filename == otherPage.filename) {
-                    page = this.data[i];
-                    break;
-                }
-            }
-            page.supplementTypeName = e.target.selectedOptions[0].getAttribute("data-translation-id");
-            //console.log("Supplement: " + page.supplementTypeName);
-			this.validateDuplicateSupplements();
-			this.update();
-        },
-
-		/* triggered when one of the three buttons `Auf ... Ausgabe(n) anwenden` is clicked */
-		generateFollowingIssueMetadata(e, page, skip) {
-			debugger;
-			//console.log("skip:", skip)
-
-	        var startPage = this.data[page.pos];
-	        var currentDate = this.parseDateByPattern(startPage.metadata?.dateStr, this.dateFormatPattern);
-			if(!currentDate) {
-				alert("Valid date format is: " + this.dateFormatPattern);
+			if (this.dataDirty) {
+				this.askConfirmation('pluginLeave', 'plugin_newspaperRecognizer_confirmLeaveUnsaved', 'pluginLeave', () => this.finish_button.click());
 				return;
 			}
-
-		    this.dataDirty = true;
-		    var prefix = startPage.metadata?.prefix;
-		    var suffix = startPage.metadata?.suffix;
-	        var currentNumber = parseInt(startPage.metadata?.number);
-	        var issueCounter = 0;
-	        for (var i = page.pos + 1; i < this.data.length; i++) {
-	            var page = this.data[i];
-	            if (page.issueTypeName) {
-	            	issueCounter++
-	            	if(issueCounter % skip == 0) {
-		                // skipped issues must not consume a number
-		                currentNumber++;
-		                currentDate = this.getNextDate(currentDate);
-		                page.issueTypeName = startPage.issueTypeName;
-						page.metadata.dateStr = currentDate.toString(this.dateFormatPattern);
-		                page.metadata.prefix = prefix;
-		                page.metadata.number = "" + currentNumber;
-		                page.metadata.suffix = suffix;
-		                page.dateValid = true;
-	            	}
-	            }
-	        }
-	        this.validateDuplicateIssues();
-	        this.update();
-	    },
-
-		/* used by the function generateFollowingIssueMetadata to get the next date */
-	    getNextDate(currentDate) {
-            const dayFlags = {
-                0: this.sunday,
-                1: this.monday,
-                2: this.tuesday,
-                3: this.wednesday,
-                4: this.thursday,
-                5: this.friday,
-                6: this.saturday
-            };
-
-            const initialOffset = this.biWeekly ? 8 : 1;
-            let newDate = new XDate(currentDate).addDays(initialOffset);
-
-            while (!dayFlags[newDate.getDay()]) {
-                newDate.addDays(1);
-            }
-
-            return newDate;
-        },
-
-        /* the backend may report the wrong scheme (e.g. http behind an https
-		   reverse proxy), which the img-src 'self' CSP then blocks as
-		   cross-origin. Stripping scheme/host/port avoids that regardless of
-		   proxy config. */
-        toSameOriginUrl(url) {
-            if (!url) {
-                return url;
-            }
-            try {
-                const parsed = new URL(url, window.location.href);
-				// no action if the hostname is different for any reason
-                if (parsed.hostname !== window.location.hostname) {
-                    return url;
-                }
-                return parsed.pathname + parsed.search + parsed.hash;
-            } catch (e) {
-                return url;
-            }
-        },
-
-        /* check if a given date string is valid (with respect to configured date pattern) */
-		validateDate(dateStr) {
-		    if (!dateStr) {
-		        return true;
-		    }
-		    return this.parseDateByPattern(dateStr, this.dateFormatPattern) != null;
+			this.finish_button.click();
 		},
 
-        /* parse an XDate from a string given a pattern */
-        parseDateByPattern(dateStr, pattern) {
-          const tokenRegexMap = {
-            'dd': { regex: '(\\d{2})', field: 'day' },
-            'MM': { regex: '(\\d{2})', field: 'month' },
-            'yyyy': { regex: '(\\d{4})', field: 'year' }
-          };
-
-          const tokenRegex = /(dd|MM|yyyy)/g;
-
-          let match;
-          const orderedFields = [];
-
-          // Build the regex dynamically from the pattern
-          let regexStr = '';
-          let lastIndex = 0;
-
-          while ((match = tokenRegex.exec(pattern)) !== null) {
-            const token = match[0];
-            const index = match.index;
-
-            // Escape and include the separator characters
-            regexStr += pattern.slice(lastIndex, index).replace(/([.*+?^=!:${}()|[\]\\])/g, '\\$1');
-            regexStr += tokenRegexMap[token].regex;
-            orderedFields.push(tokenRegexMap[token].field);
-
-            lastIndex = index + token.length;
-          }
-
-          // Append any remaining static characters
-          regexStr += pattern.slice(lastIndex).replace(/([.*+?^=!:${}()|[\]\\])/g, '\\$1');
-
-          const fullRegex = new RegExp(`^${regexStr}$`);
-          const dateMatch = dateStr.match(fullRegex);
-
-          if (!dateMatch) return null;
-
-          // Map matched groups to date parts based on token order
-          const dateParts = {};
-          orderedFields.forEach((field, i) => {
-            dateParts[field] = parseInt(dateMatch[i + 1], 10);
-          });
-
-          const { day, month, year } = dateParts;
-
-          // Create XDate object (month is 1-based in XDate)
-          const date = new XDate(year + "-" + month + "-" + day);
-
-          // Check if the created date is valid
-          if (!date.valid() || date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-            return null;
-          }
-
-          return date;
-        }
-	 }
+		/* the backend may report the wrong scheme (e.g. http behind an https reverse proxy), which the img-src 'self' CSP then
+		   blocks as cross-origin. Stripping scheme/host/port avoids that regardless of proxy config. */
+		toSameOriginUrl(url) {
+			if (!url) {
+				return url;
+			}
+			try {
+				const parsed = new URL(url, window.location.href);
+				if (parsed.hostname !== window.location.hostname) {
+					return url;
+				}
+				return parsed.pathname + parsed.search + parsed.hash;
+			} catch (e) {
+				return url;
+			}
+		},
+	}
 	</script>
 </app>

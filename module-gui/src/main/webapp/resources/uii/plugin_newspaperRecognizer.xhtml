@@ -31,13 +31,12 @@
     <ui:define name="content">
         <h:form id="extra_form">
             <h:commandLink id="delete_and_start_over_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualDataAndStartAutoAnalysis}"/>
-            <h:commandLink id="delete_manual_results_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualData}"/>
         </h:form>
         <h:form id="newspaper_form">
 			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
 			<h:outputText id="save_result" value="#{AktuelleSchritteForm.myPlugin.saveResult}" style="display:none" />
 			<h:commandLink id="save_button" action="#{AktuelleSchritteForm.myPlugin.save}">
-				<f:ajax execute="@form" render="save_result" />
+				<f:ajax execute="@form" render="save_result my_plugin_data" />
 			</h:commandLink>
 			<h:commandLink id="finish_button" action="#{AktuelleSchritteForm.myPlugin.finish}"></h:commandLink>
 		</h:form>
@@ -66,19 +65,17 @@
            		saveResultEl: document.getElementById('newspaper_form:save_result'),
            		finishButton: document.getElementById('newspaper_form:finish_button'),
            		restartAnalysisButton: document.getElementById('extra_form:delete_and_start_over_button'),
-           		deleteManualResultsButton: document.getElementById('extra_form:delete_manual_results_button'),
            		deleteFileButton: document.getElementById('delete_form:delete_file_button'),
            		language: '#{SpracheForm.locale.language}',
            		thumbHeight: 400,
            		title: "#{msgs[('plugin_').concat(AktuelleSchritteForm.myPlugin.title)]}",
            		loadallimages: #{AktuelleSchritteForm.myPlugin.loadAllImages},
 			    showDeletePageButton: #{AktuelleSchritteForm.myPlugin.showDeletePageButton},
-			    preventDuplicateIssues: #{AktuelleSchritteForm.myPlugin.preventDuplicateIssues},
-			    preventDuplicateSupplements: #{AktuelleSchritteForm.myPlugin.preventDuplicateSupplements},
+			    preventDuplicates: #{AktuelleSchritteForm.myPlugin.preventDuplicates},
 			    dateFormatPattern: '#{AktuelleSchritteForm.myPlugin.dateFormatPattern}',
-           		pagenumCorrect: #{AktuelleSchritteForm.myPlugin.pageNumberCountEqual()},
-		   		issueTypes: #{AktuelleSchritteForm.myPlugin.getIssueTypeLabels()},
-		   		supplementTypes: #{AktuelleSchritteForm.myPlugin.getSupplementTypeLabels()},
+			    volumeType: '#{AktuelleSchritteForm.myPlugin.volumeType}',
+		   		typeCatalog: #{AktuelleSchritteForm.myPlugin.typeCatalogJson},
+		   		configErrors: #{AktuelleSchritteForm.myPlugin.configErrorsJson},
            };
            console.log(opts);
            mountNewspaperCorrection(opts);
