@@ -50,7 +50,14 @@
 				<div if={!validation.valid} class="p-3">
 					<div class="alert alert-danger">
 						{t('plugin_newspaperRecognizer_validation_title')}
-						<ul class="mb-0"><li each={problem in validationProblems()}>{t(problem.key)}: {problem.count}</li></ul>
+						<ul class="mb-0 list-unstyled d-flex flex-column gap-1 mt-1">
+							<li each={problem in validationProblems()} class="d-flex align-items-center gap-3">
+								<span>{t(problem.key).replace('{0}', problem.count)}</span>
+								<button type="button" class="btn btn-blank btn-sm text-nowrap" onclick={() => jumpToProblem(problem.name)}>
+									{t(problem.count > 1 ? 'plugin_newspaperRecognizer_validation_jumpNext' : 'plugin_newspaperRecognizer_validation_jump')}
+								</button>
+							</li>
+						</ul>
 					</div>
 				</div>
 
@@ -385,13 +392,35 @@
 
 		validationProblems() {
 			return [
-				['missingType', 'plugin_newspaperRecognizer_validation_missingType'],
-				['notAllowed', 'plugin_newspaperRecognizer_validation_notAllowed'],
-				['invalidDate', 'plugin_newspaperRecognizer_wrongDateFormat'],
-				['missingRequired', 'plugin_newspaperRecognizer_validation_missingRequired'],
-				['duplicates', 'plugin_newspaperRecognizer_validation_duplicate'],
-			].filter(([name]) => this.validation[name].length > 0).map(([name, key]) => ({ key, count: this.validation[name].length }));
+				['missingType', 'plugin_newspaperRecognizer_validation_summary_missingType'],
+				['notAllowed', 'plugin_newspaperRecognizer_validation_summary_notAllowed'],
+				['invalidDate', 'plugin_newspaperRecognizer_validation_summary_invalidDate'],
+				['missingRequired', 'plugin_newspaperRecognizer_validation_summary_missingRequired'],
+				['duplicates', 'plugin_newspaperRecognizer_validation_summary_duplicates'],
+			].filter(([name]) => this.validation[name].length > 0)
+				.map(([name, key]) => ({ name, key, count: new Set(this.validation[name].map(ref => `${ref.page}:${ref.level}`)).size }));
 		},
+
+		/* scrolls to the next block with this problem (cycling) and puts the cursor into its type drop-down */
+		jumpToProblem(name) {
+			const refs = [...new Map(this.validation[name].map(ref => [`${ref.page}:${ref.level}`, ref])).values()];
+			if (refs.length === 0) {
+				return;
+			}
+			this.problemCursor = this.problemCursor || {};
+			const next = ((this.problemCursor[name] ?? -1) + 1) % refs.length;
+			this.problemCursor[name] = next;
+			const ref = refs[next];
+			const element = document.getElementById(this.blockElementId({ first: ref.page, level: ref.level }));
+			if (element) {
+				element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				const select = (ref.level === 0 ? element.nextElementSibling : element).querySelector('select');
+				if (select) {
+					select.focus({ preventScroll: true });
+				}
+			}
+		},
+
 
 		typeOptions(parentType) {
 			return ((this.catalog[parentType] || {}).children || []).map(name => ({ name, label: (this.catalog[name] || {}).label || name }));
