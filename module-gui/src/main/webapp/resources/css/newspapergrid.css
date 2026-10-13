@@ -121,7 +121,7 @@ progress {
 	color: var(--clr-white);
 }
 
-/* child blocks as a tree: a guide line per level and a branch with the colour of the block's page markers.
+/* child blocks as a tree: a guide line per level and a branch to each child (its colour dot sits in the type label).
    .block-tree can be nested inside .block-tree__item for deeper levels. */
 .block-tree {
 	display: flex;
@@ -150,26 +150,16 @@ progress {
 	height: calc(0.5rem + 1rem);
 }
 
-/* horizontal branch to the block, ending in the colour dot */
+/* horizontal branch to the block */
 .block-tree__item::after {
 	content: "";
 	position: absolute;
 	left: -1rem;
 	top: 1rem;
-	width: 0.6rem;
+	width: 1rem;
 	border-top: 1px solid var(--clr-neutral-400, #b8b8b8);
 }
 
-.block-tree__item > block-fields::before {
-	content: "";
-	position: absolute;
-	left: -0.5rem;
-	top: calc(1rem - 4px);
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	background: var(--branch-color, var(--clr-neutral-400, #b8b8b8));
-}
 
 .block-tree .block-tree {
 	margin-top: 0.5rem;

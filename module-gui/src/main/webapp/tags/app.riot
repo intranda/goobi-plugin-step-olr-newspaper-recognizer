@@ -88,7 +88,7 @@
 									<div class="thumbnail-image px-3 pb-3"></div>
 									<div class="issue-controls d-flex flex-column gap-2 px-3 pb-3">
 										<strong>{t('plugin_newspaperRecognizer_pagesWithoutStructure')}</strong>
-										<span>{t('otherPages')}: {row.pages.length}</span>
+										<span class="small text-muted">{pagesSummary(row.pages[0] + 1, row.pages[row.pages.length - 1] + 1)}</span>
 									</div>
 									<div class="thumbnails px-3 pb-3" style="--thumb-size: {thumb_height / 2.5}px;">
 										<div each={index in row.pages} key={pages[index].filename} class="newspaper-thumbnail">
@@ -143,11 +143,12 @@
 											handle-toggle-hidden={() => toggleHidden(blockElementId(row.node))}
 											handle-remove-hidden={() => askRemoveHidden(row.node)}
 											handle-pattern={() => openDialog('pattern', row.node)}
-											handle-continue={isGeneratable(row.node) ? () => openDialog('continue', row.node) : null}></block-fields>
+											handle-continue={isGeneratable(row.node) ? () => openDialog('continue', row.node) : null}
+											page-first={row.node.first + 1}
+											page-last={row.node.last + 1}></block-fields>
 
 										<div if={row.node.children.length > 0} class="block-tree">
-										<div each={(child, childIndex) in row.node.children} class="block-tree__item" id={blockElementId(child)}
-											style="--branch-color: {childColor(childIndex + 1)};">
+										<div each={(child, childIndex) in row.node.children} class="block-tree__item" id={blockElementId(child)}>
 											<block-fields
 												start={child.start}
 												info={catalog[child.start.type]}
@@ -161,12 +162,10 @@
 												hidden-open={openHidden === blockElementId(child)}
 												handle-toggle-hidden={() => toggleHidden(blockElementId(child))}
 												handle-remove-hidden={() => askRemoveHidden(child)}
-												handle-pattern={() => openDialog('pattern', child)}
-												handle-continue={isGeneratable(child) ? () => openDialog('continue', child) : null}></block-fields>
+												color={childColor(childIndex + 1)}></block-fields>
 										</div>
 										</div>
 
-										<span>{t('otherPages')}: {row.node.last - row.node.first}</span>
 									</div>
 
 									<div class="thumbnails px-3 pb-3" style="--thumb-size: {thumb_height / 2.5}px;">
@@ -414,6 +413,13 @@
 				result.push({ index: i, child: child + 1 });
 			}
 			return result;
+		},
+
+		pagesSummary(first, last) {
+			if (first === last) {
+				return this.t('plugin_newspaperRecognizer_pagesSummarySingle').replace('{0}', first);
+			}
+			return this.t('plugin_newspaperRecognizer_pagesSummary').replace('{0}', last - first + 1).replace('{1}', first).replace('{2}', last);
 		},
 
 		t(key) {

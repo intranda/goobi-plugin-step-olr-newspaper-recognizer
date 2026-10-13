@@ -1,7 +1,7 @@
 <block-fields>
 	<div class="d-flex flex-column gap-2">
 		<!-- type, hidden data and tools share one input group, so they line up with the field -->
-		<div class="form-group p-0 m-0 position-relative {props.flags.missingType || props.flags.notAllowed ? 'has-validation-error' : ''}">
+		<div class="form-group p-0 m-0 {props.flags.missingType || props.flags.notAllowed ? 'has-validation-error' : ''}">
 			<div class="input-group flex-nowrap">
 				<label class="input-group-text" style={LABEL_STYLE} for={fieldId('type')}>
 					<span if={props.color} aria-hidden="true" class="me-2" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: {props.color};"></span>
@@ -12,24 +12,14 @@
 					<option value="" selected={!props.start.type}>{props.t('plugin_newspaperRecognizer_pleaseSelect')}</option>
 					<option each={option in props.typeOptions} value={option.name} selected={option.name === props.start.type}>{option.label}</option>
 				</select>
-				<button if={hiddenCount() > 0} type="button" class="btn btn-blank text-nowrap d-flex align-items-center gap-2" onclick={() => props.handleToggleHidden()}
-					title={hiddenTitle()} aria-label={hiddenTitle()} aria-expanded={props.hiddenOpen ? 'true' : 'false'}>
-					<span if={structures().length > 0} class="d-flex align-items-center gap-1"><span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('stack-2')}" /></svg></span> {structures().length}</span>
-					<span if={metadata().length > 0} class="d-flex align-items-center gap-1"><span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('notes')}" /></svg></span> {metadata().length}</span>
-				</button>
-				<button type="button" class="btn btn-blank" onclick={() => props.handlePattern()}
-					title={props.t('plugin_newspaperRecognizer_typePattern')} aria-label={props.t('plugin_newspaperRecognizer_typePattern')}>
-					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('repeat')}" /></svg></span>
-				</button>
-				<button if={props.handleContinue} type="button" class="btn btn-blank" onclick={() => props.handleContinue()}
-					title={props.t('plugin_newspaperRecognizer_continueFromHere')} aria-label={props.t('plugin_newspaperRecognizer_continueFromHere')}>
-					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('calendar-repeat')}" /></svg></span>
+				<button if={props.handlePattern} type="button" class="btn btn-blank text-nowrap d-flex align-items-center gap-1" onclick={() => props.handlePattern()}
+					title={props.t('plugin_newspaperRecognizer_typePattern')}>
+					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('copy')}" /></svg></span>
+					<span>{props.t('plugin_newspaperRecognizer_typePattern_short')}</span>
 				</button>
 			</div>
 			<span if={props.flags.missingType} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_validation_missingType')}</span>
 			<span if={props.flags.notAllowed} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_validation_notAllowed')}</span>
-			<hidden-popover if={props.hiddenOpen} summary={props.start.hidden} t={props.t}
-				handle-close={() => props.handleToggleHidden()} handle-remove={props.handleRemoveHidden}></hidden-popover>
 		</div>
 
 		<div if={props.info && props.info.dated} class="form-group p-0 m-0 {props.flags.invalidDate || props.flags.missingDate || props.flags.duplicate ? 'has-validation-error' : ''}">
@@ -40,6 +30,11 @@
 				</label>
 				<input type="text" class="form-control" id={fieldId('date')} value={props.start.dateInput} placeholder={props.dateFormatPattern}
 					onkeyup={e => props.handleDate(e.target.value)} onblur={e => props.handleDate(e.target.value)} />
+				<button if={props.handleContinue && true} type="button" class="btn btn-blank text-nowrap d-flex align-items-center gap-1" onclick={() => props.handleContinue()}
+					title={props.t('plugin_newspaperRecognizer_continueFromHere')}>
+					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('calendar-plus')}" /></svg></span>
+					<span>{props.t('plugin_newspaperRecognizer_continue_short')}</span>
+				</button>
 			</div>
 			<span if={props.flags.invalidDate} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_wrongDateFormat')} {props.dateFormatPattern}</span>
 			<span if={props.flags.missingDate} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_validation_missingRequired')}</span>
@@ -58,8 +53,23 @@
 					onkeyup={e => props.handleField('number', e.target.value)} />
 				<input if={props.info.partNumbered} type="text" class="form-control" value={props.start.suffix || ''}
 					aria-label={props.t('suffix')} placeholder={props.t('suffix')} onkeyup={e => props.handleField('suffix', e.target.value)} />
+				<button if={props.handleContinue && !props.info.dated} type="button" class="btn btn-blank text-nowrap d-flex align-items-center gap-1" onclick={() => props.handleContinue()}
+					title={props.t('plugin_newspaperRecognizer_continueFromHere')}>
+					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('calendar-plus')}" /></svg></span>
+					<span>{props.t('plugin_newspaperRecognizer_continue_short')}</span>
+				</button>
 			</div>
 			<span if={props.flags.missingNumber} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_validation_missingRequired')}</span>
+		</div>
+		<div if={props.pageFirst || hiddenCount() > 0} class="d-flex justify-content-between align-items-center gap-3 small border-top pt-2 position-relative">
+			<span class="text-muted">{props.pageFirst ? pagesText() : ''}</span>
+			<button if={hiddenCount() > 0} type="button" class="btn btn-link btn-sm p-0 d-flex align-items-center gap-1 text-decoration-none"
+				onclick={() => props.handleToggleHidden()} aria-expanded={props.hiddenOpen ? 'true' : 'false'}>
+				<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('info-circle')}" /></svg></span>
+				<span>{hiddenText()}</span>
+			</button>
+			<hidden-popover if={props.hiddenOpen} summary={props.start.hidden} t={props.t}
+				handle-close={() => props.handleToggleHidden()} handle-remove={props.handleRemoveHidden}></hidden-popover>
 		</div>
 	</div>
 
@@ -89,10 +99,24 @@
 		hiddenCount() {
 			return this.structures().length + this.metadata().length;
 		},
-		hiddenTitle() {
-			return this.props.t('plugin_newspaperRecognizer_hidden_badgeTitle')
-				.replace('{0}', this.structures().length)
-				.replace('{1}', this.metadata().length);
+		pagesText() {
+			if (this.props.pageFirst === this.props.pageLast) {
+				return this.props.t('plugin_newspaperRecognizer_pagesSummarySingle').replace('{0}', this.props.pageFirst);
+			}
+			return this.props.t('plugin_newspaperRecognizer_pagesSummary')
+				.replace('{0}', this.props.pageLast - this.props.pageFirst + 1)
+				.replace('{1}', this.props.pageFirst)
+				.replace('{2}', this.props.pageLast);
+		},
+		hiddenText() {
+			const parts = [];
+			if (this.structures().length > 0) {
+				parts.push(this.props.t('plugin_newspaperRecognizer_hidden_structureCount').replace('{0}', this.structures().length));
+			}
+			if (this.metadata().length > 0) {
+				parts.push(this.props.t('plugin_newspaperRecognizer_hidden_metadataCount').replace('{0}', this.metadata().length));
+			}
+			return parts.join(', ');
 		},
 	}
 	</script>
