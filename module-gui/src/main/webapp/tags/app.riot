@@ -22,7 +22,23 @@
 					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('puzzle')}" /></svg></span>
 					{props.title}
 				</h2>
-				<div class="actions d-flex">
+				<div class="actions d-flex align-items-center">
+					<span id="ajaxloaderbottom" class="me-2" style="display: none;">
+						<img src="template/img/goobi/ajaxloader2.gif" alt="" style="height: 20px;" />
+					</span>
+					<div class="position-relative">
+						<a class="btn d-flex align-items-center btn--title-action{saveInFlight ? ' disabled' : ''}" onclick={toggleActions}
+							title={t('plugin_newspaperRecognizer_actions_more')} aria-label={t('plugin_newspaperRecognizer_actions_more')}
+							aria-haspopup="true" aria-expanded={actionsOpen ? 'true' : 'false'}>
+							<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('dots-vertical')}" /></svg></span>
+						</a>
+						<ul if={actionsOpen} class="dropdown-menu dropdown-menu-end show" style="position: absolute; right: 0; top: 100%;">
+							<li><button type="button" class="dropdown-item" onclick={() => runAction(askResetToAnalysis)}>{t('plugin_newspaperRecognizer_action_takeAnalysis')}</button></li>
+							<li><button type="button" class="dropdown-item" onclick={() => runAction(askRemoveAllBlocks)}>{t('plugin_newspaperRecognizer_removeAllBlocks')}</button></li>
+							<li><hr class="dropdown-divider" /></li>
+							<li><button type="button" class="dropdown-item" onclick={() => runAction(askRecompute)}>{t('plugin_newspaperRecognizer_action_restartAnalysis')}</button></li>
+						</ul>
+					</div>
 					<a class="btn d-flex align-items-center btn--title-action{saveInFlight ? ' disabled' : ''}" onclick={exit} title={t('pluginLeave')} data-bs-toggle="tooltip">
 						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
 					</a>
@@ -42,9 +58,29 @@
 						<ul class="mb-0"><li each={error in configErrors}>{error}</li></ul>
 					</div>
 				</div>
-				<div if={notices.length > 0} class="p-3">
+				<div if={otherNotices().length > 0} class="p-3">
 					<div class="alert alert-warning">
-						<ul class="mb-0"><li each={notice in notices}>{formatNotice(notice)}</li></ul>
+						<ul class="mb-0"><li each={notice in otherNotices()}>{formatNotice(notice)}</li></ul>
+					</div>
+				</div>
+				<div if={hiddenBlocks().length > 0 || volumeHidden.structures.length > 0} class="p-3">
+					<div class="alert alert-info">
+						<ul class="mb-0 list-unstyled d-flex flex-column gap-1">
+							<li if={hiddenBlocks().length > 0} class="d-flex align-items-center gap-3">
+								<span>{t('plugin_newspaperRecognizer_hidden_notice').replace('{0}', hiddenBlocks().length)}</span>
+								<button type="button" class="btn btn-blank btn-sm text-nowrap" onclick={jumpToNextHidden}>
+									{t(hiddenBlocks().length > 1 ? 'plugin_newspaperRecognizer_validation_jumpNext' : 'plugin_newspaperRecognizer_validation_jump')}
+								</button>
+							</li>
+							<li if={volumeHidden.structures.length > 0} class="d-flex align-items-center gap-3 position-relative">
+								<span>{t('plugin_newspaperRecognizer_notice_volumeHidden').replace('{0}', volumeHidden.structures.length)}</span>
+								<button type="button" class="btn btn-blank btn-sm text-nowrap" onclick={() => toggleHidden('volume')}>
+									{t('plugin_newspaperRecognizer_hidden_show')}
+								</button>
+								<hidden-popover if={openHidden === 'volume'} summary={volumeHidden} align="left" t={t}
+									handle-close={() => toggleHidden('volume')}></hidden-popover>
+							</li>
+						</ul>
 					</div>
 				</div>
 				<div if={!validation.valid} class="p-3">
@@ -69,25 +105,6 @@
 				</div>
 
 				<template if={imagesLoaded}>
-					<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 border-bottom">
-						<div class="d-flex align-items-center gap-2 position-relative">
-							<span if={hiddenBlocks().length > 0}>{t('plugin_newspaperRecognizer_hidden_overview').replace('{0}', hiddenBlocks().length)}</span>
-							<button if={hiddenBlocks().length > 0} type="button" class="btn btn-blank btn-sm" onclick={jumpToNextHidden}>
-								{t('plugin_newspaperRecognizer_hidden_next')}
-							</button>
-							<button if={volumeHidden.structures.length > 0} type="button" class="btn btn-blank btn-sm" onclick={() => toggleHidden('volume')}>
-								{t('plugin_newspaperRecognizer_hidden_volume').replace('{0}', volumeHidden.structures.length)}
-							</button>
-							<hidden-popover if={openHidden === 'volume'} summary={volumeHidden} align="left" t={t}
-								handle-close={() => toggleHidden('volume')}></hidden-popover>
-						</div>
-						<div class="d-flex gap-2">
-							<button type="button" class="btn btn-blank" onclick={askResetToAnalysis}>{t('plugin_newspaperRecognizer_resetToAnalysis')}</button>
-							<button type="button" class="btn btn-hot" onclick={askRemoveAllBlocks}>{t('plugin_newspaperRecognizer_removeAllBlocks')}</button>
-							<button type="button" class="btn btn-hot" onclick={askRecompute}>{t('plugin_newspaperRecognizer_recompute')}</button>
-						</div>
-					</div>
-
 					<div class="section-body">
 						<div class="issues">
 							<template each={row in rows}>
@@ -199,16 +216,6 @@
 				</template>
 			</div>
 
-			<template if={imagesLoaded}>
-				<div class="section-footer">
-					<span id="ajaxloaderbottom" style="margin-right: 15px; display: none;">
-						<img src="template/img/goobi/ajaxloader2.gif" />
-					</span>
-					<a class="btn btn-blank{saveInFlight ? ' disabled' : ''}" onclick={exit}>{t('pluginLeave')}</a>
-					<a class="btn btn-blank{canSave() ? '' : ' disabled'}" onclick={save}>{t('save')}</a>
-					<a class="btn btn-blank{canSave() ? '' : ' disabled'}" onclick={saveAndExit}>{t('pluginSaveAndLeave')}</a>
-				</div>
-			</template>
 		</div>
 	</div>
 
@@ -275,6 +282,7 @@
 			this.openHidden = null; // element id of the block whose hidden data is listed, or 'volume'
 			this.pendingChange = null; // a change waiting for the user's decision about hidden data
 			this.hiddenCursor = -1;
+			this.actionsOpen = false;
 			this.dialog = null; // {kind: 'pattern' | 'continue', ref, typeOptions}
 			this.loadData(JSON.parse(this.data_el.value));
 
@@ -296,6 +304,19 @@
 
 		onMounted(props) {
 			this.addAjaxEvent();
+			// close the actions menu on a click outside of it or on Escape
+			document.addEventListener('click', e => {
+				if (this.actionsOpen && !e.target.closest('.dropdown-menu') && !e.target.closest('[aria-haspopup]')) {
+					this.actionsOpen = false;
+					this.update();
+				}
+			});
+			document.addEventListener('keydown', e => {
+				if (this.actionsOpen && e.key === 'Escape') {
+					this.actionsOpen = false;
+					this.update();
+				}
+			});
 			if (this.loadallimages) {
 				this.loadedImages = 0;
 				window.npImages = {};
@@ -500,6 +521,24 @@
 			this.update();
 		},
 
+		otherNotices() {
+			// the notice about structures of the volume is part of the additional data notice
+			return this.notices.filter(n => n.key !== 'plugin_newspaperRecognizer_notice_volumeHidden');
+		},
+
+		toggleActions() {
+			if (this.saveInFlight) {
+				return;
+			}
+			this.actionsOpen = !this.actionsOpen;
+			this.update();
+		},
+
+		runAction(action) {
+			this.actionsOpen = false;
+			action();
+		},
+
 		toggleHidden(key) {
 			this.openHidden = this.openHidden === key ? null : key;
 			this.update();
@@ -612,8 +651,8 @@
 		},
 
 		askResetToAnalysis() {
-			this.askConfirmation('plugin_newspaperRecognizer_resetToAnalysis', 'plugin_newspaperRecognizer_confirmResetToAnalysis',
-				'plugin_newspaperRecognizer_resetToAnalysis', () => this.applyChange(resetToAnalysis(this.pages), { bulk: true, total: flatten(this.tree.roots).length }));
+			this.askConfirmation('plugin_newspaperRecognizer_action_takeAnalysis', 'plugin_newspaperRecognizer_confirmResetToAnalysis',
+				'plugin_newspaperRecognizer_action_takeAnalysis', () => this.applyChange(resetToAnalysis(this.pages), { bulk: true, total: flatten(this.tree.roots).length }));
 		},
 
 		askRemoveAllBlocks() {
@@ -622,8 +661,8 @@
 		},
 
 		askRecompute() {
-			this.askConfirmation('plugin_newspaperRecognizer_recompute', 'plugin_newspaperRecognizer_confirmRecompute',
-				'plugin_newspaperRecognizer_recompute', () => this.restartAnalysisButton.click());
+			this.askConfirmation('plugin_newspaperRecognizer_action_restartAnalysis', 'plugin_newspaperRecognizer_confirmRecompute',
+				'plugin_newspaperRecognizer_action_restartAnalysis', () => this.restartAnalysisButton.click());
 		},
 
 		askDeletePage(index) {
