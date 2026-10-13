@@ -71,7 +71,7 @@
 							<button if={volumeHidden.structures.length > 0} type="button" class="btn btn-blank btn-sm" onclick={() => toggleHidden('volume')}>
 								{t('plugin_newspaperRecognizer_hidden_volume').replace('{0}', volumeHidden.structures.length)}
 							</button>
-							<hidden-popover if={openHidden === 'volume'} hidden={volumeHidden} align="left" t={t}
+							<hidden-popover if={openHidden === 'volume'} summary={volumeHidden} align="left" t={t}
 								handle-close={() => toggleHidden('volume')}></hidden-popover>
 						</div>
 						<div class="d-flex gap-2">
@@ -141,22 +141,22 @@
 											handle-field={(name, value) => changeField(row.node, name, value)}>
 											<template slot="badge">
 												<div class="position-relative">
-													<hidden-badge hidden={row.node.start.hidden} t={t} handle-open={() => toggleHidden(blockElementId(row.node))}></hidden-badge>
-													<hidden-popover if={openHidden === blockElementId(row.node)} hidden={row.node.start.hidden} t={t}
+													<hidden-badge summary={row.node.start.hidden} t={t} handle-open={() => toggleHidden(blockElementId(row.node))}></hidden-badge>
+													<hidden-popover if={openHidden === blockElementId(row.node)} summary={row.node.start.hidden} t={t}
 														handle-close={() => toggleHidden(blockElementId(row.node))}
 														handle-remove={() => askRemoveHidden(row.node)}></hidden-popover>
 												</div>
 											</template>
 											<template slot="actions">
-												<div class="d-flex flex-wrap justify-content-end gap-2">
-													<button type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('pattern', row.node)}>
-														{t('plugin_newspaperRecognizer_typePattern')}
+													<button type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('pattern', row.node)}
+														title={t('plugin_newspaperRecognizer_typePattern')} aria-label={t('plugin_newspaperRecognizer_typePattern')} data-bs-toggle="tooltip">
+														<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('repeat')}" /></svg></span>
 													</button>
-													<button if={isGeneratable(row.node)} type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('continue', row.node)}>
-														{t('plugin_newspaperRecognizer_continueFromHere')}
+													<button if={isGeneratable(row.node)} type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('continue', row.node)}
+														title={t('plugin_newspaperRecognizer_continueFromHere')} aria-label={t('plugin_newspaperRecognizer_continueFromHere')} data-bs-toggle="tooltip">
+														<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('calendar-repeat')}" /></svg></span>
 													</button>
-												</div>
-											</template>
+												</template>
 										</block-fields>
 
 										<div each={(child, childIndex) in row.node.children} class="ps-3 border-start" id={blockElementId(child)}>
@@ -173,22 +173,22 @@
 												handle-field={(name, value) => changeField(child, name, value)}>
 												<template slot="badge">
 												<div class="position-relative">
-													<hidden-badge hidden={child.start.hidden} t={t} handle-open={() => toggleHidden(blockElementId(child))}></hidden-badge>
-													<hidden-popover if={openHidden === blockElementId(child)} hidden={child.start.hidden} t={t}
+													<hidden-badge summary={child.start.hidden} t={t} handle-open={() => toggleHidden(blockElementId(child))}></hidden-badge>
+													<hidden-popover if={openHidden === blockElementId(child)} summary={child.start.hidden} t={t}
 														handle-close={() => toggleHidden(blockElementId(child))}
 														handle-remove={() => askRemoveHidden(child)}></hidden-popover>
 												</div>
 											</template>
 												<template slot="actions">
-												<div class="d-flex flex-wrap justify-content-end gap-2">
-													<button type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('pattern', child)}>
-														{t('plugin_newspaperRecognizer_typePattern')}
+													<button type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('pattern', child)}
+														title={t('plugin_newspaperRecognizer_typePattern')} aria-label={t('plugin_newspaperRecognizer_typePattern')} data-bs-toggle="tooltip">
+														<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('repeat')}" /></svg></span>
 													</button>
-													<button if={isGeneratable(child)} type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('continue', child)}>
-														{t('plugin_newspaperRecognizer_continueFromHere')}
+													<button if={isGeneratable(child)} type="button" class="btn btn-blank btn-sm" onclick={() => openDialog('continue', child)}
+														title={t('plugin_newspaperRecognizer_continueFromHere')} aria-label={t('plugin_newspaperRecognizer_continueFromHere')} data-bs-toggle="tooltip">
+														<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('calendar-repeat')}" /></svg></span>
 													</button>
-												</div>
-											</template>
+												</template>
 											</block-fields>
 										</div>
 

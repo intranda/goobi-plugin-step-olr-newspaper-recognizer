@@ -1,9 +1,9 @@
 <block-fields>
 	<div class="d-flex flex-column gap-2">
-		<div class="d-flex align-items-center gap-2">
-			<span if={props.color} aria-hidden="true" style="display: inline-block; flex: 0 0 20px; width: 20px; height: 20px; border-radius: 50%; background: {props.color};"></span>
-			<div class="form-group px-0 flex-grow-1 {props.flags.missingType || props.flags.notAllowed ? 'has-validation-error' : ''}">
-				<select class="form-select" aria-label={props.t('plugin_newspaperRecognizer_blockType')} onchange={e => props.handleType(e.target.value || null)}>
+		<div class="d-flex align-items-start gap-2">
+			<span if={props.color} aria-hidden="true" style="display: inline-block; flex: 0 0 20px; width: 20px; height: 20px; margin-top: 8px; border-radius: 50%; background: {props.color};"></span>
+			<div class="form-group px-0 flex-grow-1 mb-0 {props.flags.missingType || props.flags.notAllowed ? 'has-validation-error' : ''}">
+				<select class="form-select w-100" aria-label={props.t('plugin_newspaperRecognizer_blockType')} onchange={e => props.handleType(e.target.value || null)}>
 					<option value="" selected={!props.start.type}>{props.t('plugin_newspaperRecognizer_pleaseSelect')}</option>
 					<option each={option in props.typeOptions} value={option.name} selected={option.name === props.start.type}>{option.label}</option>
 				</select>
@@ -11,6 +11,9 @@
 				<span if={props.flags.notAllowed} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_validation_notAllowed')}</span>
 			</div>
 			<slot name="badge" />
+			<div class="d-flex flex-nowrap gap-1 align-self-start">
+				<slot name="actions" />
+			</div>
 		</div>
 
 		<div if={props.info && props.info.dated} class="form-group px-0 {props.flags.invalidDate || props.flags.missingDate || props.flags.duplicate ? 'has-validation-error' : ''}">
@@ -37,6 +40,5 @@
 			<span if={props.flags.missingNumber} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_validation_missingRequired')}</span>
 		</div>
 
-		<slot name="actions" />
 	</div>
 </block-fields>

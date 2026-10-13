@@ -30,10 +30,10 @@
 	<script>
 	export default {
 		structures() {
-			return (this.props.hidden && this.props.hidden.structures) || [];
+			return (this.props.summary && this.props.summary.structures) || [];
 		},
 		metadata() {
-			return (this.props.hidden && this.props.hidden.metadata) || [];
+			return (this.props.summary && this.props.summary.metadata) || [];
 		},
 		pages(structure) {
 			if (structure.firstPage < 0) {

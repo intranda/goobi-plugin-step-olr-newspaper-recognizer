@@ -6,12 +6,13 @@
 	</button>
 
 	<script>
+	// the prop is called "summary": Riot also writes props as attributes, and "hidden" would hide the element
 	export default {
 		structures() {
-			return (this.props.hidden && this.props.hidden.structures) || [];
+			return (this.props.summary && this.props.summary.structures) || [];
 		},
 		metadata() {
-			return (this.props.hidden && this.props.hidden.metadata) || [];
+			return (this.props.summary && this.props.summary.metadata) || [];
 		},
 		count() {
 			return this.structures().length + this.metadata().length;
