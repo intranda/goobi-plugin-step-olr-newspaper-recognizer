@@ -1,6 +1,11 @@
 package de.intranda.goobi.plugins.newspaperRecognizer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldConfiguration;
+import de.intranda.goobi.plugins.newspaperRecognizer.data.BlockStart;
+import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperPage;
 import de.intranda.goobi.plugins.newspaperRecognizer.ruleset.RulesetTypes;
 import ugh.dl.Prefs;
 import ugh.exceptions.PreferencesException;
@@ -42,5 +47,20 @@ public final class TestDocuments {
         } catch (PreferencesException e) {
             throw new IllegalStateException("Unable to load test ruleset " + path, e);
         }
+    }
+
+    public static BlockStart start(String id, String type) {
+        BlockStart start = new BlockStart();
+        start.setId(id);
+        start.setType(type);
+        return start;
+    }
+
+    public static NewspaperPage page(String filename, int depth, BlockStart... starts) {
+        NewspaperPage page = new NewspaperPage();
+        page.setFilename(filename);
+        page.setDepth(depth);
+        page.setStarts(new ArrayList<>(List.of(starts)));
+        return page;
     }
 }
