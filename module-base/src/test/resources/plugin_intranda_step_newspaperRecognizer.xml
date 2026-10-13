@@ -1,21 +1,47 @@
 <config_plugin>
-	<loadAllImages>true</loadAllImages>
+    <loadAllImages>true</loadAllImages>
     <showDeletePageButton>false</showDeletePageButton>
-	<preventDuplicateIssues>true</preventDuplicateIssues>
-	<preventDuplicateSupplements>true</preventDuplicateSupplements>
-	<dateFormat>dd.MM.yyyy</dateFormat>
+    <!-- block saving while two blocks of the same type with the same date and number share a parent -->
+    <preventDuplicates>true</preventDuplicates>
 
-	<pagination>
-		<createNewPagination>true</createNewPagination>
-		<type>1</type>
-		<useFakePagination>false</useFakePagination>
-	</pagination>
+    <!-- configurations related to pagination settings -->
+    <pagination>
+        <!-- whether or not to create a new pagination, if false then the old pagination will be used. DEFAULT true. -->
+        <createNewPagination>true</createNewPagination>
+        <!-- type of the paginations: - (none), 1 (1, 2, 3), i (i, ii, iii), I (I, II, III). DEFAULT 1. -->
+        <type>1</type>
+        <!-- whether or not to use the fake pagination [N]. DEFAULT false. -->
+        <useFakePagination>false</useFakePagination>
+    </pagination>
 
-	<issue type="NewspaperIssue" label="plugin_intranda_step_newspaperRecognizer_issueType_issue">
-		<metadata key="TitleDocMain" value="Ausgabe {partNo} vom {date:dd.MM.yyyy}" />
-	</issue>
+    <!--
+        Structure types, their labels, their hierarchy and their metadata come from the ruleset.
+        A type gets a date field if it allows the date metadata below, and a number field if it allows the number metadata.
+    -->
+    <fields>
+        <!-- format: input format in the plugin, storeFormat: format of the metadata value (DEFAULT yyyy-MM-dd) -->
+        <date metadata="DateIssued" format="dd.MM.yyyy" storeFormat="yyyy-MM-dd" />
+        <!-- partMetadata: prefix + number + suffix; without it the plugin offers no prefix and suffix fields -->
+        <number metadata="CurrentNo" partMetadata="PartNumber" />
+    </fields>
 
-	<supplement type="NewspaperSupplement" label="Allgemeine Beilage">
-		<metadata key="TitleDocMain" value="Beilage zur {no}. Ausgabe vom {date:dd.MM.yyyy}" />
-	</supplement>
+    <!--
+        Additional metadata per ruleset type. Placeholders: {date:FORMAT}, {no}, {partNo}, {label} take the value of the block
+        or of the nearest enclosing block; {parent.date:FORMAT}, {parent.no}, {parent.partNo}, {parent.label} only that of the
+        direct parent. An empty placeholder writes [MISSING], or nothing with skipIfEmpty="true".
+    -->
+    <generate docstruct="MorningIssue">
+        <metadata key="CurrentNoSorting" value="{no}" skipIfEmpty="true" />
+        <metadata key="TitleDocMain" value="Morgenausgabe {partNo} vom {date:dd.MM.yyyy}" />
+    </generate>
+    <generate docstruct="EveningIssue">
+        <metadata key="CurrentNoSorting" value="{no}" skipIfEmpty="true" />
+        <metadata key="TitleDocMain" value="Abendausgabe {partNo} vom {date:dd.MM.yyyy}" />
+    </generate>
+    <generate docstruct="NewspaperSupplement">
+        <metadata key="TitleDocMain" value="Beilage zur {parent.no}. Ausgabe vom {date:dd.MM.yyyy}" />
+    </generate>
+    <generate docstruct="TableOfContents">
+        <metadata key="TitleDocMain" value="Inhaltsverzeichnis" />
+    </generate>
 </config_plugin>

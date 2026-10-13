@@ -31,26 +31,29 @@ Für die Verwendung des Plugins muss dieses in einem Arbeitsschritt ausgewählt 
 
 
 ## Überblick und Funktionsweise
-Beim Betreten des Plugins werden alle Bilder einer Ausgabe zugeordnet. Das erste Bild ist hierbei die erste Seite der Ausgabe und wird etwas größer dargestellt. Alle Seiten rechts davon sind Folgeseiten der Ausgabe und werden kleiner dargestellt:
 
-![Erstes Betreten des Plugins](screen3_de.png)
+Das Plugin zeigt die Bilder eines Bandes als Blöcke. Jeder Block ist eine Struktur des Bandes (zum Beispiel eine Ausgabe oder ein Inhaltsverzeichnis), deren Typ aus dem Regelsatz stammt. Beim Öffnen liest das Plugin die Strukturen, die bereits in der METS-Datei vorhanden sind. Ein Band ohne Struktur beginnt mit den Blöcken der automatischen Analyse; ihr Typ steht noch auf „— bitte wählen —“.
 
-Mit einem Klick auf eine Folgeseite wird diese Seite zu einer neuen Ausgabeseite. Alle Folgeseiten danach werden zu Folgeseiten der neuen Ausgabe. Ein Klick auf die erste Seite einer Ausgabe auf der linken Seite macht diese Seite zu einer Folgeseite der vorherigen Ausgabe. Auf diese Weise werden zunächst alle Ausgabenseiten zu Ausgaben gemacht, indem die jeweiligen Seiten angeklickt werden.
+![Blöcke eines Bandes](screen3_de.png)
 
-Wenn der Mauszeiger über eine Seite bewegt wird während zugleich die `SHIFT` Taste auf der Tastatur gehalten wird, wird die Seite vergrößert dargestellt. So lassen sich Details wie das Datum der Ausgabe oder die Ausgabennummer besser ablesen. Diese Informationen werden in die Felder `Präfix`, `Nr. ` und `Suffix` eingetragen. Darüber hinaus kann der Ausgabentyp ausgewählt werden:
+Ein Klick auf eine Seite beginnt dort einen neuen Block; ein Klick auf die erste Seite eines Blocks entfernt ihn, seine Seiten gehören dann zum vorherigen Block. Ein Klick mit `STRG` oder `ALT` beginnt einen Unterblock (zum Beispiel eine Beilage) innerhalb eines Blocks; diese Seiten werden mit einer farbigen Ziffer markiert. Mit gedrückter `SHIFT`-Taste wird eine Seite beim Überfahren vergrößert.
 
-![Ausgabendetails eintragen](screen4_de.png)
+Das Auswahlmenü eines Blocks bietet genau die Typen an, die der Regelsatz an dieser Stelle erlaubt, mit ihren Bezeichnungen aus dem Regelsatz. Ein Datumsfeld erscheint, wenn der Typ das konfigurierte Datumsmetadatum erlaubt, ein Nummernfeld (mit Präfix und Suffix, falls konfiguriert), wenn er das Nummernmetadatum erlaubt. Pflichtwerte sind mit `*` markiert. Gespeichert werden kann erst, wenn jeder Block einen Typ hat, alle Pflichtwerte gefüllt und alle Datumsangaben gültig sind und – falls konfiguriert – keine Duplikate vorliegen.
 
-Je nachdem welche Wochentage im oberen Bereich des Plugins aktiviert sind, werden bei einem Klick auf `Auf alle Ausgaben anwenden` die Datums- und Nummerierungsinformationen für alle Folgeausgaben berechnet:
+![Typ und Felder eines Blocks](screen4_de.png)
 
-![Ausgabeninformationen für Folgeausgaben berechnen](screen5_de.png)
+Zwei Werkzeuge füllen viele Blöcke auf einmal:
 
-Wenn eine Folgeseite einer Ausgabe angeklickt wird während dabei die `STRG` oder `ALT` Taste auf der Tastatur gehalten wird, werden diese Seite und alle folgenden Seiten zu einer Beilage. Beilage werden mit einem farbigen Kreis und einer Ziffer dargestellt. Unterhalb der Ausgabeninformationen taucht ein zusätzliches Auswahlmenü für den Beilagentypen auf. Jede Beilage kann individuell typisiert werden:
+- **Typmuster anwenden** setzt die Typen eines Blocks und aller folgenden Blöcke derselben Ebene nach einem sich wiederholenden Muster, zum Beispiel Morgenausgabe, Abendausgabe. Datum und Nummer bleiben erhalten, wo der neue Typ diese Felder hat.
+- **Ab hier fortsetzen** füllt Datum und Nummer ab einem Block. Berücksichtigt werden nur die gewählten Typen. Ein neuer Tag beginnt, sobald sich ein berücksichtigter Typ wiederholt. Die Nummer zählt pro Tag (Morgen 1, Abend 1, Morgen 2 …) oder pro Ausgabe (Morgen 1, Abend 2, Morgen 3 …). Wochentage und ein zweiwöchentlicher Rhythmus steuern das Datum. Eine Vorschau zeigt das Ergebnis vor dem Übernehmen. Typen werden nie geändert.
 
-![Beilagen](screen6_de.png)
+![Ab hier fortsetzen](screen5_de.png)
 
-Nach dem Speichern und Verlassen des Plugins werden die Metadaten so aktualisiert, dass sie pro Ausgabe und Beilage passende Strukturelemente mit den jeweiligen Seitenzuweisungen und Metadaten enthalten.
+Strukturen und Metadaten, die das Plugin nicht verwaltet – zum Beispiel Artikel unterhalb einer Beilage oder eine im Metadateneditor ergänzte Notiz – bleiben erhalten. Ein Hinweis neben dem Block zeigt ihre Anzahl; ein Klick listet sie auf. Würde eine Änderung sie betreffen (Block entfernen, Typ oder Seiten ändern), fragt das Plugin, was mit ihnen geschehen soll. Beim Speichern gehen sie nie unbemerkt verloren.
 
+![Zusätzliche Daten eines Blocks](screen6_de.png)
+
+Beim Speichern wird die METS-Datei angepasst: neue Blöcke werden ergänzt, entfernte gelöscht, geänderte behalten alles, was das Plugin nicht verwaltet.
 
 ## Konfiguration
 Die Konfiguration des Plugins erfolgt in der Datei `plugin_intranda_step_newspaperRecognizer.xml` wie hier aufgezeigt:
@@ -61,9 +64,12 @@ Die Konfiguration des Plugins erfolgt in der Datei `plugin_intranda_step_newspap
 
 Parameter               | Erläuterung
 ------------------------|------------------------------------
-`loadAllImages`         | Hiermit kann eingestellt werden, dass beim Laden des Plugins alle Bilder direkt geladen werden sollen.
-`showDeletePageButton`  | Hiermit kann eingestellt werden, ob es möglich sein soll, Seiten innerhalb dieses Plugins permanent zu löschen. Der Wert `true` aktiviert diese Funktion, `false` schaltet sie aus.
-`dateFormat`            | Hier kann eingestellt werden, in welchem Format das Datum einzugeben ist (siehe https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html).
-`pagination`            | Das `pagination` Element definiert Paginierungseinstellungen. Mit `createNewPagination` kann gesteuert werden, ob eine neue Paginierung erzeugt werden soll. Der `type` gibt an, welches Format die Paginierung haben soll: `1` für arabische Zahlen, `i` für römische Zahlen, `I` für großgeschriebene römische Zahlen. Mit `useFakePagination` kann gesteuert werden, ob eine fingierte Paginierung erzeugt werden soll.
-`issue`                 | Jeder Ausgabentyp, der mit dem Plugin erfassbar sein soll, muss hier konfiguriert werden. Pro Ausgabentyp muss es ein `issue` Element geben. Das `type` Attribut referenziert einen Strukturelementtypen aus dem Regelsatz, der für eine Ausgabe dieses Typs verwendet werden soll. Das Attribut `label` definiert die Beschriftung dieses Ausgabetypen im Auswahlmenü des Plugins. Hier kann auch eine Bezeichnung verwendet werden, die in den Übersetzungsdateien außerdem übersetzt werden kann. Das `issue` Element kann beliebig viele oder auch keine `metadata` Elemente enthalten. Ein `metadata` Element hat einen `key` und einen `value`. Der `key` referenziert ein Metadatum aus dem Regelsatz, welches im jeweilig konfigurierten Strukturelement verfügbar sein muss. `value` definiert den Wert des Metadatums, welcher geschrieben werden soll. Es können die Platzhalter `{no}`, `{partNo}` und `{date:FORMAT}` verwendet werden, um im Wert des Metadatums die Ausgabennummer, Ausgabennummer mit Präfix und Suffix sowie das Datum in beliebigem `FORMAT` zu verwenden. Auf diese Weise können einfach Überschriften für die Ausgaben erzeugt werden.
-`supplement`            | Jeder Beilagentyp, der mit dem Plugin erfassbar sein soll, muss hier konfiguriert werden. Pro Beilagentyp muss es ein `supplement` Element geben. Die Beilagentypen sind analog zu den Ausgabentypen zu konfigurieren.
+`loadAllImages`         | Ob beim Start des Plugins alle Bilder geladen werden.
+`showDeletePageButton`  | Ob Bilder im Plugin dauerhaft gelöscht werden können.
+`preventDuplicates`     | Bei `true` ist das Speichern gesperrt, solange zwei Blöcke mit demselben Elternelement denselben Typ, dasselbe Datum und dieselbe Nummer haben.
+`pagination`            | `createNewPagination` legt fest, ob eine neue Paginierung erzeugt wird (gezählt innerhalb jedes Blocks). `type`: `1` arabisch, `i` römisch, `I` römisch in Großbuchstaben, `-` keine. `useFakePagination` schreibt `[N]`.
+`fields/date`           | `metadata`: das Metadatum, das aus dem Datumsfeld geschrieben wird; Typen, die es nicht erlauben, haben kein Datumsfeld. `format`: Eingabeformat im Plugin (Standard `dd.MM.yyyy`). `storeFormat`: Format des gespeicherten Werts (Standard `yyyy-MM-dd`).
+`fields/number`         | `metadata`: das Metadatum, das aus dem Nummernfeld geschrieben wird. `partMetadata`: das Metadatum für Präfix + Nummer + Suffix; ohne es gibt es keine Präfix- und Suffixfelder.
+`generate`              | Zusätzliche Metadaten für Blöcke des Regelsatztyps `docstruct`. Jedes `metadata` hat einen `key` (für diesen Typ erlaubt), einen `value` mit optionalen Platzhaltern und optional `skipIfEmpty="true"`. Platzhalter: `{date:FORMAT}`, `{no}`, `{partNo}`, `{label}` (eigener Wert oder der des nächsten umschließenden Blocks), `{parent.date:FORMAT}`, `{parent.no}`, `{parent.partNo}`, `{parent.label}` (nur das direkte Elternelement). Ein leerer Platzhalter schreibt `[MISSING]`, mit `skipIfEmpty` gar nichts.
+
+Typen, Bezeichnungen, die erlaubte Hierarchie und Pflichtmetadaten werden aus dem Regelsatz gelesen. Varianten wie Morgen- und Abendausgaben sind eigene Strukturtypen im Regelsatz; beide können als METS-Typ `issue` exportiert werden. Die Konfiguration wird beim Start des Plugins geprüft; Fehler werden im Plugin angezeigt, und das Speichern ist gesperrt, bis sie behoben sind.
