@@ -164,3 +164,10 @@ progress {
 .block-tree .block-tree {
 	margin-top: 0.5rem;
 }
+
+/* small page images in the preview tables of the bulk tools */
+.preview-thumb {
+	height: 48px;
+	width: auto;
+	border: 1px solid var(--clr-neutral-400, #ccc);
+}

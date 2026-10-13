@@ -53,7 +53,7 @@
 				</thead>
 				<tbody>
 					<tr each={row in result().preview.slice(0, 20)} class={row.note === 'notIncluded' ? 'text-muted' : ''}>
-						<td>{row.ref.page + 1}</td>
+						<td><div class="d-flex align-items-center gap-2"><img if={thumb(row.ref.page)} src={thumb(row.ref.page)} alt="" class="preview-thumb" loading="lazy" /><span>{row.ref.page + 1}</span></div></td>
 						<td>{label(row.type)}</td>
 						<td>{formatDate(row.date)}</td>
 						<td>{row.number || '—'}</td>
@@ -126,6 +126,10 @@
 			return continueFrom(this.props.pages, this.props.startRef, {
 				include: this.state.include, mode: this.state.mode, weekdays: this.state.weekdays, biweekly: this.state.biweekly,
 			}, this.props.catalog);
+		},
+		thumb(index) {
+			const page = this.props.pages[index];
+			return (page && page.image && page.image.thumbnailUrl) || null;
 		},
 		label(type) {
 			return type ? (this.props.catalog[type] || {}).label || type : this.props.t('plugin_newspaperRecognizer_pleaseSelect');

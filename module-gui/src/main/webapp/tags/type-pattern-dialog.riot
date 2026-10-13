@@ -24,7 +24,7 @@
 				</thead>
 				<tbody>
 					<tr each={row in rows()}>
-						<td>{row.page} ({row.filename})</td>
+						<td><div class="d-flex align-items-center gap-2"><img if={row.thumb} src={row.thumb} alt="" class="preview-thumb" loading="lazy" /><span>{row.page}</span></div></td>
 						<td class="text-muted">{row.before}</td>
 						<td class={row.before !== row.after ? 'fw-bold' : ''}>{row.after}</td>
 					</tr>
@@ -44,6 +44,8 @@
 	import { buildTree, siblingsFrom } from '../logic/blocks.mjs'
 
 	import PluginModal from './plugin-modal.riot'
+
+	const thumbnail = page => (page && page.image && page.image.thumbnailUrl) || null;
 
 	export default {
 		components: {
@@ -68,7 +70,7 @@
 			const pattern = this.state.pattern;
 			return this.siblings().slice(0, 20).map((node, i) => ({
 				page: node.first + 1,
-				filename: this.props.pages[node.first].filename,
+				thumb: thumbnail(this.props.pages[node.first]),
 				before: this.label(node.start.type),
 				after: this.label(pattern[i % pattern.length]),
 			}));
