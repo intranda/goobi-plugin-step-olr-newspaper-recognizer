@@ -1,5 +1,6 @@
 package de.intranda.goobi.plugins.newspaperRecognizer.mets;
 
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDefinition;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.add;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.addMetadata;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.filenames;
@@ -326,5 +327,53 @@ public class MetsWriterTest {
         assertSame(article, volumeOf(dd).getAllChildren().get(0));
         assertEquals(List.of("TitleDocMain=Fremd"), metadata(article));
         assertEquals(List.of("0006.tif"), images(article));
+    }
+
+    private static final List<FieldDefinition> VISIBLE = List.of(FieldDefinition.of("TitleDocMain", "Ausgabe {no}", false, false),
+            FieldDefinition.of("Note", null, false, false), FieldDefinition.of("CurrentNoSorting", "{no}", true, false));
+
+    @Test
+    public void visibleValues_writtenAfterRoleFields_beforeHiddenFields() throws Exception {
+        config = TestDocuments.config(VISIBLE, Map.of());
+        load(volume(strict, 1), filenames(1));
+        BlockStart start = start(null, "MorningIssue");
+        start.setDate("1890-03-02");
+        start.setNumber("2");
+        start.getValues().put("TitleDocMain", " Sonderausgabe ");
+        start.getValues().put("Note", "Beschädigt");
+        pages.get(0).getStarts().add(start);
+        pages.get(0).setDepth(1);
+        write();
+        assertEquals(List.of("DateIssued=1890-03-02", "CurrentNo=2", "PartNumber=2", "TitleDocMain=Sonderausgabe", "Note=Beschädigt", "CurrentNoSorting=2"),
+                metadata(volumeOf(dd).getAllChildren().get(0)));
+    }
+
+    @Test
+    public void visibleValues_emptyRemoves_missingKeyKeeps() throws Exception {
+        config = TestDocuments.config(VISIBLE, Map.of());
+        DigitalDocument document = volume(strict, 1);
+        DocStruct morning = add(strict, document, volumeOf(document), "MorningIssue", 0);
+        addMetadata(strict, morning, "DateIssued", "1890-03-02");
+        addMetadata(strict, morning, "TitleDocMain", "Sonderausgabe");
+        addMetadata(strict, morning, "Note", "Beschädigt");
+        load(document, filenames(1));
+        startOn(0, 0).getValues().put("TitleDocMain", "");
+        startOn(0, 0).getValues().remove("Note");
+        write();
+        assertEquals(List.of("DateIssued=1890-03-02", "Note=Beschädigt", "CurrentNoSorting=[MISSING]"), metadata(volumeOf(dd).getAllChildren().get(0)));
+    }
+
+    @Test
+    public void values_ofUnconfiguredOrHiddenOrDisallowedFields_ignored() throws Exception {
+        config = TestDocuments.config(VISIBLE, Map.of());
+        load(volume(strict, 1), filenames(1));
+        BlockStart start = start(null, "EveningIssue");
+        start.getValues().put("Note", "nicht erlaubt");
+        start.getValues().put("CurrentNoSorting", "99");
+        start.getValues().put("PartNumber", "Nr. 99");
+        pages.get(0).getStarts().add(start);
+        pages.get(0).setDepth(1);
+        write();
+        assertEquals(List.of("CurrentNoSorting=[MISSING]"), metadata(volumeOf(dd).getAllChildren().get(0)));
     }
 }

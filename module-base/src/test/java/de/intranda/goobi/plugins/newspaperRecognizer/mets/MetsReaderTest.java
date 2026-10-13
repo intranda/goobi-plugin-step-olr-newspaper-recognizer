@@ -1,5 +1,7 @@
 package de.intranda.goobi.plugins.newspaperRecognizer.mets;
 
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDefinition;
+import java.util.Map;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.add;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.addMetadata;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.filenames;
@@ -197,5 +199,22 @@ public class MetsReaderTest {
         List<HiddenMetadataInfo> hidden = startOn(read(dd, 2), 0, 0).getHidden().getMetadata();
 
         assertEquals(2, hidden.stream().map(HiddenMetadataInfo::key).distinct().count());
+    }
+
+    @Test
+    public void readsVisibleFieldValues_notHiddenOrEmptyOnes() {
+        MetsReader fieldsReader = new MetsReader(TestDocuments.ruleset(), TestDocuments.config(List.of(FieldDefinition.of("TitleDocMain", "Ausgabe {no}", false, false),
+                FieldDefinition.of("Note", null, false, false), FieldDefinition.of("CurrentNoSorting", "{no}", true, false)), Map.of()), "de");
+        DigitalDocument dd = volume(strict, 2);
+        DocStruct morning = add(strict, dd, volumeOf(dd), "MorningIssue", 0);
+        addMetadata(strict, morning, "TitleDocMain", "Sonderausgabe");
+        addMetadata(strict, morning, "CurrentNoSorting", "7");
+        add(strict, dd, volumeOf(dd), "EveningIssue", 1);
+
+        ReadResult result = fieldsReader.read(dd, filenames(2), registry);
+
+        assertEquals(Map.of("TitleDocMain", "Sonderausgabe"), startOn(result, 0, 0).getValues());
+        assertTrue(startOn(result, 0, 0).getHidden().getMetadata().isEmpty());
+        assertEquals(Map.of(), startOn(result, 1, 0).getValues());
     }
 }

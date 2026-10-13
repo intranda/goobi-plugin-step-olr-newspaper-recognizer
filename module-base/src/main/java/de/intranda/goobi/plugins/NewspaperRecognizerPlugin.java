@@ -217,7 +217,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         }
         try {
             List<BlockNode> roots = BlockTree.build(saveRequest.getPages());
-            ValidationReport report = new BlockValidator(ruleset, state.volumeType(), configuration.preventDuplicates()).validate(roots);
+            ValidationReport report = new BlockValidator(ruleset, state.volumeType(), configuration).validate(roots);
             if (!report.isValid()) {
                 saveResult = report.result();
                 report.details().forEach(detail -> log.info("Save refused: {}", detail));

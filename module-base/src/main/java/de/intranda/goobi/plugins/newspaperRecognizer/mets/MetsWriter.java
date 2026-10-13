@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
 import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldConfiguration;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDefinition;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.MetadataTemplate;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.HiddenOperation;
@@ -179,6 +180,13 @@ public class MetsWriter {
         // the part number is derived from the number; without any number (now or stored) a part number from elsewhere stays
         if (ruleset.isPartNumbered(type) && (StringUtils.isNotBlank(node.getStart().getNumber()) || storedNumber != null)) {
             MetadataAccess.setFirst(ds, ruleset.metadataType(fields.partNumberMetadata()), ValueGenerator.partNumber(node.getStart()));
+        }
+        // visible fields carry the value shown in the plugin; a key the request does not send stays untouched
+        Map<String, String> shown = node.getStart().getValues();
+        for (FieldDefinition field : config.visibleFieldsFor(type, ruleset)) {
+            if (shown.containsKey(field.key())) {
+                MetadataAccess.setFirst(ds, ruleset.metadataType(field.key()), StringUtils.trimToNull(shown.get(field.key())));
+            }
         }
         for (MetadataTemplate template : config.templatesFor(type, ruleset)) {
             MetadataAccess.setFirst(ds, ruleset.metadataType(template.key()), values.generate(template, node).orElse(null));

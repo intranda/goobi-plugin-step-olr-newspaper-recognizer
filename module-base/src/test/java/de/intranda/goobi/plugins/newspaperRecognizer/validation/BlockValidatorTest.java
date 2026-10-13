@@ -1,5 +1,8 @@
 package de.intranda.goobi.plugins.newspaperRecognizer.validation;
 
+import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDefinition;
+import java.util.Map;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.page;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.start;
 import static org.junit.Assert.assertEquals;
@@ -100,5 +103,25 @@ public class BlockValidatorTest {
         ValidationReport report = validate(true, page("1", 1, block(null, null, null)), page("2", 1, block("MorningIssue", null, null)));
         assertEquals(SaveResult.MISSING_TYPE, report.result());
         assertEquals(List.of("Missing type: Block on page 1 (level 0)", "Missing required value: Block on page 2 (level 0)"), report.details());
+    }
+
+    private static ValidationReport validateFields(NewspaperPage... pages) throws Exception {
+        PluginConfiguration config = TestDocuments.config(List.of(FieldDefinition.of("TitleDocMain", null, false, false)), Map.of());
+        return new BlockValidator(TestDocuments.ruleset(), "NewspaperVolume", config).validate(BlockTree.build(List.of(pages)));
+    }
+
+    @Test
+    public void requiredVisibleField_blankValue_missingRequired() throws Exception {
+        BlockStart article = block("Article", null, null);
+        article.getValues().put("TitleDocMain", " ");
+        ValidationReport report = validateFields(page("1", 3, block("MorningIssue", "1890-03-01", "1"), block("NewspaperSupplement", null, null), article));
+        assertEquals(List.of("Block on page 1 (level 2)"), report.getMissingRequired());
+    }
+
+    @Test
+    public void requiredVisibleField_keyNotSent_notChecked_optionalBlank_valid() throws Exception {
+        BlockStart morning = block("MorningIssue", "1890-03-01", "1");
+        morning.getValues().put("TitleDocMain", "");
+        assertTrue(validateFields(page("1", 3, morning, block("NewspaperSupplement", null, null), block("Article", null, null))).isValid());
     }
 }

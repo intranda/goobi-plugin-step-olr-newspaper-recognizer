@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDefinition;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.BlockStart;
 import de.intranda.goobi.plugins.newspaperRecognizer.model.BlockNode;
 import de.intranda.goobi.plugins.newspaperRecognizer.ruleset.RulesetTypes;
@@ -16,11 +19,23 @@ public class BlockValidator {
     private final RulesetTypes ruleset;
     private final String volumeType;
     private final boolean preventDuplicates;
+    private final Function<String, List<FieldDefinition>> visibleFields;
 
+    /** Without metadata fields. */
     public BlockValidator(RulesetTypes ruleset, String volumeType, boolean preventDuplicates) {
+        this(ruleset, volumeType, preventDuplicates, type -> List.of());
+    }
+
+    public BlockValidator(RulesetTypes ruleset, String volumeType, PluginConfiguration config) {
+        this(ruleset, volumeType, config.preventDuplicates(), type -> config.visibleFieldsFor(type, ruleset));
+    }
+
+    private BlockValidator(RulesetTypes ruleset, String volumeType, boolean preventDuplicates,
+            Function<String, List<FieldDefinition>> visibleFields) {
         this.ruleset = ruleset;
         this.volumeType = volumeType;
         this.preventDuplicates = preventDuplicates;
+        this.visibleFields = visibleFields;
     }
 
     public ValidationReport validate(List<BlockNode> roots) {
@@ -48,6 +63,13 @@ public class BlockValidator {
                     report.getMissingRequired().add(describe(node));
                 }
                 if (numbered && ruleset.isRequired(type, ruleset.fields().numberMetadata()) && StringUtils.isBlank(start.getNumber())) {
+                    report.getMissingRequired().add(describe(node));
+                }
+                // a field the request does not send is left untouched, so only sent values are checked
+                boolean missingField = visibleFields.apply(type).stream()
+                        .anyMatch(f -> ruleset.isRequired(type, f.key()) && start.getValues().containsKey(f.key())
+                                && StringUtils.isBlank(start.getValues().get(f.key())));
+                if (missingField) {
                     report.getMissingRequired().add(describe(node));
                 }
                 String date = StringUtils.defaultString(start.getDate());

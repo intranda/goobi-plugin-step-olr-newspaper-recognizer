@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.StringUtils;
 
 import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldConfiguration;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDefinition;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.BlockStart;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.HiddenMetadataInfo;
@@ -144,6 +145,12 @@ public class MetsReader {
         }
         HiddenSummary summary = new HiddenSummary();
         hidden.forEach(structure -> summary.getStructures().add(structureInfo(structure, index, keys)));
+        for (FieldDefinition field : config.visibleFieldsFor(type, ruleset)) {
+            String value = MetadataAccess.firstValue(ds, field.key());
+            if (value != null) {
+                start.getValues().put(field.key(), value);
+            }
+        }
         for (Object entry : MetadataAccess.hidden(ds, config.managedMetadata(type, ruleset))) {
             String entryType = MetadataAccess.typeName(entry);
             summary.getMetadata().add(new HiddenMetadataInfo("m" + keys.incrementAndGet(), entryType, ruleset.metadataLabel(entryType, language),
