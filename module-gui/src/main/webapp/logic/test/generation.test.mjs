@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { catalog, start, pages } from './fixtures.mjs';
-import { applyTypePattern, continueFrom, movePatternEntry } from '../generation.mjs';
+import { applyTypePattern, continueFrom, followingTypeCounts, movePatternEntry } from '../generation.mjs';
 
 const ALL_DAYS = [true, true, true, true, true, true, true];
 const options = (overrides = {}) => ({ include: ['MorningIssue', 'EveningIssue'], mode: 'perDay', weekdays: ALL_DAYS, biweekly: false, ...overrides });
@@ -123,4 +123,10 @@ test('movePatternEntry moves an entry and leaves its input unchanged', () => {
   assert.deepEqual(movePatternEntry(pattern, 0, -1), ['A', 'B', 'C']);
   assert.deepEqual(movePatternEntry(pattern, 2, 3), ['A', 'B', 'C']);
   assert.deepEqual(pattern, ['A', 'B', 'C']);
+});
+
+test('followingTypeCounts counts the types of the blocks after the start on its level', () => {
+  assert.deepEqual(followingTypeCounts(sequence('MEMXEM'), { page: 0, level: 0 }), { EveningIssue: 2, MorningIssue: 2, ExtraEdition: 1 });
+  assert.deepEqual(followingTypeCounts(sequence('MEM'), { page: 1, level: 0 }), { MorningIssue: 1 });
+  assert.deepEqual(followingTypeCounts(sequence('M'), { page: 0, level: 0 }), {});
 });

@@ -79,3 +79,14 @@ export function movePatternEntry(pattern, from, to) {
   out.splice(to, 0, entry);
   return out;
 }
+
+/** How many of the blocks after the start block on its level have each type (untyped blocks are not counted). */
+export function followingTypeCounts(pages, startRef) {
+  const counts = {};
+  for (const node of siblingsFrom(buildTree(pages), startRef).slice(1)) {
+    if (node.start.type) {
+      counts[node.start.type] = (counts[node.start.type] || 0) + 1;
+    }
+  }
+  return counts;
+}

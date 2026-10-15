@@ -1,35 +1,11 @@
-/* publication days: one joined row like a calendar week, chosen days filled */
-.weekday-toggle {
-	flex-wrap: wrap;
+/* Goobi's table filter option used as a toggle: pressed ones in the primary colour */
+.gw-table__filters__option.newspaper-toggle[aria-pressed="true"] {
+	background-color: var(--clr-primary-400);
+	color: var(--clr-white, #fff);
 }
 
-/* Bootstrap's button variables, so hover, focus and pressed states stay consistent */
-.weekday-toggle > .btn {
-	min-width: 2.75rem;
-	--bs-btn-color: var(--clr-primary);
-	--bs-btn-bg: var(--bs-body-bg);
-	--bs-btn-border-color: var(--clr-primary);
-	--bs-btn-hover-color: var(--clr-primary);
-	--bs-btn-hover-bg: color-mix(in srgb, var(--clr-primary) 12%, var(--bs-body-bg));
-	--bs-btn-hover-border-color: var(--clr-primary);
-	--bs-btn-active-color: #fff;
-	--bs-btn-active-bg: var(--clr-primary);
-	--bs-btn-active-border-color: var(--clr-primary);
-	color: var(--bs-btn-color);
-	background-color: var(--bs-btn-bg);
-	border: var(--bs-border-width) solid var(--bs-btn-border-color);
-}
-
-.weekday-toggle > .btn.active,
-.weekday-toggle > .btn.active:hover {
-	color: var(--bs-btn-active-color);
-	background-color: var(--bs-btn-active-bg);
-}
-
-.weekday-toggle > .btn:focus-visible {
-	outline: 2px solid var(--clr-primary);
-	outline-offset: 2px;
-	z-index: 2;
+.gw-table__filters__option.newspaper-toggle[aria-pressed="true"]:hover {
+	background-color: var(--clr-primary-600);
 }
 
 .other-images {

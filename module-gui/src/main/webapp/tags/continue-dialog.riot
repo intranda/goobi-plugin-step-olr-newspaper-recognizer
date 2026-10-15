@@ -3,12 +3,17 @@
 		<!-- options and preview side by side, stacked on small screens -->
 		<div class="row g-4">
 			<div class="col-12 col-lg-5 d-flex flex-column gap-3">
+				<!-- toggles: Goobi's table filter options (btn gw-table__filters__option), pressed ones filled -->
 				<fieldset>
 					<legend class="fs-6 fw-bold">{props.t('plugin_newspaperRecognizer_continue_include')}</legend>
-					<div each={option in generatable()} class="form-check">
-						<input class="form-check-input" type="checkbox" id={'include-' + option.name} checked={state.include.includes(option.name)}
-							disabled={option.name === startType()} onchange={() => toggleInclude(option.name)} />
-						<label class="form-check-label" for={'include-' + option.name}>{option.label}</label>
+					<div class="d-flex flex-column gap-2">
+						<button each={option in generatable()} type="button" class="btn gw-table__filters__option newspaper-toggle d-flex align-items-center gap-2 text-start"
+							aria-pressed={state.include.includes(option.name) ? 'true' : 'false'} disabled={option.name === startType()} onclick={() => toggleInclude(option.name)}
+							title={props.t('plugin_newspaperRecognizer_continue_following').replace('{0}', following()[option.name] || 0)}>
+							<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(state.include.includes(option.name) ? 'checkbox' : 'square')}" /></svg></span>
+							<span class="flex-grow-1">{option.label}</span>
+							<span class="small">{option.name === startType() ? props.t('plugin_newspaperRecognizer_continue_note_start') + ' · ' : ''}{following()[option.name] || 0}</span>
+						</button>
 					</div>
 				</fieldset>
 				<fieldset>
@@ -35,20 +40,24 @@
 				</fieldset>
 				<fieldset>
 					<legend class="fs-6 fw-bold">{props.t('plugin_newspaperRecognizer_continue_weekdays')}</legend>
-					<!-- one joined row like a calendar week, quick choices below -->
-					<div class="btn-group weekday-toggle" role="group" aria-label={props.t('plugin_newspaperRecognizer_continue_weekdays')}>
-						<!-- toggle buttons: their look follows the state (Riot sets checked only as attribute, which a clicked checkbox ignores) -->
-						<button each={day in DAYS} type="button" class="btn {state.weekdays[day.index] ? 'active' : ''}" aria-pressed={state.weekdays[day.index] ? 'true' : 'false'}
-							title={props.t(day.key)} aria-label={props.t(day.key)} onclick={() => toggleDay(day.index)}>{props.t(day.key).slice(0, 2)}</button>
+					<div class="d-flex flex-wrap gap-2" role="group" aria-label={props.t('plugin_newspaperRecognizer_continue_weekdays')}>
+						<button each={day in DAYS} type="button" class="btn gw-table__filters__option newspaper-toggle d-inline-flex align-items-center gap-1"
+							aria-pressed={state.weekdays[day.index] ? 'true' : 'false'} title={props.t(day.key)} aria-label={props.t(day.key)} onclick={() => toggleDay(day.index)}>
+							<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(state.weekdays[day.index] ? 'checkbox' : 'square')}" /></svg></span>
+							<span aria-hidden="true">{props.t(day.key).slice(0, 2)}</span>
+						</button>
 					</div>
 					<div class="d-flex flex-wrap column-gap-3 mt-1">
 						<button each={preset in PRESETS} type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick={() => applyPreset(preset.name)}>
 							{props.t(preset.key)}
 						</button>
 					</div>
-					<div class="form-check form-switch mt-2">
-						<input class="form-check-input" type="checkbox" role="switch" id="continue-biweekly" checked={state.biweekly} onchange={() => update({ biweekly: !state.biweekly })} />
-						<label class="form-check-label" for="continue-biweekly">{props.t('plugin_newspaperRecognizer_biWeekly')}</label>
+					<div class="d-flex mt-2">
+						<button type="button" class="btn gw-table__filters__option newspaper-toggle d-inline-flex align-items-center gap-1"
+							aria-pressed={state.biweekly ? 'true' : 'false'} onclick={() => update({ biweekly: !state.biweekly })}>
+							<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(state.biweekly ? 'checkbox' : 'square')}" /></svg></span>
+							<span>{props.t('plugin_newspaperRecognizer_biWeekly')}</span>
+						</button>
 					</div>
 				</fieldset>
 			</div>
@@ -98,7 +107,7 @@
 
 	<script>
 	import { buildTree, siblingsFrom } from '../logic/blocks.mjs'
-	import { continueFrom } from '../logic/generation.mjs'
+	import { continueFrom, followingTypeCounts } from '../logic/generation.mjs'
 	import { fromIso, formatByPattern, WEEKDAY_PRESETS } from '../logic/dates.mjs'
 
 	import PluginModal from './plugin-modal.riot'
@@ -143,6 +152,9 @@
 				const info = this.props.catalog[option.name] || {};
 				return info.dated || info.numbered;
 			});
+		},
+		following() {
+			return followingTypeCounts(this.props.pages, this.props.startRef);
 		},
 		toggleInclude(type) {
 			const include = this.state.include.includes(type) ? this.state.include.filter(t => t !== type) : [...this.state.include, type];
