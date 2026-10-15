@@ -57,6 +57,13 @@ export function weekday(date) {
   return utc(date.y, date.m, date.d).getUTCDay();
 }
 
+/** Quick choices for the publication days, indexed like weekday() (0 = Sunday). */
+export const WEEKDAY_PRESETS = {
+  daily: [true, true, true, true, true, true, true],
+  monToSat: [false, true, true, true, true, true, true],
+  monToFri: [false, true, true, true, true, true, false],
+};
+
 /** The next publication day: +1 day (+8 if biweekly), then forward to the next enabled weekday. */
 export function nextDate(date, { weekdays, biweekly }) {
   let next = addDays(date, biweekly ? 8 : 1);

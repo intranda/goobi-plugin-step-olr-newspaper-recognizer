@@ -8,7 +8,7 @@ export const ANALYSIS_THRESHOLD = -0.8;
 export function newStart(type = null) {
   return {
     id: null, type, date: null, dateRaw: null, dateInput: '', prefix: null, number: null, suffix: null,
-    hidden: { structures: [], metadata: [] }, values: {}, originalType: null,
+    hidden: { structures: [], metadata: [] }, values: {}, generatedBase: {}, originalType: null,
   };
 }
 
@@ -20,7 +20,7 @@ export function clonePages(pages) {
   return pages.map(page => ({
     ...page,
     depth: page.depth || 0,
-    starts: (page.starts || []).map(s => ({ ...s, hidden: cloneHidden(s.hidden), values: { ...(s.values || {}) } })),
+    starts: (page.starts || []).map(s => ({ ...s, hidden: cloneHidden(s.hidden), values: { ...(s.values || {}) }, generatedBase: { ...(s.generatedBase || {}) } })),
   }));
 }
 

@@ -1,7 +1,35 @@
-.check-week {
-	align-items: center;
-	display: flex;
-	flex-wrap: nowrap;
+/* publication days: one joined row like a calendar week, chosen days filled */
+.weekday-toggle {
+	flex-wrap: wrap;
+}
+
+/* Bootstrap's button variables, so hover, focus and pressed states stay consistent */
+.weekday-toggle > .btn {
+	min-width: 2.75rem;
+	--bs-btn-color: var(--clr-primary);
+	--bs-btn-bg: var(--bs-body-bg);
+	--bs-btn-border-color: var(--clr-primary);
+	--bs-btn-hover-color: var(--clr-primary);
+	--bs-btn-hover-bg: color-mix(in srgb, var(--clr-primary) 12%, var(--bs-body-bg));
+	--bs-btn-hover-border-color: var(--clr-primary);
+	--bs-btn-active-color: #fff;
+	--bs-btn-active-bg: var(--clr-primary);
+	--bs-btn-active-border-color: var(--clr-primary);
+	color: var(--bs-btn-color);
+	background-color: var(--bs-btn-bg);
+	border: var(--bs-border-width) solid var(--bs-btn-border-color);
+}
+
+.weekday-toggle > .btn.active,
+.weekday-toggle > .btn.active:hover {
+	color: var(--bs-btn-active-color);
+	background-color: var(--bs-btn-active-bg);
+}
+
+.weekday-toggle > .btn:focus-visible {
+	outline: 2px solid var(--clr-primary);
+	outline-offset: 2px;
+	z-index: 2;
 }
 
 .other-images {
@@ -241,6 +269,63 @@ progress {
 	color: var(--clr-action);
 }
 
+/* the generated value changed after it was overwritten: a dot on the button, the new value in a bubble */
+.newspaper-field__reset--stale::after {
+	content: '';
+	position: absolute;
+	top: 0.4rem;
+	right: 0.35rem;
+	width: 0.45rem;
+	height: 0.45rem;
+	border-radius: 50%;
+	background: var(--clr-action);
+}
+
+.newspaper-field__bubble {
+	position: absolute;
+	z-index: 10;
+	top: calc(100% + 6px);
+	right: 0;
+	width: min(22rem, 100%);
+	padding: 0.5rem 0.75rem;
+	border: var(--bs-border-width) solid var(--bs-border-color);
+	border-radius: var(--bs-border-radius);
+	background: var(--bs-body-bg);
+	box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+	font-size: 0.8125rem;
+}
+
+.newspaper-field__bubble::before {
+	content: '';
+	position: absolute;
+	top: -6px;
+	right: 0.9rem;
+	width: 10px;
+	height: 10px;
+	border-top: var(--bs-border-width) solid var(--bs-border-color);
+	border-left: var(--bs-border-width) solid var(--bs-border-color);
+	background: inherit;
+	transform: rotate(45deg);
+}
+
+/* a generated value that followed a change of date or number flashes briefly */
+@keyframes newspaper-field-updated {
+	from {
+		border-color: #2b9a5a;
+		box-shadow: 0 0 0 0.2rem color-mix(in srgb, #2b9a5a 35%, transparent);
+	}
+}
+
+.newspaper-field--updated > .form-control {
+	animation: newspaper-field-updated 1s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.newspaper-field--updated > .form-control {
+		animation: none;
+	}
+}
+
 /* type pattern: one step per row, the colour of its position on the left (same colours as nested types) */
 .pattern-step {
 	display: flex;
@@ -292,6 +377,22 @@ progress {
 .preview-note-inline { display: none; }
 
 @media (max-width: 575.98px) {
+	.preview-col-block { width: 3rem; }
+	.preview-col-date { width: 6rem; }
+	.preview-col-number { width: 3rem; }
+	.preview-col-note { width: 0; }
+	.preview-table .preview-thumb,
+	.preview-table .preview-note { display: none; }
+	.preview-note-inline { display: block; }
+	.preview-table td:nth-child(2) { white-space: normal; }
+}
+
+/* the continue preview has the most columns: compact whenever its pane is narrow, also beside the options */
+.continue-preview {
+	container: continue-preview / inline-size;
+}
+
+@container continue-preview (max-width: 36rem) {
 	.preview-col-block { width: 3rem; }
 	.preview-col-date { width: 6rem; }
 	.preview-col-number { width: 3rem; }

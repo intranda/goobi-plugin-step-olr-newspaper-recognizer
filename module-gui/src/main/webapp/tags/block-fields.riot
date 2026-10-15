@@ -68,7 +68,8 @@
 					<span aria-hidden="true" class="icon-wrapper me-2"><svg><use href="{GoobiIcons.iconHref(fieldIcon(field))}" /></svg></span>
 					{field.label}{field.required ? ' *' : ''}
 				</label>
-				<div class="newspaper-field {field.display === 'textarea' ? 'grow-wrap' : ''} {field.overwritten ? 'newspaper-field--overwritten' : ''}" data-content={field.value}>
+				<div class="newspaper-field {field.display === 'textarea' ? 'grow-wrap' : ''} {field.overwritten ? 'newspaper-field--overwritten' : ''}" data-content={field.value}
+					data-field-wrapper={field.key}>
 					<select if={field.display === 'select1'} class="form-select" id={fieldId('field-' + field.key)} onchange={e => props.handleValue(field.key, e.target.value)}>
 						<option value="" selected={!field.value}>{props.t('plugin_newspaperRecognizer_pleaseSelect')}</option>
 						<option if={field.value && !field.items.some(item => item.value === field.value)} value={field.value} selected>{field.value}</option>
@@ -78,11 +79,26 @@
 						oninput={e => props.handleValue(field.key, e.target.value)}></textarea>
 					<input if={field.display === 'input' || field.display === 'readonly'} type="text" class="form-control" id={fieldId('field-' + field.key)}
 						value={field.value} readonly={field.display === 'readonly'} oninput={e => props.handleValue(field.key, e.target.value)} />
-					<button if={field.overwritten && field.display !== 'readonly'} type="button" class="btn btn-blank newspaper-field__reset"
+					<button if={field.overwritten && !field.stale && field.display !== 'readonly'} type="button" class="btn btn-blank newspaper-field__reset"
 						title={props.t('plugin_newspaperRecognizer_field_reset')} aria-label={props.t('plugin_newspaperRecognizer_field_reset')}
 						onclick={() => props.handleReset(field.key)}>
 						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('arrow-back-up')}" /></svg></span>
 					</button>
+					<!-- the generated value changed after the value was overwritten: offer it without a dialog -->
+					<button if={field.stale && field.display !== 'readonly'} type="button" class="btn btn-blank newspaper-field__reset newspaper-field__reset--stale"
+						title={props.t('plugin_newspaperRecognizer_field_changed')} aria-label={props.t('plugin_newspaperRecognizer_field_changed')}
+						aria-expanded={state.bubble === field.key ? 'true' : 'false'} onclick={() => toggleBubble(field.key)}>
+						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('refresh')}" /></svg></span>
+					</button>
+					<div if={field.stale && state.bubble === field.key} class="newspaper-field__bubble" role="dialog" aria-label={props.t('plugin_newspaperRecognizer_field_changed')}
+						onkeydown={e => e.key === 'Escape' && toggleBubble(field.key)}>
+						<div class="text-muted mb-1">{props.t('plugin_newspaperRecognizer_field_changed')}:</div>
+						<div class="fw-semibold mb-2 text-break">{field.generated}</div>
+						<div class="d-flex gap-2 justify-content-end">
+							<button type="button" class="btn btn-blank btn-sm" onclick={() => closeBubble(() => props.handleKeep(field.key))}>{props.t('plugin_newspaperRecognizer_field_keep')}</button>
+							<button type="button" class="btn btn-primary btn-sm" onclick={() => closeBubble(() => props.handleReset(field.key))}>{props.t('uebernehmen')}</button>
+						</div>
+					</div>
 				</div>
 			</div>
 			<span if={isMissing(field)} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_validation_missingRequired')}</span>
@@ -113,9 +129,39 @@
 		// Riot sets value={…} on a textarea as an attribute, which a textarea ignores: its text is the value property
 		onMounted() {
 			this.syncTextareas();
+			this.rememberGenerated();
 		},
 		onUpdated() {
 			this.syncTextareas();
+			this.flashUpdated();
+			this.rememberGenerated();
+		},
+		toggleBubble(key) {
+			this.update({ bubble: this.state.bubble === key ? null : key });
+		},
+		closeBubble(action) {
+			this.update({ bubble: null });
+			action();
+		},
+		// shown values that follow the generated value, per type and field, to notice when a change of date or number updates them
+		rememberGenerated() {
+			this.shownGenerated = Object.fromEntries(this.fieldList().filter(f => f.pattern != null && !f.overwritten)
+				.map(f => [this.props.start.type + ':' + f.key, f.value]));
+		},
+		flashUpdated() {
+			const before = this.shownGenerated || {};
+			for (const field of this.fieldList()) {
+				const key = this.props.start.type + ':' + field.key;
+				if (field.pattern == null || field.overwritten || !(key in before) || before[key] === field.value) {
+					continue;
+				}
+				const wrapper = this.root.querySelector(`[data-field-wrapper="${field.key}"]`);
+				if (wrapper) {
+					wrapper.classList.remove('newspaper-field--updated');
+					void wrapper.offsetWidth; // restart the animation
+					wrapper.classList.add('newspaper-field--updated');
+				}
+			}
 		},
 		syncTextareas() {
 			this.root.querySelectorAll('textarea[data-field-key]').forEach(textarea => {
@@ -127,6 +173,7 @@
 		},
 		onBeforeMount() {
 			this.fieldPrefix = 'blockField' + (++counter);
+			this.state = { bubble: null }; // key of the field whose changed generated value is shown
 		},
 		fieldId(name) {
 			return this.fieldPrefix + '-' + name;

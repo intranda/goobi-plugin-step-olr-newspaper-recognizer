@@ -105,7 +105,8 @@ export function generateValue(field, node, catalog) {
 
 /**
  * The visible fields of a node with the value shown: a value in start.values (stored or typed) wins, otherwise the generated
- * value. A field with a pattern is overwritten when its value differs from the generated one.
+ * value. A field with a pattern is overwritten when its value differs from the generated one, and stale when the generated
+ * value changed since it was overwritten (start.generatedBase, only known in this session).
  */
 export function fieldStates(node, catalog) {
   const info = catalog[node.start.type];
@@ -113,12 +114,47 @@ export function fieldStates(node, catalog) {
     return [];
   }
   const values = node.start.values || {};
+  const bases = node.start.generatedBase || {};
   return (info.fields || []).map(field => {
     const generated = field.pattern != null ? generateValue(field, node, catalog) : null;
     const set = Object.prototype.hasOwnProperty.call(values, field.key);
     const value = set ? values[field.key] ?? '' : generated ?? '';
-    return { ...field, generated, value, overwritten: field.pattern != null && set && value !== (generated ?? '') };
+    const overwritten = field.pattern != null && set && value !== (generated ?? '');
+    const stale = overwritten && Object.prototype.hasOwnProperty.call(bases, field.key) && bases[field.key] !== (generated ?? '');
+    return { ...field, generated, value, overwritten, stale };
   });
+}
+
+const generatedOf = (node, key, catalog) => fieldStates(node, catalog).find(f => f.key === key)?.generated ?? '';
+
+/** A typed value; one equal to the generated value is no overwrite, it keeps following the date and number. */
+export function setFieldValue(node, key, value, catalog) {
+  const start = node.start;
+  start.values = start.values || {};
+  start.generatedBase = start.generatedBase || {};
+  const field = fieldStates(node, catalog).find(f => f.key === key);
+  if (field && field.pattern != null && value === (field.generated ?? '')) {
+    delete start.values[key];
+    delete start.generatedBase[key];
+  } else {
+    start.values[key] = value;
+    if (field && field.pattern != null) {
+      start.generatedBase[key] = field.generated ?? '';
+    }
+  }
+}
+
+/** Keeps an overwritten value although the generated value changed: no hint until it changes again. */
+export function keepFieldValue(node, key, catalog) {
+  node.start.generatedBase = { ...(node.start.generatedBase || {}), [key]: generatedOf(node, key, catalog) };
+}
+
+/** Back to the generated value. */
+export function resetFieldValue(start, key) {
+  delete start.values[key];
+  if (start.generatedBase) {
+    delete start.generatedBase[key];
+  }
 }
 
 /**
@@ -137,13 +173,19 @@ export function userValuesLeftBehind(start, catalog) {
     .map(field => ({ field, value: start.values[field.key] }));
 }
 
-/** After loading: a stored value equal to the generated one is not an overwrite, it follows later changes of date or number. */
+/**
+ * After loading: a stored value equal to the generated one is not an overwrite, it follows later changes of date or number. A loaded
+ * overwrite is stale only after the generated value changes in this session.
+ */
 export function initFieldStates(pages, catalog) {
   for (const node of flatten(buildTree(pages).roots)) {
     const values = node.start.values = node.start.values || {};
+    const bases = node.start.generatedBase = {};
     for (const field of fieldStates(node, catalog)) {
       if (field.pattern != null && !field.overwritten) {
         delete values[field.key];
+      } else if (field.overwritten) {
+        bases[field.key] = field.generated ?? '';
       }
     }
   }

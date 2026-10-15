@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTree, flatten, setType, toSaveRequest, validateBlocks } from '../blocks.mjs';
 import { applyResolution, findConflicts } from '../hidden.mjs';
-import { fieldStates, formatJavaDate, generateValue, initFieldStates } from '../fields.mjs';
+import { fieldStates, formatJavaDate, generateValue, initFieldStates, keepFieldValue, resetFieldValue, setFieldValue } from '../fields.mjs';
+import { clonePages } from '../blocks.mjs';
 import { catalog as base, pages, start, VOLUME } from './fixtures.mjs';
 
 const field = (key, pattern = null, extra = {}) => ({ key, label: key, display: 'input', required: false, pattern, skipIfEmpty: false, items: [], ...extra });
@@ -118,4 +119,56 @@ test('type change: a value the user entered that the new type does not allow is 
   applyResolution(after, conflict, 'KEEP_ALLOWED', catalog, VOLUME);
   assert.deepEqual(after[0].starts[0].values, {});
   assert.deepEqual(findConflicts(before, morningToEvening({ Note: '' }).after, catalog, VOLUME), []);
+});
+
+const title = node => fieldStates(node, catalog).find(f => f.key === 'TitleDocMain');
+
+test('an overwritten value becomes stale when the generated value changes afterwards', () => {
+  const morning = issue('MorningIssue', '1890-03-01', null, '7', null);
+  const node = block(morning);
+  setFieldValue(node, 'TitleDocMain', 'Festausgabe', catalog);
+  assert.deepEqual([title(node).overwritten, title(node).stale], [true, false]);
+  morning.number = '8';
+  assert.deepEqual([title(node).value, title(node).generated, title(node).stale], ['Festausgabe', 'Morgenausgabe 8 vom 01.03.1890', true]);
+  morning.number = '7';
+  assert.equal(title(node).stale, false);
+});
+
+test('keepFieldValue keeps the overwritten value and drops the hint until the generated value changes again', () => {
+  const morning = issue('MorningIssue', '1890-03-01', null, '7', null);
+  const node = block(morning);
+  setFieldValue(node, 'TitleDocMain', 'Festausgabe', catalog);
+  morning.number = '8';
+  keepFieldValue(node, 'TitleDocMain', catalog);
+  assert.deepEqual([title(node).value, title(node).stale], ['Festausgabe', false]);
+  morning.number = '9';
+  assert.equal(title(node).stale, true);
+});
+
+test('setFieldValue with the generated value and resetFieldValue follow the generated value again', () => {
+  const morning = issue('MorningIssue', '1890-03-01', null, '7', null);
+  const node = block(morning);
+  setFieldValue(node, 'TitleDocMain', 'Festausgabe', catalog);
+  setFieldValue(node, 'TitleDocMain', 'Morgenausgabe 7 vom 01.03.1890', catalog);
+  assert.deepEqual([morning.values, morning.generatedBase], [{}, {}]);
+  setFieldValue(node, 'TitleDocMain', 'Festausgabe', catalog);
+  morning.number = '8';
+  resetFieldValue(morning, 'TitleDocMain');
+  assert.deepEqual([title(node).value, title(node).overwritten, title(node).stale], ['Morgenausgabe 8 vom 01.03.1890', false, false]);
+});
+
+test('fields without a pattern are never stale, loaded overwrites are not stale, copies keep the base', () => {
+  const morning = issue('MorningIssue', '1890-03-01', null, '7', null);
+  const node = block(morning);
+  setFieldValue(node, 'Note', 'Beschädigt', catalog);
+  assert.equal(fieldStates(node, catalog).find(f => f.key === 'Note').stale, false);
+
+  const list = pages({ depth: 1, starts: [issue('MorningIssue', '1890-03-01', null, '1', null)] });
+  list[0].starts[0].values = { TitleDocMain: 'Sonderausgabe' };
+  initFieldStates(list, catalog);
+  const loaded = buildTree(list).roots[0];
+  assert.equal(title(loaded).stale, false);
+  list[0].starts[0].number = '2';
+  assert.equal(title(loaded).stale, true);
+  assert.deepEqual(clonePages(list)[0].starts[0].generatedBase, { TitleDocMain: 'Morgenausgabe 1 vom 01.03.1890' });
 });

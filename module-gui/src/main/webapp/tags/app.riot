@@ -167,6 +167,7 @@
 											fields={fieldsOf(row.node)}
 											handle-value={(key, value) => changeValue(row.node, key, value)}
 											handle-reset={key => resetValue(row.node, key)}
+											handle-keep={key => keepValue(row.node, key)}
 											hidden-open={openHidden === blockElementId(row.node)}
 											handle-toggle-hidden={() => toggleHidden(blockElementId(row.node))}
 											handle-remove-hidden={() => askRemoveHidden(row.node)}
@@ -190,6 +191,7 @@
 												fields={fieldsOf(child)}
 												handle-value={(key, value) => changeValue(child, key, value)}
 												handle-reset={key => resetValue(child, key)}
+												handle-keep={key => keepValue(child, key)}
 												hidden-open={openHidden === blockElementId(child)}
 												handle-toggle-hidden={() => toggleHidden(blockElementId(child))}
 												handle-remove-hidden={() => askRemoveHidden(child)}
@@ -258,7 +260,7 @@
 	import TypePatternDialog from './type-pattern-dialog.riot'
 	import ContinueDialog from './continue-dialog.riot'
 	import { applyTypePattern } from '../logic/generation.mjs'
-	import { fieldStates, initFieldStates } from '../logic/fields.mjs'
+	import { fieldStates, initFieldStates, keepFieldValue, resetFieldValue, setFieldValue } from '../logic/fields.mjs'
 	import { positionColor } from '../logic/colors.mjs'
 	import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from '../logic/hidden.mjs'
 
@@ -633,14 +635,8 @@
 			this.update();
 		},
 
-		/* a value equal to the generated one is no overwrite: it keeps following the date and number */
 		changeValue(node, key, value) {
-			const field = fieldStates(node, this.catalog).find(f => f.key === key);
-			if (field && field.pattern != null && value === (field.generated ?? '')) {
-				delete node.start.values[key];
-			} else {
-				node.start.values[key] = value;
-			}
+			setFieldValue(node, key, value, this.catalog);
 			this.dataDirty = true;
 			this.refresh();
 			this.update();
@@ -651,8 +647,14 @@
 		},
 
 		resetValue(node, key) {
-			delete node.start.values[key];
+			resetFieldValue(node.start, key);
 			this.dataDirty = true;
+			this.refresh();
+			this.update();
+		},
+
+		keepValue(node, key) {
+			keepFieldValue(node, key, this.catalog);
 			this.refresh();
 			this.update();
 		},

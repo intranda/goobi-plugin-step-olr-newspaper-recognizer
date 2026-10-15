@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseByPattern, formatByPattern, fromIso, toIso, addDays, weekday, nextDate } from '../dates.mjs';
+import { parseByPattern, formatByPattern, fromIso, toIso, addDays, weekday, nextDate, WEEKDAY_PRESETS } from '../dates.mjs';
 
 const ALL_DAYS = [true, true, true, true, true, true, true];
 
@@ -41,4 +41,10 @@ test('nextDate skips disabled weekdays', () => {
 
 test('nextDate without any enabled weekday does not loop', () => {
   assert.deepEqual(nextDate({ y: 1890, m: 3, d: 1 }, { weekdays: [false, false, false, false, false, false, false], biweekly: false }), { y: 1890, m: 3, d: 2 });
+});
+
+test('weekday presets are indexed like weekday() (0 = Sunday)', () => {
+  assert.deepEqual(WEEKDAY_PRESETS.daily, [true, true, true, true, true, true, true]);
+  assert.deepEqual(WEEKDAY_PRESETS.monToSat, [false, true, true, true, true, true, true]);
+  assert.deepEqual(WEEKDAY_PRESETS.monToFri, [false, true, true, true, true, true, false]);
 });

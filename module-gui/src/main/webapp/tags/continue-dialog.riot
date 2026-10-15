@@ -35,23 +35,25 @@
 				</fieldset>
 				<fieldset>
 					<legend class="fs-6 fw-bold">{props.t('plugin_newspaperRecognizer_continue_weekdays')}</legend>
-					<div class="d-flex flex-wrap gap-2">
-						<!-- same toggles as the former weekday toolbar of this plugin -->
-						<label each={day in DAYS} class="check-week btn btn-{state.weekdays[day.index] ? 'neutral-600' : 'blank'}">
-							<input type="checkbox" class="btn-check" checked={state.weekdays[day.index]} onclick={() => toggleDay(day.index)} />
-							<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(state.weekdays[day.index] ? 'toggle-right' : 'toggle-left', state.weekdays[day.index])}" /></svg></span>
-							<span>{props.t(day.key)}</span>
-						</label>
-						<label class="check-week btn btn-{state.biweekly ? 'neutral-600' : 'blank'}">
-							<input type="checkbox" class="btn-check" checked={state.biweekly} onclick={() => update({ biweekly: !state.biweekly })} />
-							<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref(state.biweekly ? 'toggle-right' : 'toggle-left', state.biweekly)}" /></svg></span>
-							<span>{props.t('plugin_newspaperRecognizer_biWeekly')}</span>
-						</label>
+					<!-- one joined row like a calendar week, quick choices below -->
+					<div class="btn-group weekday-toggle" role="group" aria-label={props.t('plugin_newspaperRecognizer_continue_weekdays')}>
+						<!-- toggle buttons: their look follows the state (Riot sets checked only as attribute, which a clicked checkbox ignores) -->
+						<button each={day in DAYS} type="button" class="btn {state.weekdays[day.index] ? 'active' : ''}" aria-pressed={state.weekdays[day.index] ? 'true' : 'false'}
+							title={props.t(day.key)} aria-label={props.t(day.key)} onclick={() => toggleDay(day.index)}>{props.t(day.key).slice(0, 2)}</button>
+					</div>
+					<div class="d-flex flex-wrap column-gap-3 mt-1">
+						<button each={preset in PRESETS} type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick={() => applyPreset(preset.name)}>
+							{props.t(preset.key)}
+						</button>
+					</div>
+					<div class="form-check form-switch mt-2">
+						<input class="form-check-input" type="checkbox" role="switch" id="continue-biweekly" checked={state.biweekly} onchange={() => update({ biweekly: !state.biweekly })} />
+						<label class="form-check-label" for="continue-biweekly">{props.t('plugin_newspaperRecognizer_biWeekly')}</label>
 					</div>
 				</fieldset>
 			</div>
 
-			<div class="col-12 col-lg-7">
+			<div class="col-12 col-lg-7 continue-preview">
 			<h5 class="mb-2">{props.t('plugin_newspaperRecognizer_preview')}</h5>
 			<div if={result().error} class="alert alert-warning mb-0">{props.t('plugin_newspaperRecognizer_continue_error_' + result().error)}</div>
 
@@ -97,7 +99,7 @@
 	<script>
 	import { buildTree, siblingsFrom } from '../logic/blocks.mjs'
 	import { continueFrom } from '../logic/generation.mjs'
-	import { fromIso, formatByPattern } from '../logic/dates.mjs'
+	import { fromIso, formatByPattern, WEEKDAY_PRESETS } from '../logic/dates.mjs'
 
 	import PluginModal from './plugin-modal.riot'
 
@@ -114,6 +116,14 @@
 			{ index: 5, key: 'plugin_newspaperRecognizer_friday' },
 			{ index: 6, key: 'plugin_newspaperRecognizer_saturday' },
 			{ index: 0, key: 'plugin_newspaperRecognizer_sunday' },
+		],
+		applyPreset(name) {
+			this.update({ weekdays: [...WEEKDAY_PRESETS[name]] });
+		},
+		PRESETS: [
+			{ name: 'daily', key: 'plugin_newspaperRecognizer_weekdays_daily' },
+			{ name: 'monToSat', key: 'plugin_newspaperRecognizer_weekdays_monToSat' },
+			{ name: 'monToFri', key: 'plugin_newspaperRecognizer_weekdays_monToFri' },
 		],
 		onBeforeMount(props) {
 			this.state = {
