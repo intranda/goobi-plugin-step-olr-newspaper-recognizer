@@ -13,8 +13,8 @@
 					<option each={option in props.typeOptions} value={option.name} selected={option.name === props.start.type}>{option.label}</option>
 				</select>
 				<button if={props.handlePattern} type="button" class="btn btn-blank text-nowrap d-flex align-items-center gap-1" onclick={() => props.handlePattern()}
-					title={props.t('plugin_newspaperRecognizer_typePattern')}>
-					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('copy')}" /></svg></span>
+					title={props.t('plugin_newspaperRecognizer_typePattern_title')}>
+					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('repeat')}" /></svg></span>
 					<span>{props.t('plugin_newspaperRecognizer_typePattern_short')}</span>
 				</button>
 			</div>
