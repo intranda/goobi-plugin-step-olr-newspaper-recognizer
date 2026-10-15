@@ -210,8 +210,10 @@ progress {
 	padding-right: 2.25rem;
 }
 
-.newspaper-field__reset {
+/* more specific than Bootstrap's ".input-group .btn { position: relative }" */
+.input-group > .newspaper-field > .newspaper-field__reset {
 	position: absolute;
+	width: auto;
 	z-index: 5;
 	top: 0;
 	right: 0;
@@ -219,5 +221,7 @@ progress {
 	align-items: center;
 	height: calc(1lh + 0.75rem + 2 * var(--bs-border-width));
 	padding: 0 0.5rem;
+	border: 0;
+	background: transparent;
 	color: var(--clr-action);
 }

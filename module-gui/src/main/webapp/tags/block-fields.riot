@@ -74,7 +74,7 @@
 						<option if={field.value && !field.items.some(item => item.value === field.value)} value={field.value} selected>{field.value}</option>
 						<option each={item in field.items} value={item.value} selected={item.value === field.value}>{item.label}</option>
 					</select>
-					<textarea if={field.display === 'textarea'} class="form-control" rows="1" id={fieldId('field-' + field.key)} value={field.value}
+					<textarea if={field.display === 'textarea'} class="form-control" rows="1" id={fieldId('field-' + field.key)} data-field-key={field.key}
 						oninput={e => props.handleValue(field.key, e.target.value)}></textarea>
 					<input if={field.display === 'input' || field.display === 'readonly'} type="text" class="form-control" id={fieldId('field-' + field.key)}
 						value={field.value} readonly={field.display === 'readonly'} oninput={e => props.handleValue(field.key, e.target.value)} />
@@ -110,6 +110,21 @@
 		},
 		// all labels get the same width, so the fields of a block line up
 		LABEL_STYLE: 'min-width: 6.5rem;',
+		// Riot sets value={…} on a textarea as an attribute, which a textarea ignores: its text is the value property
+		onMounted() {
+			this.syncTextareas();
+		},
+		onUpdated() {
+			this.syncTextareas();
+		},
+		syncTextareas() {
+			this.root.querySelectorAll('textarea[data-field-key]').forEach(textarea => {
+				const field = this.fieldList().find(f => f.key === textarea.dataset.fieldKey);
+				if (field && textarea.value !== field.value) {
+					textarea.value = field.value;
+				}
+			});
+		},
 		onBeforeMount() {
 			this.fieldPrefix = 'blockField' + (++counter);
 		},
