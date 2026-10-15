@@ -166,9 +166,24 @@ progress {
 }
 
 /* small page images in the preview tables of the bulk tools */
+/* fixed columns: widths must not follow the content while the selection changes or thumbnails load */
+.preview-table {
+	table-layout: fixed;
+	width: 100%;
+}
+
+.preview-table td,
+.preview-table th {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .preview-thumb {
+	flex: none;
 	height: 48px;
-	width: auto;
+	width: 36px;
+	object-fit: contain;
 	border: 1px solid var(--clr-neutral-400, #ccc);
 }
 
