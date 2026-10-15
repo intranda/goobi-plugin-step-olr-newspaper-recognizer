@@ -240,3 +240,64 @@ progress {
 	background: transparent;
 	color: var(--clr-action);
 }
+
+/* type pattern: one step per row, the colour of its position on the left (same colours as nested types) */
+.pattern-step {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.25rem 0.25rem 0.25rem 0;
+	border: var(--bs-border-width) solid var(--bs-border-color);
+	border-left: 4px solid var(--position-color);
+	border-radius: var(--bs-border-radius);
+	background: var(--bs-body-bg);
+}
+
+.pattern-step--dragging {
+	opacity: 0.5;
+}
+
+.pattern-step__grip {
+	cursor: grab;
+	color: var(--clr-neutral-500, #888);
+}
+
+.pattern-step__no {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	border-radius: 50%;
+	background: var(--position-color);
+	color: #fff;
+	font-size: 0.8rem;
+	font-weight: 600;
+}
+
+.position-dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	margin-right: 0.5rem;
+	border-radius: 50%;
+}
+
+/* preview columns; on narrow screens without thumbnail and note column (the note follows the type) */
+.preview-col-block { width: 7rem; }
+.preview-col-date { width: 7.5rem; }
+.preview-col-number { width: 4rem; }
+.preview-col-note { width: 11rem; }
+.preview-note-inline { display: none; }
+
+@media (max-width: 575.98px) {
+	.preview-col-block { width: 3rem; }
+	.preview-col-date { width: 6rem; }
+	.preview-col-number { width: 3rem; }
+	.preview-col-note { width: 0; }
+	.preview-table .preview-thumb,
+	.preview-table .preview-note { display: none; }
+	.preview-note-inline { display: block; }
+	.preview-table td:nth-child(2) { white-space: normal; }
+}

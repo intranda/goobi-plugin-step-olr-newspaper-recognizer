@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { catalog, start, pages } from './fixtures.mjs';
-import { applyTypePattern, continueFrom } from '../generation.mjs';
+import { applyTypePattern, continueFrom, movePatternEntry } from '../generation.mjs';
 
 const ALL_DAYS = [true, true, true, true, true, true, true];
 const options = (overrides = {}) => ({ include: ['MorningIssue', 'EveningIssue'], mode: 'perDay', weekdays: ALL_DAYS, biweekly: false, ...overrides });
@@ -113,4 +113,14 @@ test('dateMode perIssue respects weekdays, and per-day numbers follow the new da
   const result = continueFrom(sequence('MEM'), { page: 0, level: 0 }, options({ dateMode: 'perIssue', weekdays: noSunday }), catalog);
   assert.deepEqual(dates(result), ['1890-03-01', '1890-03-03', '1890-03-04']);
   assert.deepEqual(numbers(result), ['1', '2', '3']);
+});
+
+test('movePatternEntry moves an entry and leaves its input unchanged', () => {
+  const pattern = ['A', 'B', 'C'];
+  assert.deepEqual(movePatternEntry(pattern, 0, 2), ['B', 'C', 'A']);
+  assert.deepEqual(movePatternEntry(pattern, 2, 0), ['C', 'A', 'B']);
+  assert.deepEqual(movePatternEntry(pattern, 1, 1), ['A', 'B', 'C']);
+  assert.deepEqual(movePatternEntry(pattern, 0, -1), ['A', 'B', 'C']);
+  assert.deepEqual(movePatternEntry(pattern, 2, 3), ['A', 'B', 'C']);
+  assert.deepEqual(pattern, ['A', 'B', 'C']);
 });

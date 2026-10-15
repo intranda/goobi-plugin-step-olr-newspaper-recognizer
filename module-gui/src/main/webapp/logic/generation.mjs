@@ -68,3 +68,14 @@ export function continueFrom(pages, startRef, options, catalog) {
   }
   return { pages: out, preview, count };
 }
+
+/** A copy of the pattern with the entry at {@code from} moved to {@code to}; out of range moves change nothing. */
+export function movePatternEntry(pattern, from, to) {
+  if (from === to || from < 0 || to < 0 || from >= pattern.length || to >= pattern.length) {
+    return [...pattern];
+  }
+  const out = [...pattern];
+  const [entry] = out.splice(from, 1);
+  out.splice(to, 0, entry);
+  return out;
+}

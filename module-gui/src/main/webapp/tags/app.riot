@@ -259,9 +259,9 @@
 	import ContinueDialog from './continue-dialog.riot'
 	import { applyTypePattern } from '../logic/generation.mjs'
 	import { fieldStates, initFieldStates } from '../logic/fields.mjs'
+	import { positionColor } from '../logic/colors.mjs'
 	import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from '../logic/hidden.mjs'
 
-	const CHILD_COLORS = ['#146abf', '#e00404', '#6300b5', '#ba5d06', '#467021'];
 
 	export default {
 		components: { Thumbcanvas, BlockFields, HiddenPopover, ConflictDialog, TypePatternDialog, ContinueDialog, PluginModal },
@@ -457,7 +457,7 @@
 		},
 
 		childColor(number) {
-			return CHILD_COLORS[(number - 1) % CHILD_COLORS.length];
+			return positionColor(number - 1);
 		},
 
 		blockElementId(node) {
