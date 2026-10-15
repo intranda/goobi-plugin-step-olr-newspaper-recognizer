@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { catalog, start, pages } from './fixtures.mjs';
-import { applyTypePattern, continueFrom, followingTypeCounts, movePatternEntry } from '../generation.mjs';
+import { applyTypePattern, continueFrom, followingTypeCounts, movePatternEntry, numberModeMatters } from '../generation.mjs';
 
 const ALL_DAYS = [true, true, true, true, true, true, true];
 const options = (overrides = {}) => ({ include: ['MorningIssue', 'EveningIssue'], mode: 'perDay', weekdays: ALL_DAYS, biweekly: false, ...overrides });
@@ -129,4 +129,18 @@ test('followingTypeCounts counts the types of the blocks after the start on its 
   assert.deepEqual(followingTypeCounts(sequence('MEMXEM'), { page: 0, level: 0 }), { EveningIssue: 2, MorningIssue: 2, ExtraEdition: 1 });
   assert.deepEqual(followingTypeCounts(sequence('MEM'), { page: 1, level: 0 }), { MorningIssue: 1 });
   assert.deepEqual(followingTypeCounts(sequence('M'), { page: 0, level: 0 }), {});
+});
+
+test('with a new date for every issue, per day and per issue count alike unless an included type has a number but no date', () => {
+  const both = (letters, include) => ['perDay', 'perIssue'].map(mode =>
+    numbers(continueFrom(sequence(letters), { page: 0, level: 0 }, options({ dateMode: 'perIssue', mode, include }), catalog)));
+  const [perDay, perIssue] = both('MEME', ['MorningIssue', 'EveningIssue']);
+  assert.deepEqual(perDay, perIssue);
+  const [extraPerDay, extraPerIssue] = both('MXM', ['MorningIssue', 'ExtraEdition']);
+  assert.notDeepEqual(extraPerDay, extraPerIssue);
+
+  assert.equal(numberModeMatters({ dateMode: 'perDay', include: ['MorningIssue', 'EveningIssue'] }, catalog), true);
+  assert.equal(numberModeMatters({ dateMode: 'perIssue', include: ['MorningIssue', 'EveningIssue'] }, catalog), false);
+  assert.equal(numberModeMatters({ dateMode: 'perIssue', include: ['MorningIssue', 'ExtraEdition'] }, catalog), true);
+  assert.equal(numberModeMatters({ dateMode: 'perIssue', include: ['MorningIssue', 'TableOfContents'] }, catalog), false);
 });

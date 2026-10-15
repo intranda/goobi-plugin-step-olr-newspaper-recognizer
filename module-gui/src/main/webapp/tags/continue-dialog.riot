@@ -19,23 +19,28 @@
 				<fieldset>
 					<legend class="fs-6 fw-bold">{props.t('plugin_newspaperRecognizer_continue_date')}</legend>
 					<div class="form-check">
-						<input class="form-check-input" type="radio" name="continue-dateMode" id="continue-dateRepeat" checked={state.dateMode === 'perDay'} onchange={() => update({ dateMode: 'perDay' })} />
+						<input class="form-check-input" type="radio" name="continue-dateMode" id="continue-dateRepeat" data-checked={state.dateMode === 'perDay' ? 'true' : 'false'} onchange={() => update({ dateMode: 'perDay' })} />
 						<label class="form-check-label" for="continue-dateRepeat">{props.t('plugin_newspaperRecognizer_continue_dateRepeat')}</label>
 					</div>
 					<div class="form-check">
-						<input class="form-check-input" type="radio" name="continue-dateMode" id="continue-datePerIssue" checked={state.dateMode === 'perIssue'} onchange={() => update({ dateMode: 'perIssue' })} />
+						<input class="form-check-input" type="radio" name="continue-dateMode" id="continue-datePerIssue" data-checked={state.dateMode === 'perIssue' ? 'true' : 'false'} onchange={() => update({ dateMode: 'perIssue' })} />
 						<label class="form-check-label" for="continue-datePerIssue">{props.t('plugin_newspaperRecognizer_continue_datePerIssue')}</label>
 					</div>
 				</fieldset>
-				<fieldset>
-					<legend class="fs-6 fw-bold">{props.t('plugin_newspaperRecognizer_continue_number')}</legend>
+				<!-- with a new date for every issue both settings count alike (unless a type has a number but no date): locked, with the reason -->
+				<fieldset disabled={!numberModeMatters()}>
+					<legend class="fs-6 fw-bold {numberModeMatters() ? '' : 'text-muted'}">{props.t('plugin_newspaperRecognizer_continue_number')}</legend>
 					<div class="form-check">
-						<input class="form-check-input" type="radio" name="continue-mode" id="continue-perDay" checked={state.mode === 'perDay'} onchange={() => update({ mode: 'perDay' })} />
+						<input class="form-check-input" type="radio" name="continue-mode" id="continue-perDay" data-checked={numberMode() === 'perDay' ? 'true' : 'false'} onchange={() => update({ mode: 'perDay' })} />
 						<label class="form-check-label" for="continue-perDay">{props.t('plugin_newspaperRecognizer_continue_perDay')}</label>
 					</div>
 					<div class="form-check">
-						<input class="form-check-input" type="radio" name="continue-mode" id="continue-perIssue" checked={state.mode === 'perIssue'} onchange={() => update({ mode: 'perIssue' })} />
+						<input class="form-check-input" type="radio" name="continue-mode" id="continue-perIssue" data-checked={numberMode() === 'perIssue' ? 'true' : 'false'} onchange={() => update({ mode: 'perIssue' })} />
 						<label class="form-check-label" for="continue-perIssue">{props.t('plugin_newspaperRecognizer_continue_perIssue')}</label>
+					</div>
+					<div if={!numberModeMatters()} class="form-text d-flex gap-1 mt-1">
+						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('info-circle')}" /></svg></span>
+						<span>{props.t('plugin_newspaperRecognizer_continue_numberPerIssueHint')}</span>
 					</div>
 				</fieldset>
 				<fieldset>
@@ -107,7 +112,7 @@
 
 	<script>
 	import { buildTree, siblingsFrom } from '../logic/blocks.mjs'
-	import { continueFrom, followingTypeCounts } from '../logic/generation.mjs'
+	import { continueFrom, followingTypeCounts, numberModeMatters } from '../logic/generation.mjs'
 	import { fromIso, formatByPattern, WEEKDAY_PRESETS } from '../logic/dates.mjs'
 
 	import PluginModal from './plugin-modal.riot'
@@ -152,6 +157,25 @@
 				const info = this.props.catalog[option.name] || {};
 				return info.dated || info.numbered;
 			});
+		},
+		// Riot sets checked only as attribute, which a clicked radio ignores: the property follows the state
+		onMounted() {
+			this.syncChecked();
+		},
+		onUpdated() {
+			this.syncChecked();
+		},
+		syncChecked() {
+			this.$$('input[data-checked]').forEach(input => {
+				input.checked = input.dataset.checked === 'true';
+			});
+		},
+		numberModeMatters() {
+			return numberModeMatters({ dateMode: this.state.dateMode, include: this.state.include }, this.props.catalog);
+		},
+		/* the setting shown; the user's choice is kept while it has no effect */
+		numberMode() {
+			return this.numberModeMatters() ? this.state.mode : 'perIssue';
 		},
 		following() {
 			return followingTypeCounts(this.props.pages, this.props.startRef);

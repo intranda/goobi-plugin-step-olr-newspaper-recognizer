@@ -45,7 +45,7 @@ Das Auswahlmenü eines Blocks bietet genau die Typen an, die der Regelsatz an di
 Zwei Werkzeuge füllen viele Blöcke auf einmal:
 
 - **Typmuster anwenden** setzt die Typen eines Blocks und aller folgenden Blöcke derselben Ebene nach einem sich wiederholenden Muster, zum Beispiel Morgenausgabe, Abendausgabe. Datum und Nummer bleiben erhalten, wo der neue Typ diese Felder hat.
-- **Ab hier fortsetzen** füllt Datum und Nummer ab einem Block. Berücksichtigt werden nur die gewählten Typen. Ein neuer Tag beginnt entweder, sobald sich ein berücksichtigter Typ wiederholt, oder mit jedem berücksichtigten Block (Option „neues Datum für jede Ausgabe“). Die Nummer zählt pro Tag (Morgen 1, Abend 1, Morgen 2 …) oder pro Ausgabe (Morgen 1, Abend 2, Morgen 3 …). Die Erscheinungstage (einzeln wählbar oder per Schnellwahl täglich, Mo–Sa, Mo–Fr) und ein zweiwöchentlicher Rhythmus steuern das Datum. Eine Vorschau zeigt das Ergebnis vor dem Übernehmen. Typen werden nie geändert.
+- **Ab hier fortsetzen** füllt Datum und Nummer ab einem Block. Berücksichtigt werden nur die gewählten Typen. Ein neuer Tag beginnt entweder, sobald sich ein berücksichtigter Typ wiederholt, oder mit jedem berücksichtigten Block (Option „neues Datum für jede Ausgabe“). Die Nummer zählt pro Tag (Morgen 1, Abend 1, Morgen 2 …) oder pro Ausgabe (Morgen 1, Abend 2, Morgen 3 …); bei „neues Datum für jede Ausgabe“ ist beides gleich, die Einstellung ist dann gesperrt (außer ein berücksichtigter Typ hat eine Nummer, aber kein Datum). Die Erscheinungstage (einzeln wählbar oder per Schnellwahl täglich, Mo–Sa, Mo–Fr) und ein zweiwöchentlicher Rhythmus steuern das Datum. Eine Vorschau zeigt das Ergebnis vor dem Übernehmen. Typen werden nie geändert.
 
 ![Ab hier fortsetzen](screen5_de.png)
 

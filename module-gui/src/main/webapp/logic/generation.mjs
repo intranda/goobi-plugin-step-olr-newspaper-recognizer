@@ -90,3 +90,14 @@ export function followingTypeCounts(pages, startRef) {
   }
   return counts;
 }
+
+/**
+ * Whether "number per day" and "number per issue" can give different numbers: with a new date for every issue each dated block
+ * starts a new day, so they only differ for included types with a number but no date.
+ */
+export function numberModeMatters(options, catalog) {
+  if (options.dateMode !== 'perIssue') {
+    return true;
+  }
+  return options.include.some(type => catalog[type]?.numbered && !catalog[type]?.dated);
+}
