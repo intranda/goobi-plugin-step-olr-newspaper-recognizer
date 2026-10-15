@@ -376,4 +376,43 @@ public class MetsWriterTest {
         write();
         assertEquals(List.of("CurrentNoSorting=[MISSING]"), metadata(volumeOf(dd).getAllChildren().get(0)));
     }
+
+    /** MorningIssue on page 1 with a date and the given metadata, loaded with a config where only MorningIssue has the fields. */
+    private void morningWithFields(List<FieldDefinition> morningFields, String... metadata) {
+        config = TestDocuments.config(List.of(), Map.of("MorningIssue", morningFields));
+        DigitalDocument document = volume(strict, 1);
+        DocStruct morning = add(strict, document, volumeOf(document), "MorningIssue", 0);
+        addMetadata(strict, morning, "DateIssued", "1890-03-02");
+        for (int i = 0; i < metadata.length; i += 2) {
+            addMetadata(strict, morning, metadata[i], metadata[i + 1]);
+        }
+        load(document, filenames(1));
+    }
+
+    @Test
+    public void typeChange_userValueOfAFieldTheNewTypeDoesNotShow_keptWithTheValueShown() throws Exception {
+        morningWithFields(List.of(FieldDefinition.of("TitleDocMain", null, false, false)), "TitleDocMain", "Sonderausgabe");
+        startOn(0, 0).setType("EveningIssue");
+        startOn(0, 0).getValues().put("TitleDocMain", "Sonderausgabe 2");
+        write();
+        DocStruct evening = volumeOf(dd).getAllChildren().get(0);
+        assertEquals("EveningIssue", evening.getType().getName());
+        assertEquals(List.of("DateIssued=1890-03-02", "TitleDocMain=Sonderausgabe 2"), metadata(evening));
+    }
+
+    @Test
+    public void typeChange_generatedOrBlankValueOfAFieldTheNewTypeDoesNotShow_removed() throws Exception {
+        morningWithFields(List.of(FieldDefinition.of("TitleDocMain", "Morgenausgabe vom {date:dd.MM.yyyy}", false, false)),
+                "TitleDocMain", "Morgenausgabe vom 02.03.1890");
+        startOn(0, 0).setType("EveningIssue");
+        startOn(0, 0).getValues().remove("TitleDocMain");
+        write();
+        assertEquals(List.of("DateIssued=1890-03-02"), metadata(volumeOf(dd).getAllChildren().get(0)));
+
+        morningWithFields(List.of(FieldDefinition.of("TitleDocMain", null, false, false)), "TitleDocMain", "Sonderausgabe");
+        startOn(0, 0).setType("EveningIssue");
+        startOn(0, 0).getValues().put("TitleDocMain", " ");
+        write();
+        assertEquals(List.of("DateIssued=1890-03-02"), metadata(volumeOf(dd).getAllChildren().get(0)));
+    }
 }

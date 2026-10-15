@@ -1,6 +1,7 @@
 // Conflicts between a change and hidden data, following "Shared rules: hidden data" in the implementation plan.
 // Mirrors HiddenDataResolver.java; the backend re-checks everything and refuses a save it cannot resolve.
 import { buildTree, flatten } from './blocks.mjs';
+import { userValuesLeftBehind } from './fields.mjs';
 
 const structuresOf = start => start?.hidden?.structures || [];
 const metadataOf = start => start?.hidden?.metadata || [];
@@ -36,10 +37,14 @@ export function findConflicts(oldPages, newPages, catalog, volumeType) {
   const conflicts = [];
   for (const old of flatten(buildTree(oldPages).roots)) {
     const start = old.start;
-    if (!start.id || !hasHidden(start)) {
+    const node = start.id ? newById.get(start.id) : null;
+    // values the user entered that the new type does not allow are decided together with the hidden data
+    const userValues = node ? userValuesLeftBehind(node.start, catalog)
+      .filter(({ field }) => !(catalog[node.start.type]?.allowedMetadata || []).includes(field.key))
+      .map(({ field, value }) => ({ key: `field:${field.key}`, type: field.key, label: field.label, value })) : [];
+    if (!start.id || (!hasHidden(start) && !userValues.length)) {
       continue;
     }
-    const node = newById.get(start.id);
     if (!node) {
       const structures = structuresOf(start);
       const canRehome = structures.length > 0 && structures.every(s => homeFor(s, newTree, catalog, volumeType));
@@ -52,7 +57,7 @@ export function findConflicts(oldPages, newPages, catalog, volumeType) {
     if (type && type !== start.type) {
       const info = catalog[type] || {};
       const badStructures = remaining.filter(s => !(info.children || []).includes(s.type));
-      const badMetadata = metadataOf(start).filter(m => !(info.allowedMetadata || []).includes(m.type));
+      const badMetadata = [...metadataOf(start).filter(m => !(info.allowedMetadata || []).includes(m.type)), ...userValues];
       // hidden metadata the new type manages would be overwritten by the backend (first instance of each such type)
       const loaded = catalog[start.originalType || start.type] || {};
       for (const type of (info.managedMetadata || []).filter(t => !(loaded.managedMetadata || []).includes(t))) {
@@ -96,6 +101,10 @@ export function applyResolution(pages, conflict, action, catalog, volumeType) {
       volumeAdditions.push({ ...structure });
     }
   });
+  // a value the user entered that the new type does not allow goes in either case
+  if (node && conflict.kind === 'TYPE') {
+    conflict.metadata.filter(m => m.key.startsWith('field:')).forEach(m => delete node.start.values[m.type]);
+  }
   if (conflict.kind === 'EXPLICIT' || action === 'REMOVE_ALL') {
     if (node) {
       node.start.hidden = { structures: [], metadata: [] };

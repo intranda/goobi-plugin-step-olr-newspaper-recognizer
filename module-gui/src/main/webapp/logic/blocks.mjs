@@ -1,7 +1,7 @@
 // Pure operations on the page list in the transfer format (NewspaperPage / BlockStart on the Java side).
 // A page with k starts and depth d opens blocks on the levels d-k … d-1; rules mirror BlockTree.java and BlockValidator.java.
 import { parseByPattern, formatByPattern, toIso, fromIso } from './dates.mjs';
-import { fieldStates } from './fields.mjs';
+import { fieldStates, userValuesLeftBehind } from './fields.mjs';
 
 export const ANALYSIS_THRESHOLD = -0.8;
 
@@ -324,7 +324,10 @@ export function removePage(pages, index) {
 /** With the catalog, every start sends the value shown for each visible field of its type (BlockStart.values). */
 export function toSaveRequest(pages, operations, catalog = null) {
   const nodes = catalog ? new Map(flatten(buildTree(pages).roots).map(node => [node.start, node])) : null;
-  const values = start => Object.fromEntries(fieldStates(nodes.get(start), catalog).map(field => [field.key, field.value]));
+  const values = start => Object.fromEntries([
+    ...fieldStates(nodes.get(start), catalog).map(field => [field.key, field.value]),
+    ...userValuesLeftBehind(start, catalog).map(({ field, value }) => [field.key, value]),
+  ]);
   return JSON.stringify({
     pages: pages.map(page => ({
       filename: page.filename,

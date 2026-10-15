@@ -1,5 +1,8 @@
 package de.intranda.goobi.plugins.newspaperRecognizer.mets;
 
+import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldDefinition;
+import java.util.Map;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.add;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.addMetadata;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.filenames;
@@ -234,5 +237,28 @@ public class HiddenDataResolverTest {
         issueWithHiddenData();
         assertEquals(List.of("remove TableOfContents", "remove metadata CurrentNo=9", "remove metadata Note=n"),
                 resolve(op(id(0, 0), HiddenConflictKind.EXPLICIT, HiddenAction.REMOVE_ALL)));
+    }
+
+    @Test
+    public void typeChange_userValueOfAFieldTheNewTypeDoesNotAllow_isATypeConflict() throws Exception {
+        PluginConfiguration fields = TestDocuments.config(List.of(), Map.of("MorningIssue", List.of(FieldDefinition.of("Note", null, false, false))));
+        DigitalDocument document = volume(strict, 1);
+        DocStruct issue = add(strict, document, volumeOf(document), "MorningIssue", 0);
+        addMetadata(strict, issue, "Note", "Beschädigt");
+        dd = document;
+        pages = new MetsReader(TestDocuments.ruleset(), fields, "de").read(dd, filenames(1), registry).pages();
+        HiddenDataResolver fieldResolver = new HiddenDataResolver(TestDocuments.ruleset(), fields);
+        pages.get(0).getStarts().get(0).setType("EveningIssue");
+        assertEquals(Map.of("Note", "Beschädigt"), pages.get(0).getStarts().get(0).getValues());
+
+        assertThrows(UnresolvedHiddenDataException.class, () -> fieldResolver.resolve("NewspaperVolume", registry, BlockTree.build(pages), List.of(),
+                PageIndex.of(dd, filenames(1))));
+        Resolution keep = fieldResolver.resolve("NewspaperVolume", registry, BlockTree.build(pages),
+                List.of(op(id(0, 0), HiddenConflictKind.TYPE, HiddenAction.KEEP_ALLOWED)), PageIndex.of(dd, filenames(1)));
+        assertEquals(List.of("remove metadata Note=Beschädigt"), keep.steps().stream().map(HiddenDataResolverTest::describe).toList());
+
+        pages.get(0).getStarts().get(0).getValues().put("Note", "");
+        assertEquals(List.of(), fieldResolver.resolve("NewspaperVolume", registry, BlockTree.build(pages), List.of(),
+                PageIndex.of(dd, filenames(1))).steps());
     }
 }

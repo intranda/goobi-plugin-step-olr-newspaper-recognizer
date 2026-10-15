@@ -121,6 +121,22 @@ export function fieldStates(node, catalog) {
   });
 }
 
+/**
+ * On a type change: the values the user entered in fields of the loaded type that the current type does not show. start.values
+ * only holds entered values (generated ones that were not overwritten are dropped), blank ones are skipped. Mirrors
+ * PluginConfiguration.userValuesLeftBehind.
+ */
+export function userValuesLeftBehind(start, catalog) {
+  const loaded = catalog[start.originalType];
+  if (!loaded || start.originalType === start.type) {
+    return [];
+  }
+  const shown = new Set((catalog[start.type]?.fields || []).map(field => field.key));
+  return (loaded.fields || [])
+    .filter(field => !shown.has(field.key) && String(start.values?.[field.key] ?? '').trim())
+    .map(field => ({ field, value: start.values[field.key] }));
+}
+
 /** After loading: a stored value equal to the generated one is not an overwrite, it follows later changes of date or number. */
 export function initFieldStates(pages, catalog) {
   for (const node of flatten(buildTree(pages).roots)) {

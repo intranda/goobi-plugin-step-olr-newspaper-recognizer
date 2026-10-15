@@ -184,6 +184,23 @@ public record PluginConfiguration(boolean loadAllImages, boolean showDeletePageB
         return result;
     }
 
+    /**
+     * On a type change: the values the user entered in visible fields of {@code oldType} that {@code newType} does not manage
+     * (key → trimmed value). They are kept, never removed silently: as additional data if the new type allows them, otherwise
+     * as part of the type conflict. Generated values that were not overwritten are not sent by the frontend, blank ones are skipped.
+     */
+    public Map<String, String> userValuesLeftBehind(String oldType, String newType, Map<String, String> values, RulesetTypes ruleset) {
+        Set<String> managedByNew = managedMetadata(newType, ruleset);
+        Map<String, String> result = new LinkedHashMap<>();
+        for (FieldDefinition field : visibleFieldsFor(oldType, ruleset)) {
+            String value = StringUtils.trimToNull(values.get(field.key()));
+            if (value != null && !managedByNew.contains(field.key())) {
+                result.put(field.key(), value);
+            }
+        }
+        return result;
+    }
+
     public List<String> validate(RulesetTypes ruleset, String volumeType) {
         List<String> errors = new ArrayList<>(parseErrors);
         Set<String> reachable = reachableTypes(ruleset, volumeType);

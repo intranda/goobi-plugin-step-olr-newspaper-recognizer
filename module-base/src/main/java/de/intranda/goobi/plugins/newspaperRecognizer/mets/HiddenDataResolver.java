@@ -54,7 +54,8 @@ public class HiddenDataResolver {
             String oldType = ds.getType().getName();
             List<DocStruct> structures = PageIndex.children(ds).stream().filter(child -> !registry.isBlock(child)).toList();
             List<Object> metadata = MetadataAccess.hidden(ds, config.managedMetadata(oldType, ruleset));
-            if (structures.isEmpty() && metadata.isEmpty()) {
+            List<Object> userValues = notAllowedUserValues(ds, oldType, nodes.get(id));
+            if (structures.isEmpty() && metadata.isEmpty() && userValues.isEmpty()) {
                 continue;
             }
             Map<HiddenConflictKind, HiddenAction> ops = chosen.getOrDefault(id, Map.of());
@@ -79,6 +80,7 @@ public class HiddenDataResolver {
             if (node.type() != null && !node.type().equals(oldType)) {
                 List<DocStruct> badStructures = structures.stream().filter(s -> !ruleset.isAllowedChild(node.type(), s.getType().getName())).toList();
                 List<Object> badMetadata = new ArrayList<>(metadata.stream().filter(m -> !ruleset.allowsEntry(node.type(), m)).toList());
+                badMetadata.addAll(userValues);
                 // hidden metadata the new type manages would be overwritten (or removed) by the writer
                 for (Object entry : managedByNewType(ds, oldType, node.type())) {
                     if (badMetadata.stream().noneMatch(b -> b == entry)) {
@@ -88,7 +90,9 @@ public class HiddenDataResolver {
                 if (!badStructures.isEmpty() || !badMetadata.isEmpty()) {
                     HiddenAction action = ops.get(HiddenConflictKind.TYPE);
                     if (action == HiddenAction.REMOVE_ALL) {
-                        removeAll(ds, structures, metadata, steps);
+                        List<Object> all = new ArrayList<>(metadata);
+                        all.addAll(userValues);
+                        removeAll(ds, structures, all, steps);
                         continue;
                     }
                     if (action != HiddenAction.KEEP_ALLOWED) {
@@ -131,6 +135,20 @@ public class HiddenDataResolver {
             throw new UnresolvedHiddenDataException(problems);
         }
         return new Resolution(steps);
+    }
+
+    /** On a type change: the stored values the user entered in fields the new type does not allow. */
+    private List<Object> notAllowedUserValues(DocStruct ds, String oldType, BlockNode node) {
+        if (node == null || node.type() == null || node.type().equals(oldType)) {
+            return List.of();
+        }
+        List<Object> result = new ArrayList<>();
+        for (String key : config.userValuesLeftBehind(oldType, node.type(), node.getStart().getValues(), ruleset).keySet()) {
+            if (!ruleset.allowsMetadata(node.type(), key)) {
+                MetadataAccess.first(ds, key).ifPresent(result::add);
+            }
+        }
+        return result;
     }
 
     /** The first instance of every metadata type the new type manages but the old one did not: the writer replaces it. */

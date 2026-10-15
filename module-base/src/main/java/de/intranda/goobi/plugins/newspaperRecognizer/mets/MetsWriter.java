@@ -145,9 +145,17 @@ public class MetsWriter {
         if (ds == null) {
             ds = dd.createDocStruct(ruleset.docStructType(node.type()));
         } else if (!ds.getType().getName().equals(node.type())) {
-            Set<String> stale = new HashSet<>(config.managedMetadata(ds.getType().getName(), ruleset));
+            String oldType = ds.getType().getName();
+            Set<String> stale = new HashSet<>(config.managedMetadata(oldType, ruleset));
             stale.removeAll(config.managedMetadata(node.type(), ruleset));
+            // what the user entered stays (it is additional data of the new type then); values the new type does not allow are
+            // removed by the type conflict resolution before
+            Map<String, String> userValues = config.userValuesLeftBehind(oldType, node.type(), node.getStart().getValues(), ruleset);
             for (String metadata : stale) {
+                if (userValues.containsKey(metadata) && ruleset.allowsMetadata(node.type(), metadata)) {
+                    MetadataAccess.setFirst(ds, ruleset.metadataType(metadata), userValues.get(metadata));
+                    continue;
+                }
                 Optional<Metadata> old = MetadataAccess.first(ds, metadata);
                 if (old.isPresent()) {
                     ds.removeMetadata(old.get(), true);

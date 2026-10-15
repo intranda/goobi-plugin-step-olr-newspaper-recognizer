@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildTree, flatten, toSaveRequest, validateBlocks } from '../blocks.mjs';
+import { buildTree, flatten, setType, toSaveRequest, validateBlocks } from '../blocks.mjs';
+import { applyResolution, findConflicts } from '../hidden.mjs';
 import { fieldStates, formatJavaDate, generateValue, initFieldStates } from '../fields.mjs';
 import { catalog as base, pages, start, VOLUME } from './fixtures.mjs';
 
@@ -95,4 +96,26 @@ test('toSaveRequest with the catalog sends the value shown for every visible fie
   const request = JSON.parse(toSaveRequest(list, [], catalog));
   assert.deepEqual(request.pages.map(p => p.starts[0].values), [{ TitleDocMain: 'Morgenausgabe 1 vom 01.03.1890', Note: 'Notiz' }, {}]);
   assert.equal(flatten(buildTree(list).roots).length, 2);
+});
+
+/** A loaded MorningIssue (id b1) with the given field values, and the same pages after changing its type to EveningIssue. */
+function morningToEvening(values) {
+  const before = pages({ depth: 1, starts: [issue('MorningIssue', '1890-03-01', null, '1', null)] });
+  Object.assign(before[0].starts[0], { id: 'b1', originalType: 'MorningIssue', values });
+  return { before, after: setType(before, { page: 0, level: 0 }, 'EveningIssue', catalog) };
+}
+
+test('type change: values the user entered in fields the new type does not show are sent, generated and blank ones not', () => {
+  const { after } = morningToEvening({ Note: 'Beschädigt', TitleDocMain: ' ' });
+  assert.deepEqual(JSON.parse(toSaveRequest(after, [], catalog)).pages[0].starts[0].values, { Note: 'Beschädigt' });
+});
+
+test('type change: a value the user entered that the new type does not allow is part of the type conflict', () => {
+  const { before, after } = morningToEvening({ Note: 'Beschädigt' });
+  const [conflict] = findConflicts(before, after, catalog, VOLUME);
+  assert.equal(conflict.kind, 'TYPE');
+  assert.deepEqual(conflict.metadata, [{ key: 'field:Note', type: 'Note', label: 'Note', value: 'Beschädigt' }]);
+  applyResolution(after, conflict, 'KEEP_ALLOWED', catalog, VOLUME);
+  assert.deepEqual(after[0].starts[0].values, {});
+  assert.deepEqual(findConflicts(before, morningToEvening({ Note: '' }).after, catalog, VOLUME), []);
 });
