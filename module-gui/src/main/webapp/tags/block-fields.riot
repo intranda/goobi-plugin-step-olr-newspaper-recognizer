@@ -90,15 +90,13 @@
 						aria-expanded={state.bubble === field.key ? 'true' : 'false'} onclick={() => toggleBubble(field.key)}>
 						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('refresh')}" /></svg></span>
 					</button>
-					<div if={field.stale && state.bubble === field.key} class="newspaper-field__bubble" role="dialog" aria-label={props.t('plugin_newspaperRecognizer_field_changed')}
-						onkeydown={e => e.key === 'Escape' && toggleBubble(field.key)}>
-						<div class="text-muted mb-1">{props.t('plugin_newspaperRecognizer_field_changed')}:</div>
+					<plugin-popover if={field.stale && state.bubble === field.key} title={props.t('plugin_newspaperRecognizer_field_changed')} handle-close={() => toggleBubble(field.key)}>
 						<div class="fw-semibold mb-2 text-break">{field.generated}</div>
 						<div class="d-flex gap-2 justify-content-end">
 							<button type="button" class="btn btn-blank btn-sm" onclick={() => closeBubble(() => props.handleKeep(field.key))}>{props.t('plugin_newspaperRecognizer_field_keep')}</button>
 							<button type="button" class="btn btn-primary btn-sm" onclick={() => closeBubble(() => props.handleReset(field.key))}>{props.t('uebernehmen')}</button>
 						</div>
-					</div>
+					</plugin-popover>
 				</div>
 			</div>
 			<span if={isMissing(field)} class="help-inline text-danger">{props.t('plugin_newspaperRecognizer_validation_missingRequired')}</span>
@@ -117,12 +115,14 @@
 
 	<script>
 	import HiddenPopover from './hidden-popover.riot'
+	import PluginPopover from './plugin-popover.riot'
 
 	let counter = 0;
 
 	export default {
 		components: {
 			HiddenPopover,
+			PluginPopover,
 		},
 		// all labels get the same width, so the fields of a block line up
 		LABEL_STYLE: 'min-width: 6.5rem;',

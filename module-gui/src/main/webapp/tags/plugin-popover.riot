@@ -1,0 +1,36 @@
+<plugin-popover>
+	<!-- the popover markup Goobi uses (Bootstrap popover, styled by Goobi's _tooltip-custom.scss), placed below its trigger -->
+	<div class="popover bs-popover-bottom newspaper-popover newspaper-popover--{props.align === 'start' ? 'start' : 'end'}" role="dialog" aria-label={props.title}>
+		<div class="popover-arrow"></div>
+		<h3 class="popover-header">{props.title}</h3>
+		<div class="popover-body">
+			<slot />
+		</div>
+	</div>
+
+	<script>
+	export default {
+		// closes like Goobi's popovers: Escape or a click outside (the trigger next to it toggles by itself)
+		onMounted() {
+			this.onKeyDown = e => {
+				if (e.key === 'Escape') {
+					this.props.handleClose();
+				}
+			};
+			this.onPointerDown = e => {
+				// the positioned container holds the trigger too
+				const area = this.root.closest('.position-relative, .newspaper-field') || this.root.parentElement;
+				if (!area.contains(e.target)) {
+					this.props.handleClose();
+				}
+			};
+			document.addEventListener('keydown', this.onKeyDown);
+			document.addEventListener('mousedown', this.onPointerDown);
+		},
+		onUnmounted() {
+			document.removeEventListener('keydown', this.onKeyDown);
+			document.removeEventListener('mousedown', this.onPointerDown);
+		},
+	}
+	</script>
+</plugin-popover>
