@@ -175,6 +175,6 @@ public final class TestDocuments {
 
     /** FIELDS with the given metadata fields. */
     public static PluginConfiguration config(List<FieldDefinition> defaults, Map<String, List<FieldDefinition>> types) {
-        return new PluginConfiguration(true, false, false, PaginationConfiguration.defaults(), FIELDS, defaults, types, List.of());
+        return new PluginConfiguration(true, false, false, new PaginationConfiguration(false, true, List.of("–"), Map.of()), FIELDS, defaults, types, List.of());
     }
 }

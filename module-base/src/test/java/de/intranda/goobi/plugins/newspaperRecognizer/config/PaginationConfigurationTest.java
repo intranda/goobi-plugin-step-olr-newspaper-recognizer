@@ -106,6 +106,14 @@ public class PaginationConfigurationTest {
     }
 
     @Test
+    public void parse_removedElementEmptyForm_error() throws Exception {
+        List<String> errors = new ArrayList<>();
+        parse("<pagination><useFakePagination/></pagination>", errors);
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0), errors.get(0).contains("no longer supported"));
+    }
+
+    @Test
     public void validate_unknownDocstruct_error() throws Exception {
         PaginationConfiguration config = parse("<pagination><rule docstruct=\"Nope\" beginsWith=\"1\" /></pagination>");
         List<String> errors = config.validate(TestDocuments.ruleset());
