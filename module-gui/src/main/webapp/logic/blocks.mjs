@@ -132,7 +132,7 @@ export function toggleBlock(pages, index) {
   return out;
 }
 
-/** Ctrl/Alt-click: add or remove a level-1 block (child block) starting on the page. */
+/** Ctrl/Alt-click: add or remove a level-1 block (child block) starting on the page; a new child runs to the end of the block or the next child. */
 export function toggleChild(pages, index) {
   const out = clonePages(pages);
   const page = out[index];
@@ -154,12 +154,13 @@ export function toggleChild(pages, index) {
     page.starts.push(newStart());
     return out;
   }
-  if (count === 0 && index > 0 && out[index - 1].depth >= 2) {
-    page.depth = 2;
-    return out;
+  if (!(count === 0 && index > 0 && out[index - 1].depth >= 2)) {
+    page.starts.push(newStart());
   }
-  page.starts.push(newStart());
-  page.depth = 2;
+  // a new child (or the child right before the page) takes the following pages up to the end of the block or the next child
+  for (let i = index; i < out.length && out[i].depth === 1 && (i === index || out[i].starts.length === 0); i++) {
+    out[i].depth = 2;
+  }
   return out;
 }
 

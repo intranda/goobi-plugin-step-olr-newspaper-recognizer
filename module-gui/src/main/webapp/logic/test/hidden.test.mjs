@@ -43,8 +43,8 @@ test('DELETED: removing a block with hidden data; REHOME only when every structu
   const [conflict] = findConflicts(before, toggleChild(before, 2), catalog, VOLUME);
   assert.deepEqual([conflict.blockId, conflict.kind, conflict.options], ['b2', 'DELETED', ['REMOVE_ALL']]);
   assert.deepEqual(conflict.structures.map(s => s.key), ['h2']);
-  // a new supplement over pages 2-3 (removed, started again, extended by a click on page 3) can take the article
-  const resplit = toggleChild(toggleChild(toggleChild(before, 2), 2), 3);
+  // a new supplement over pages 2-3 (removed and started again; it runs to the end of the issue) can take the article
+  const resplit = toggleChild(toggleChild(before, 2), 2);
   resplit[2].starts[0].type = 'NewspaperSupplement';
   assert.deepEqual(findConflicts(before, resplit, catalog, VOLUME)[0].options, ['REHOME', 'REMOVE_ALL']);
 });

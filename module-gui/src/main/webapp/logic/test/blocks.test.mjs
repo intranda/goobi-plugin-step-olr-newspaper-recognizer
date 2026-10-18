@@ -80,9 +80,51 @@ test('toggleChild right after a child extends it', () => {
   assert.equal(shape(toggleChild(issueWithSupplement(), 4)), '1/1 1/0 2/1 2/0 2/0 1/1');
 });
 
-test('toggleChild elsewhere starts a one-page child, also on a block start', () => {
+test('toggleChild elsewhere starts a child, also on a block start', () => {
   assert.equal(shape(toggleChild(issueWithSupplement(), 1)), '1/1 2/1 2/1 2/0 1/0 1/1');
   assert.equal(shape(toggleChild(issueWithSupplement(), 5)), '1/1 1/0 2/1 2/0 1/0 2/2');
+});
+
+test('toggleChild starts a child that runs to the end of the block', () => {
+  const list = pages(
+    { depth: 1, starts: [start('MorningIssue', { id: 'b1' })] },
+    { depth: 1 },
+    { depth: 1 },
+    { depth: 1 },
+    { depth: 1, starts: [start('EveningIssue', { id: 'b3' })] },
+    { depth: 1 },
+  );
+  assert.equal(shape(toggleChild(list, 1)), '1/1 2/1 2/0 2/0 1/1 1/0');
+});
+
+test('toggleChild on a block start starts a child that runs to the end of the block', () => {
+  const list = pages({ depth: 1, starts: [start('MorningIssue', { id: 'b1' })] }, { depth: 1 }, { depth: 1 });
+  assert.equal(shape(toggleChild(list, 0)), '2/2 2/0 2/0');
+});
+
+test('toggleChild ends a new child before the next child', () => {
+  const list = pages(
+    { depth: 1, starts: [start('MorningIssue', { id: 'b1' })] },
+    { depth: 1 },
+    { depth: 1 },
+    { depth: 2, starts: [start('NewspaperSupplement', { id: 'b2' })] },
+    { depth: 2 },
+    { depth: 1 },
+  );
+  assert.equal(shape(toggleChild(list, 1)), '1/1 2/1 2/0 2/1 2/0 1/0');
+});
+
+test('toggleChild right after a child extends it to the end of the block', () => {
+  const list = pages(
+    { depth: 1, starts: [start('MorningIssue', { id: 'b1' })] },
+    { depth: 2, starts: [start('NewspaperSupplement', { id: 'b2' })] },
+    { depth: 2 },
+    { depth: 1 },
+    { depth: 1 },
+    { depth: 1 },
+    { depth: 1, starts: [start('EveningIssue', { id: 'b3' })] },
+  );
+  assert.equal(shape(toggleChild(list, 3)), '1/1 2/1 2/0 2/0 2/0 2/0 1/1');
 });
 
 test('toggleChild ignores pages without structure', () => {
