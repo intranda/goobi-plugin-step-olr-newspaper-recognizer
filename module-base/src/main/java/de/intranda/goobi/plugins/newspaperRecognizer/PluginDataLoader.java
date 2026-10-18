@@ -23,6 +23,7 @@ import de.intranda.goobi.plugins.newspaperRecognizer.legacy.LegacyDataConverter;
 import de.intranda.goobi.plugins.newspaperRecognizer.mets.DocStructRegistry;
 import de.intranda.goobi.plugins.newspaperRecognizer.mets.MetsReader;
 import de.intranda.goobi.plugins.newspaperRecognizer.mets.MetsStore;
+import de.intranda.goobi.plugins.newspaperRecognizer.mets.PageLabels;
 import de.intranda.goobi.plugins.newspaperRecognizer.mets.PageIndex;
 import de.intranda.goobi.plugins.newspaperRecognizer.mets.ReadResult;
 import de.intranda.goobi.plugins.newspaperRecognizer.mets.VolumeLocator;
@@ -77,7 +78,15 @@ public class PluginDataLoader {
         for (NewspaperPage page : data.getPages()) {
             page.setResult(analysis.getOrDefault(page.getFilename(), 0.0));
         }
+        applyLabels(data.getPages(), PageLabels.read(dd));
         return new LoadedState(fileformat, dd, volumeType, data);
+    }
+
+    /** Pages that are not in the mets get an empty label. */
+    public static void applyLabels(List<NewspaperPage> pages, Map<String, String> labels) {
+        for (NewspaperPage page : pages) {
+            page.setLabel(labels.getOrDefault(page.getFilename(), ""));
+        }
     }
 
     private List<String> imageFilenames() throws Exception {

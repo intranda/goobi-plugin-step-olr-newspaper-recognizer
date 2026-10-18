@@ -17,6 +17,8 @@ public class NewspaperPage {
     // the 'Image' object is serialized to Json, the frontend accesses individual properties
     private Image image;
     private int depth;
+    // the page label (logicalPageNumber), never null
+    private String label = "";
     private List<BlockStart> starts = new ArrayList<>();
 
     public boolean analysisIndicatesThisIsAnIssue() {
