@@ -132,6 +132,21 @@ public class PluginConfigurationTest {
     }
 
     @Test
+    public void validate_removedPaginationElement_reportsUpdateNotes() throws Exception {
+        List<String> errors = validate("<pagination><type>1</type></pagination>");
+        assertEquals(errors.toString(), 1, errors.size());
+        assertTrue(errors.get(0), errors.get(0).contains("no longer supported"));
+        assertTrue(errors.get(0), errors.get(0).contains("update notes"));
+    }
+
+    @Test
+    public void parse_paginationValuesReachConfig() throws Exception {
+        PluginConfiguration config = parse("<pagination enabled=\"false\" automatic=\"false\"/>");
+        assertFalse(config.pagination().enabled());
+        assertFalse(config.pagination().automatic());
+    }
+
+    @Test
     public void validate_oldElements_pointToTheNewFormat() throws Exception {
         assertEquals(List.of("The elements <fields> and <generate> are no longer supported, use <defaults> and <type> with <field> (see the update notes)"),
                 validate("<fields><date metadata=\"DateIssued\" /></fields><generate docstruct=\"MorningIssue\" />"));

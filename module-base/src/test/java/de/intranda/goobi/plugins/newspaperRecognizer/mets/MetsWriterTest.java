@@ -21,7 +21,6 @@ import org.junit.Test;
 import de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.MetadataTemplate;
-import de.intranda.goobi.plugins.newspaperRecognizer.config.PaginationConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.BlockStart;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.HiddenAction;
@@ -151,7 +150,7 @@ public class MetsWriterTest {
     @Test
     public void storeFormat_usedForDate() throws Exception {
         FieldConfiguration fields = new FieldConfiguration("DateIssued", "dd.MM.yyyy", "dd.MM.yyyy", "CurrentNo", "PartNumber");
-        config = new PluginConfiguration(true, false, false, new PaginationConfiguration(false, true, List.of("–"), Map.of()), fields, List.of(), Map.of(), List.of());
+        config = new PluginConfiguration(true, false, false, TestDocuments.PAGINATION_DISABLED, fields, List.of(), Map.of(), List.of());
         load(volume(strict, 1), filenames(1));
         BlockStart start = start(null, "EveningIssue");
         start.setDate("1890-03-02");
