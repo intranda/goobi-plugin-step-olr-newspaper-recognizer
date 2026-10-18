@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.configuration.XMLConfiguration;
@@ -26,6 +28,7 @@ import de.intranda.goobi.plugins.newspaperRecognizer.SaveResult;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.DisplayRulesLookup;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.FieldCatalog;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.GoobiDisplayRules;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.PaginationConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.NewspaperPage;
 import de.intranda.goobi.plugins.newspaperRecognizer.data.PluginData;
@@ -185,6 +188,15 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 .toList());
     }
 
+    public String getPaginationJson() {
+        if (ruleset == null || configuration == null) {
+            return "null";
+        }
+        PaginationConfiguration pagination = configuration.pagination();
+        return gson.toJson(Map.of("enabled", pagination.enabled(), "automatic", pagination.automatic(), "withoutBlock", pagination.withoutBlock(),
+                "rules", pagination.resolvedRules(ruleset, getVolumeType())));
+    }
+
     public String getConfigErrorsJson() {
         return gson.toJson(configErrors);
     }
@@ -233,7 +245,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
                 return "";
             }
             List<String> filenames = saveRequest.getPages().stream().map(NewspaperPage::getFilename).toList();
-            metsWriter.apply(state.digitalDocument(), registry, roots, saveRequest.getOperations(), filenames);
+            List<String> labels = saveRequest.getPages().stream().map(p -> Objects.toString(p.getLabel(), "")).toList();
+            metsWriter.apply(state.digitalDocument(), registry, roots, saveRequest.getOperations(), filenames, labels);
             metsStore.write(state.fileformat());
             saveResult = SaveResult.SUCCESS;
             Helper.setMeldung(Helper.getTranslation("dataSavedSuccessfully"));

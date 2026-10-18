@@ -3,6 +3,7 @@ package de.intranda.goobi.plugins;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.page;
 import static de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments.start;
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.Assert.assertEquals;
@@ -121,7 +122,7 @@ public class NewspaperRecognizerPluginTest {
     @Test
     public void save_unresolvedHiddenData_reportsItWithoutWriting() throws Exception {
         request(page("0001.tif", 1, issue("1890-03-01", "1")));
-        metsWriter.apply(anyObject(), anyObject(), anyObject(), anyObject(), anyObject());
+        metsWriter.apply(anyObject(), anyObject(), anyObject(), anyObject(), anyObject(), anyObject());
         expectLastCall().andThrow(new UnresolvedHiddenDataException(List.of("Removed MorningIssue on pages 1-1 contains additional data")));
         PowerMock.replayAll();
         plugin.save();
@@ -131,8 +132,12 @@ public class NewspaperRecognizerPluginTest {
 
     @Test
     public void save_success_writesAndReloads() throws Exception {
-        request(page("0001.tif", 1, issue("1890-03-01", "1")));
-        metsWriter.apply(anyObject(), anyObject(), anyObject(), anyObject(), anyObject());
+        NewspaperPage first = page("0001.tif", 1, issue("1890-03-01", "1"));
+        first.setLabel("7");
+        NewspaperPage second = page("0002.tif", 1);
+        second.setLabel(null);
+        request(first, second);
+        metsWriter.apply(anyObject(), anyObject(), anyObject(), anyObject(), eq(List.of("0001.tif", "0002.tif")), eq(List.of("7", "")));
         expectLastCall().once();
         metsStore.write(fileformat);
         expectLastCall().once();
@@ -148,7 +153,7 @@ public class NewspaperRecognizerPluginTest {
     @Test
     public void save_writeFails_reportsErrorAndReloads() throws Exception {
         request(page("0001.tif", 1, issue("1890-03-01", "1")));
-        metsWriter.apply(anyObject(), anyObject(), anyObject(), anyObject(), anyObject());
+        metsWriter.apply(anyObject(), anyObject(), anyObject(), anyObject(), anyObject(), anyObject());
         expectLastCall().once();
         metsStore.write(fileformat);
         expectLastCall().andThrow(new IOException("disk full"));
@@ -162,10 +167,11 @@ public class NewspaperRecognizerPluginTest {
     @Test
     public void setJsonData_readsPagesAndOperations() {
         plugin.setJsonData("""
-                {"pages":[{"filename":"0001.tif","depth":1,"starts":[{"id":"b1","type":"MorningIssue","date":"1890-03-01"}]}],
+                {"pages":[{"filename":"0001.tif","depth":1,"label":"7","starts":[{"id":"b1","type":"MorningIssue","date":"1890-03-01"}]}],
                  "operations":[{"blockId":"b1","kind":"TYPE","action":"KEEP_ALLOWED"}]}
                 """);
         SaveRequest request = plugin.getSaveRequest();
+        assertEquals("7", request.getPages().get(0).getLabel());
         assertEquals("1890-03-01", request.getPages().get(0).getStarts().get(0).getDate());
         assertEquals(HiddenConflictKind.TYPE, request.getOperations().get(0).getKind());
         assertEquals(HiddenAction.KEEP_ALLOWED, request.getOperations().get(0).getAction());

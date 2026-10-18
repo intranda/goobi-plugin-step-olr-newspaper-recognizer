@@ -30,7 +30,6 @@ import ugh.dl.DocStruct;
 import ugh.dl.FileSet;
 import ugh.dl.Metadata;
 import ugh.dl.Reference;
-import ugh.dl.RomanNumeral;
 import ugh.exceptions.UGHException;
 
 /** Updates the document in place so that its logical structure matches the blocks. Data the plugin does not manage stays. */
@@ -54,12 +53,12 @@ public class MetsWriter {
     }
 
     public void apply(DigitalDocument dd, DocStructRegistry registry, List<BlockNode> roots, List<HiddenOperation> operations,
-            List<String> filenames) throws UnresolvedHiddenDataException, UGHException {
+            List<String> filenames, List<String> labels) throws UnresolvedHiddenDataException, UGHException {
         long startTime = System.nanoTime();
         DocStruct volume = VolumeLocator.find(dd);
         Resolution resolution = resolver.resolve(volume.getType().getName(), registry, roots, operations, PageIndex.of(dd, filenames));
 
-        List<DocStruct> pages = reconcilePages(dd, filenames);
+        List<DocStruct> pages = reconcilePages(dd, filenames, labels);
         Map<BlockNode, DocStruct> written = new IdentityHashMap<>();
         for (BlockNode node : BlockTree.flatten(roots)) {
             DocStruct parent = node.getParent() == null ? volume : written.get(node.getParent());
@@ -84,11 +83,10 @@ public class MetsWriter {
         for (DocStruct ds : written.values()) {
             sortChildren(ds, kept, index);
         }
-        writePagination(roots, pages);
         log.info("Updated the METS structure for {} pages in {} ms", pages.size(), (System.nanoTime() - startTime) / 1_000_000);
     }
 
-    private List<DocStruct> reconcilePages(DigitalDocument dd, List<String> filenames) throws UGHException {
+    private List<DocStruct> reconcilePages(DigitalDocument dd, List<String> filenames, List<String> labels) throws UGHException {
         DocStruct boundBook = dd.getPhysicalDocStruct();
         if (dd.getFileSet() == null) {
             dd.setFileSet(new FileSet());
@@ -111,9 +109,10 @@ public class MetsWriter {
                 page.setImageName(filenames.get(i));
                 boundBook.addChild(page);
                 dd.addContentFileFromPhysicalPage(page);
-                if (!config.pagination().enabled()) {
-                    MetadataAccess.setFirst(page, ruleset.metadataType(LOG_PAGE_NO), UNCOUNTED);
-                }
+                writeLabel(page, config.pagination().enabled() ? labels.get(i) : "");
+            } else if (config.pagination().enabled() && !labels.get(i).isEmpty()
+                    && !PageLabels.normalize(labels.get(i)).equals(PageLabels.normalize(MetadataAccess.firstValue(page, LOG_PAGE_NO)))) {
+                writeLabel(page, labels.get(i));
             }
             if (boundBook.getPositionofChild(page) != i) {
                 boundBook.moveChild(page, i);
@@ -122,6 +121,11 @@ public class MetsWriter {
             result.add(page);
         }
         return result;
+    }
+
+    private void writeLabel(DocStruct page, String label) throws UGHException {
+        boolean uncounted = label.isEmpty() || "\u2013".equals(label);
+        MetadataAccess.setFirst(page, ruleset.metadataType(LOG_PAGE_NO), uncounted ? UNCOUNTED : label);
     }
 
     private static void removePage(DigitalDocument dd, DocStruct boundBook, DocStruct page) {
@@ -280,33 +284,5 @@ public class MetsWriter {
                 parent.moveChild(sorted.get(i), slots.get(i));
             }
         }
-    }
-
-    private void writePagination(List<BlockNode> roots, List<DocStruct> pages) throws UGHException {
-        if (!config.pagination().enabled()) {
-            return;
-        }
-        int[] firstOfInnermost = new int[pages.size()];
-        int runStart = 0;
-        for (int i = 0; i < pages.size(); i++) {
-            firstOfInnermost[i] = -1;
-        }
-        for (BlockNode node : BlockTree.flatten(roots)) {
-            for (int i = node.getFirstPage(); i <= node.getLastPage(); i++) {
-                firstOfInnermost[i] = node.getFirstPage();
-            }
-        }
-        for (int i = 0; i < pages.size(); i++) {
-            if (firstOfInnermost[i] < 0) {
-                runStart = i > 0 && firstOfInnermost[i - 1] < 0 ? runStart : i;
-            }
-            int first = firstOfInnermost[i] < 0 ? runStart : firstOfInnermost[i];
-            MetadataAccess.setFirst(pages.get(i), ruleset.metadataType(LOG_PAGE_NO), formatPagination(String.valueOf(i - first + 1)));
-        }
-    }
-
-    // bridge until the writer only writes changed labels: arabic numbers only
-    private String formatPagination(String pagination) {
-        return pagination;
     }
 }

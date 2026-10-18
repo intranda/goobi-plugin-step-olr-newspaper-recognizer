@@ -13,6 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -50,7 +51,7 @@ public class MetsWriterTest {
 
     private void write(HiddenOperation... operations) throws Exception {
         new MetsWriter(ruleset, config).apply(dd, registry, BlockTree.build(pages), List.of(operations),
-                pages.stream().map(NewspaperPage::getFilename).toList());
+                pages.stream().map(NewspaperPage::getFilename).toList(), Collections.nCopies(pages.size(), ""));
     }
 
     private BlockStart startOn(int page, int index) {
@@ -297,8 +298,79 @@ public class MetsWriterTest {
         assertEquals("uncounted", MetadataAccess.firstValue(physical.get(2), "logicalPageNumber"));
     }
 
+    private void writeLabels(String... labels) throws Exception {
+        new MetsWriter(ruleset, config).apply(dd, registry, BlockTree.build(pages), List.of(), pages.stream().map(NewspaperPage::getFilename).toList(),
+                List.of(labels));
+    }
+
+    private void setLabel(int page, String value) throws Exception {
+        MetadataAccess.setFirst(TestDocuments.pageOf(dd, page), strict.getMetadataTypeByName("logicalPageNumber"), value);
+    }
+
+    private List<String> labelsInMets() {
+        return dd.getPhysicalDocStruct().getAllChildren().stream().map(p -> MetadataAccess.firstValue(p, "logicalPageNumber")).toList();
+    }
+
+    private void enablePagination() {
+        config = TestDocuments.config(false, true);
+    }
+
     @Test
-    public void pagination_countsWithinInnermostBlock() throws Exception {
+    public void labels_changedLabelWritten() throws Exception {
+        enablePagination();
+        load(volume(strict, 2), filenames(2));
+        writeLabels("1", "7");
+        assertEquals(List.of("1", "7"), labelsInMets());
+    }
+
+    @Test
+    public void labels_untouchedRawTextKept() throws Exception {
+        enablePagination();
+        load(volume(strict, 4), filenames(4));
+        setLabel(0, " 5 ");
+        setLabel(1, "[ 3 ]");
+        setLabel(2, "uncounted");
+        setLabel(3, "1r");
+        writeLabels("5", "[3]", "\u2013", "1r");
+        assertEquals(List.of(" 5 ", "[ 3 ]", "uncounted", "1r"), labelsInMets());
+    }
+
+    @Test
+    public void labels_dashWrittenAsUncounted() throws Exception {
+        enablePagination();
+        load(volume(strict, 1), filenames(1));
+        setLabel(0, "3");
+        writeLabels("\u2013");
+        assertEquals(List.of("uncounted"), labelsInMets());
+    }
+
+    @Test
+    public void labels_emptyNotWritten() throws Exception {
+        enablePagination();
+        load(volume(strict, 1), filenames(1));
+        setLabel(0, null);
+        writeLabels("");
+        assertEquals(Collections.singletonList(null), labelsInMets());
+    }
+
+    @Test
+    public void labels_newPageUncountedUnlessLabelled() throws Exception {
+        enablePagination();
+        load(volume(strict, 1), filenames(3));
+        writeLabels("1", "", "4");
+        assertEquals(List.of("1", "uncounted", "4"), labelsInMets());
+    }
+
+    @Test
+    public void labels_disabled_existingUntouched_newPagesUncounted() throws Exception {
+        config = TestDocuments.config(false, false);
+        load(volume(strict, 1), filenames(2));
+        writeLabels("9", "9");
+        assertEquals(List.of("1", "uncounted"), labelsInMets());
+    }
+
+    @Test
+    public void labels_enabled_emptyLabels_noAutomaticPaginationOnSave() throws Exception {
         config = TestDocuments.config(false, true);
         DigitalDocument document = volume(strict, 6);
         DocStruct morning = add(strict, document, volumeOf(document), "MorningIssue", 0, 1, 2, 3);
@@ -306,8 +378,7 @@ public class MetsWriterTest {
         load(document, filenames(6));
         startOn(0, 0).setDate("1890-03-01");
         write();
-        assertEquals(List.of("1", "2", "1", "2", "1", "2"),
-                dd.getPhysicalDocStruct().getAllChildren().stream().map(p -> MetadataAccess.firstValue(p, "logicalPageNumber")).toList());
+        assertEquals(List.of("1", "2", "3", "4", "5", "6"), labelsInMets());
     }
 
     @Test
