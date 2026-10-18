@@ -18,10 +18,16 @@ public final class PageLabels {
         Map<String, String> result = new HashMap<>();
         for (DocStruct page : PageIndex.children(dd.getPhysicalDocStruct())) {
             if (page.getImageName() != null) {
-                result.putIfAbsent(page.getImageName(), normalize(MetadataAccess.firstValue(page, TYPE)));
+                result.putIfAbsent(page.getImageName(), raw(MetadataAccess.firstValue(page, TYPE)));
             }
         }
         return result;
+    }
+
+    /** What the mets says, trimmed, so that labels written by other tools stay visible as they are. Only {@code uncounted} is mapped. */
+    private static String raw(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        return "uncounted".equals(trimmed) ? UNCOUNTED : trimmed;
     }
 
     /** Trims, unifies the uncounted spellings and removes the blanks inside square brackets. */

@@ -31,6 +31,14 @@ public class PageLabelsTest {
     }
 
     @Test
+    public void read_keepsRawNotation() throws UGHException {
+        DigitalDocument dd = volume(prefs, 2);
+        MetadataAccess.setFirst(pageOf(dd, 0), prefs.getMetadataTypeByName("logicalPageNumber"), "[ 3 ]");
+        MetadataAccess.setFirst(pageOf(dd, 1), prefs.getMetadataTypeByName("logicalPageNumber"), "-");
+        assertEquals(Map.of("0001.tif", "[ 3 ]", "0002.tif", "-"), PageLabels.read(dd));
+    }
+
+    @Test
     public void normalize_variants() {
         assertEquals("–", PageLabels.normalize("uncounted"));
         assertEquals("–", PageLabels.normalize("-"));
@@ -41,7 +49,7 @@ public class PageLabelsTest {
     }
 
     @Test
-    public void loader_setsLabelsOnAllPaths() {
+    public void applyLabels_setsLabelsOrEmpty() {
         List<NewspaperPage> pages = List.of(page("0001.tif", 0), page("0002.tif", 0), page("0003.tif", 0));
         PluginDataLoader.applyLabels(pages, Map.of("0001.tif", "–", "0003.tif", "7"));
         assertEquals("–", pages.get(0).getLabel());
