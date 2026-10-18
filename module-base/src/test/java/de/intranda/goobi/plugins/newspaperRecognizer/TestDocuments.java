@@ -169,12 +169,12 @@ public final class TestDocuments {
                 : ds.getAllMetadata().stream().map(m -> m.getType().getName() + "=" + m.getValue()).toList();
     }
     public static PluginConfiguration config(boolean preventDuplicates, boolean createNewPagination) {
-        return new PluginConfiguration(true, false, preventDuplicates, new PaginationConfiguration(createNewPagination, "1", false), FIELDS,
+        return new PluginConfiguration(true, false, preventDuplicates, new PaginationConfiguration(createNewPagination, true, List.of("–"), Map.of()), FIELDS,
                 List.of(), Map.of("MorningIssue", List.of(FieldDefinition.of("TitleDocMain", "Morgenausgabe {partNo}", true, false))), List.of());
     }
 
     /** FIELDS with the given metadata fields. */
     public static PluginConfiguration config(List<FieldDefinition> defaults, Map<String, List<FieldDefinition>> types) {
-        return new PluginConfiguration(true, false, false, new PaginationConfiguration(false, "1", false), FIELDS, defaults, types, List.of());
+        return new PluginConfiguration(true, false, false, PaginationConfiguration.defaults(), FIELDS, defaults, types, List.of());
     }
 }

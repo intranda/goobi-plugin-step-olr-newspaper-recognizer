@@ -4,14 +4,17 @@
     <!-- block saving while two blocks of the same type with the same date and number share a parent -->
     <preventDuplicates>true</preventDuplicates>
 
-    <!-- configurations related to pagination settings -->
-    <pagination>
-        <!-- whether or not to create a new pagination, if false then the old pagination will be used. DEFAULT true. -->
-        <createNewPagination>true</createNewPagination>
-        <!-- type of the paginations: - (none), 1 (1, 2, 3), i (i, ii, iii), I (I, II, III). DEFAULT 1. -->
-        <type>1</type>
-        <!-- whether or not to use the fake pagination [N]. DEFAULT false. -->
-        <useFakePagination>false</useFakePagination>
+    <!-- page labels (pagination) -->
+    <!-- enabled: false hides all labels and never changes an existing label. automatic: default of the "automatic pagination" setting. -->
+    <pagination enabled="true" automatic="true">
+        <!-- values pages outside any block begin with, separated by blanks (– = uncounted, [1] = in brackets) -->
+        <withoutBlock beginsWith="–" />
+        <!-- numbering per structure type: beginsWith = 1, i, I, a, A, – or a bracketed form like [1]; several values are separated by blanks.
+             Types without a rule that the ruleset allows only directly in the volume begin with 1; types allowed as a child keep the
+             numbering of their parent unless they have a rule. continueInParent="true" continues the numbering of the parent. -->
+        <rule docstruct="MorningIssue" beginsWith="1" />
+        <rule docstruct="EveningIssue" beginsWith="1" />
+        <rule docstruct="NewspaperSupplement" beginsWith="i" continueInParent="false" />
     </pagination>
 
     <!--

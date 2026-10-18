@@ -84,10 +84,7 @@ public record PluginConfiguration(boolean loadAllImages, boolean showDeletePageB
                 date == null || date.storeFormat() == null ? FieldConfiguration.DEFAULT_STORE_FORMAT : date.storeFormat(),
                 number == null ? null : number.key(),
                 number == null ? null : number.partKey());
-        PaginationConfiguration pagination = new PaginationConfiguration(
-                config.getBoolean("pagination.createNewPagination", true),
-                config.getString("pagination.type", "1"),
-                config.getBoolean("pagination.useFakePagination", false));
+        PaginationConfiguration pagination = PaginationConfiguration.parse(config, errors);
         return new PluginConfiguration(config.getBoolean("loadAllImages", true), config.getBoolean("showDeletePageButton", false),
                 config.getBoolean("preventDuplicates", false), pagination, fields, defaults, Collections.unmodifiableMap(types),
                 List.copyOf(errors));
@@ -203,6 +200,7 @@ public record PluginConfiguration(boolean loadAllImages, boolean showDeletePageB
 
     public List<String> validate(RulesetTypes ruleset, String volumeType) {
         List<String> errors = new ArrayList<>(parseErrors);
+        errors.addAll(pagination.validate(ruleset));
         Set<String> reachable = reachableTypes(ruleset, volumeType);
         List<String> volumeWide = new ArrayList<>();
         roleMetadata().forEach(volumeWide::add);
@@ -240,7 +238,7 @@ public record PluginConfiguration(boolean loadAllImages, boolean showDeletePageB
         return errors;
     }
 
-    private static Set<String> reachableTypes(RulesetTypes ruleset, String volumeType) {
+    static Set<String> reachableTypes(RulesetTypes ruleset, String volumeType) {
         Set<String> result = new LinkedHashSet<>();
         Deque<String> queue = new ArrayDeque<>(ruleset.allowedChildren(volumeType));
         while (!queue.isEmpty()) {

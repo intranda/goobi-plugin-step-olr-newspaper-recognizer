@@ -111,7 +111,7 @@ public class MetsWriter {
                 page.setImageName(filenames.get(i));
                 boundBook.addChild(page);
                 dd.addContentFileFromPhysicalPage(page);
-                if (!config.pagination().createNewPagination()) {
+                if (!config.pagination().enabled()) {
                     MetadataAccess.setFirst(page, ruleset.metadataType(LOG_PAGE_NO), UNCOUNTED);
                 }
             }
@@ -283,7 +283,7 @@ public class MetsWriter {
     }
 
     private void writePagination(List<BlockNode> roots, List<DocStruct> pages) throws UGHException {
-        if (!config.pagination().createNewPagination()) {
+        if (!config.pagination().enabled()) {
             return;
         }
         int[] firstOfInnermost = new int[pages.size()];
@@ -305,29 +305,8 @@ public class MetsWriter {
         }
     }
 
-    // unchanged from the old MetsWriter: pagination type "1", "i", "I", blank or "-", optional fake pagination [N]
+    // bridge until the writer only writes changed labels: arabic numbers only
     private String formatPagination(String pagination) {
-        String paginationType = config.pagination().type();
-        if (StringUtils.isBlank(paginationType) || "-".equals(paginationType)) {
-            return "";
-        }
-        String value = pagination.replace("[", "").replace("]", "");
-        boolean isArabic = Pattern.matches("\\d+", value);
-        int num;
-        RomanNumeral roman;
-        if (isArabic) {
-            num = Integer.parseInt(value);
-            roman = new RomanNumeral(num);
-        } else {
-            roman = new RomanNumeral(value.toUpperCase());
-            num = roman.intValue();
-        }
-        String formatted = switch (paginationType) {
-            case "1" -> String.valueOf(num);
-            case "i" -> roman.getNumber().toLowerCase();
-            case "I" -> roman.getNumber();
-            default -> value;
-        };
-        return config.pagination().useFakePagination() ? "[" + formatted + "]" : formatted;
+        return pagination;
     }
 }

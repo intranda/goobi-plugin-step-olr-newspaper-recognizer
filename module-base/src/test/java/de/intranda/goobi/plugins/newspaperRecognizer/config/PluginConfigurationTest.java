@@ -41,9 +41,7 @@ public class PluginConfigurationTest {
         assertTrue(config.loadAllImages());
         assertFalse(config.showDeletePageButton());
         assertFalse(config.preventDuplicates());
-        assertTrue(config.pagination().createNewPagination());
-        assertEquals("1", config.pagination().type());
-        assertFalse(config.pagination().useFakePagination());
+        assertEquals(PaginationConfiguration.defaults(), config.pagination());
         assertEquals(new FieldConfiguration(null, "dd.MM.yyyy", "yyyy-MM-dd", null, null), config.fields());
         assertEquals(List.of(), config.defaults());
         assertTrue(config.types().isEmpty());
@@ -52,11 +50,8 @@ public class PluginConfigurationTest {
     @Test
     public void parse_roleFields_becomeTheFieldConfiguration() throws Exception {
         PluginConfiguration config = parse("<preventDuplicates>true</preventDuplicates>"
-                + "<pagination><createNewPagination>false</createNewPagination><type>i</type></pagination>"
                 + "<defaults>" + ROLES + "</defaults>");
         assertTrue(config.preventDuplicates());
-        assertFalse(config.pagination().createNewPagination());
-        assertEquals("i", config.pagination().type());
         assertEquals(TestDocuments.FIELDS, config.fields());
         assertEquals(List.of(), config.defaults());
     }
