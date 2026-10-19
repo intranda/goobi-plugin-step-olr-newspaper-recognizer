@@ -11,6 +11,8 @@
 				<select class="form-select" id={fieldId('type')} onchange={e => props.handleType(e.target.value || null)}>
 					<option value="" selected={!props.start.type}>{props.t('plugin_newspaperRecognizer_pleaseSelect')}</option>
 					<option each={option in props.typeOptions} value={option.name} selected={option.name === props.start.type}>{option.label}</option>
+					<hr if={props.allowLoose} />
+					<option if={props.allowLoose} value="__loose__">{props.t('plugin_newspaperRecognizer_pagination_withoutBlock')}</option>
 				</select>
 				<button if={props.handlePattern} type="button" class="btn btn-blank text-nowrap d-flex align-items-center gap-1" onclick={() => props.handlePattern()}
 					title={props.t('plugin_newspaperRecognizer_typePattern_title')}>

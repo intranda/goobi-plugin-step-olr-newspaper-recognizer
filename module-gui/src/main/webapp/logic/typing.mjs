@@ -23,17 +23,23 @@ export function followValue(pages, settings, index) {
   return followIn(pages, streamOf(streams(pages, settings), index), index);
 }
 
+const ownIn = (pages, stream, index) => isCounting(pages[index].label)
+  && stream.pages.some(i => i < index && isCounting(pages[i].label))
+  && normalizeLabel(pages[index].label) !== followIn(pages, stream, index);
+
 /** A counting label that does not follow the page before it: an earlier page of the stream counts and the label differs from the follow value. */
 export function ownNumbering(pages, settings, index) {
-  const label = pages[index].label;
-  if (!isCounting(label)) {
-    return false;
-  }
-  const stream = streamOf(streams(pages, settings), index);
-  if (!stream.pages.some(i => i < index && isCounting(pages[i].label))) {
-    return false;
-  }
-  return normalizeLabel(label) !== followIn(pages, stream, index);
+  return ownIn(pages, streamOf(streams(pages, settings), index), index);
+}
+
+/** ownNumbering of every page with the streams built once: per page the value it would get by following (truthy) or null. */
+export function ownNumberingAll(pages, settings) {
+  const result = streams(pages, settings);
+  const byKey = new Map(result.list.map(s => [s.key, s]));
+  return pages.map((page, index) => {
+    const stream = byKey.get(result.byPage[index]);
+    return ownIn(pages, stream, index) ? followIn(pages, stream, index) : null;
+  });
 }
 
 /**

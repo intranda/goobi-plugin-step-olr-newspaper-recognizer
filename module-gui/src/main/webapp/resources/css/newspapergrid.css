@@ -384,3 +384,94 @@ progress {
 	.preview-note-inline { display: block; }
 	.preview-table td:nth-child(2) { white-space: normal; }
 }
+
+/* the help line stays visible under the plugin's title bar while scrolling; below it what just happened */
+.newspaper-help {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	background: var(--bs-body-bg);
+	border-bottom: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color);
+}
+
+.newspaper-help__hints,
+.newspaper-help__last {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.25rem 1.25rem;
+	padding: 0.4rem var(--section-padding, 1rem);
+	font-size: 0.875rem;
+}
+
+.newspaper-help__last {
+	gap: 0 0.5rem;
+}
+
+/* the label of a page under its thumbnail: unobtrusive until hovered or focused */
+.label-input {
+	margin-top: 0.25rem;
+	border-left: 3px solid transparent;
+}
+
+.label-input input {
+	text-align: center;
+	border-color: transparent;
+	background: transparent;
+}
+
+.label-input input:hover,
+.label-input input:focus {
+	border-color: var(--bs-border-color);
+	background: var(--bs-body-bg);
+}
+
+/* own numbering: grey bar; typed and following labels in italics; changed since opening in the colour of changed fields */
+.label-input.is-own {
+	border-left-color: var(--clr-neutral-500, #888);
+}
+
+.label-input.is-stop {
+	border-left-color: var(--clr-primary-400, #368ee0);
+}
+
+.label-input.is-preview input {
+	font-style: italic;
+	color: var(--clr-primary-400, #368ee0);
+}
+
+.label-input.is-changed input {
+	color: var(--clr-action);
+	font-weight: 600;
+}
+
+/* hint line and offer of a block under its thumbnails */
+.newspaper-hint,
+.newspaper-offer {
+	grid-column: 1 / -1;
+	font-size: 0.875rem;
+}
+
+.newspaper-hint:empty {
+	display: none;
+}
+
+.newspaper-offer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.4rem 0.75rem;
+	border: var(--bs-border-width) solid var(--bs-border-color);
+	border-left: 4px solid var(--clr-action);
+	border-radius: var(--bs-border-radius);
+}
+
+/* the field must not be wider than its column, even where the image is */
+label-input {
+	display: block;
+}
+
+.newspaper-thumbnail .label-input {
+	max-width: var(--thumb-size, 80px);
+}

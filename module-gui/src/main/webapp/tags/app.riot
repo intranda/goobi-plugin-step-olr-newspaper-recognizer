@@ -52,6 +52,26 @@
 				</div>
 			</div>
 
+			<div data-help class="newspaper-help">
+				<div if={!helpHidden} data-help-hints class="newspaper-help__hints">
+					<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('hand-click')}" /></svg></span>
+					<span><b class="me-1">{t('plugin_newspaperRecognizer_pagination_help_small')}</b> {t('plugin_newspaperRecognizer_pagination_help_smallText')}</span>
+					<span><b class="me-1">{t('plugin_newspaperRecognizer_pagination_help_big')}</b> {t('plugin_newspaperRecognizer_pagination_help_bigText')}</span>
+					<span><b class="me-1">{t('plugin_newspaperRecognizer_pagination_help_supplement')}</b> {t('plugin_newspaperRecognizer_pagination_help_supplementText')}</span>
+					<span><b class="me-1">{t('plugin_newspaperRecognizer_pagination_help_zoom')}</b> {t('plugin_newspaperRecognizer_pagination_help_zoomText')}</span>
+					<button type="button" data-help-close class="btn btn-blank btn-sm ms-auto p-0 px-1" onclick={hideHelp}
+						title={t('plugin_newspaperRecognizer_pagination_help_hide')} aria-label={t('plugin_newspaperRecognizer_pagination_help_hide')}>
+						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
+					</button>
+				</div>
+				<div if={last} data-last class="newspaper-help__last text-muted" aria-live="polite">
+					{t('plugin_newspaperRecognizer_pagination_last').replace('{0}', last.text)}
+					<button if={last.undoable && undoStep} type="button" data-undo class="btn btn-link btn-sm p-0 align-baseline" onclick={undoStep}>
+						{t('plugin_newspaperRecognizer_pagination_undo')}
+					</button>
+				</div>
+			</div>
+
 			<div>
 				<div if={configErrors.length > 0} class="p-3">
 					<div class="alert alert-danger">
@@ -108,7 +128,7 @@
 				<template if={imagesLoaded}>
 					<div class="section-body">
 						<div class="issues">
-							<template each={row in rows}>
+							<template each={row in rows} key={row.loose ? 'loose-' + row.pages[0] : 'block-' + row.node.first}>
 								<template if={row.loose}>
 									<div class="thumbnail-image px-3 pb-3"></div>
 									<div class="issue-controls d-flex flex-column gap-2 px-3 pb-3">
@@ -129,7 +149,12 @@
 													<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('trash')}" /></svg></span>
 												</button>
 											</div>
+											<label-input if={settings.enabled} page={pages[index]} index={index} preview={preview ? preview.result : null}
+												own={!!ownFlags[index]} follow={ownFlags[index]} changed={pages[index].label !== pages[index].metsLabel} t={t}
+												handle-preview={(text, mode) => previewLabelAt(index, text, mode)} handle-commit={(text, mode) => commitLabel(index, text, mode)}
+												handle-cancel={cancelLabel} is-rendering={isRendering} handle-move={delta => moveLabelFocus(index, delta)}></label-input>
 										</div>
+										<div data-typing-hint class="newspaper-hint" aria-live="polite">{hintFor(row)}</div>
 									</div>
 								</template>
 
@@ -151,6 +176,10 @@
 												</div>
 											</div>
 										</div>
+										<label-input if={settings.enabled} page={pages[row.node.first]} index={row.node.first} preview={preview ? preview.result : null}
+											own={!!ownFlags[row.node.first]} follow={ownFlags[row.node.first]} changed={pages[row.node.first].label !== pages[row.node.first].metsLabel} t={t}
+											handle-preview={(text, mode) => previewLabelAt(row.node.first, text, mode)} handle-commit={(text, mode) => commitLabel(row.node.first, text, mode)}
+											handle-cancel={cancelLabel} is-rendering={isRendering} handle-move={delta => moveLabelFocus(row.node.first, delta)}></label-input>
 									</div>
 
 									<div class="issue-controls d-flex flex-column gap-3 px-3 pb-3" style="min-height: {thumb_height}px;">
@@ -173,6 +202,7 @@
 											handle-remove-hidden={() => askRemoveHidden(row.node)}
 											handle-pattern={() => openDialog('pattern', row.node)}
 											handle-continue={isGeneratable(row.node) ? () => openDialog('continue', row.node) : null}
+											allow-loose={true}
 											page-first={row.node.first + 1}
 											page-last={row.node.last + 1}></block-fields>
 
@@ -216,6 +246,20 @@
 													<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('trash')}" /></svg></span>
 												</button>
 											</div>
+												<label-input if={settings.enabled} page={pages[entry.index]} index={entry.index} preview={preview ? preview.result : null}
+													own={!!ownFlags[entry.index]} follow={ownFlags[entry.index]} changed={pages[entry.index].label !== pages[entry.index].metsLabel} t={t}
+													handle-preview={(text, mode) => previewLabelAt(entry.index, text, mode)} handle-commit={(text, mode) => commitLabel(entry.index, text, mode)}
+													handle-cancel={cancelLabel} is-rendering={isRendering} handle-move={delta => moveLabelFocus(entry.index, delta)}></label-input>
+										</div>
+										<div data-typing-hint class="newspaper-hint" aria-live="polite">{hintFor(row)}</div>
+										<div if={offerFor(row)} data-offer class="newspaper-offer">
+											<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('list-numbers')}" /></svg></span>
+											<span>{offerText(row)}</span>
+											<button type="button" data-offer-accept class="btn btn-primary btn-sm" onclick={() => acceptOffer(row.node.first)}>{offerButton(row)}</button>
+											<button type="button" data-offer-dismiss class="btn btn-blank btn-sm p-0 px-1" onclick={() => dismissOffer(row.node.first)}
+												title={t('plugin_newspaperRecognizer_pagination_offer_dismiss')} aria-label={t('plugin_newspaperRecognizer_pagination_offer_dismiss')}>
+												<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
+											</button>
 										</div>
 									</div>
 								</template>
@@ -253,10 +297,15 @@
 	import HiddenPopover from './hidden-popover.riot'
 	import ConflictDialog from './conflict-dialog.riot'
 	import PluginModal from './plugin-modal.riot'
+	import LabelInput from './label-input.riot'
 	import {
 		buildTree, flatten, refOf, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
 		removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest, clonePages, siblingsFrom, syncDateInputs,
+		canMerge, makeLoose,
 	} from '../logic/blocks.mjs'
+	import { initLabels, structureChanged, paginateBlock } from '../logic/pagination.mjs'
+	import { previewLabel, ownNumberingAll } from '../logic/typing.mjs'
+	import { parseLabel, isCounting } from '../logic/labels.mjs'
 	import TypePatternDialog from './type-pattern-dialog.riot'
 	import ContinueDialog from './continue-dialog.riot'
 	import { applyTypePattern } from '../logic/generation.mjs'
@@ -266,7 +315,7 @@
 
 
 	export default {
-		components: { Thumbcanvas, BlockFields, HiddenPopover, ConflictDialog, TypePatternDialog, ContinueDialog, PluginModal },
+		components: { Thumbcanvas, BlockFields, HiddenPopover, ConflictDialog, TypePatternDialog, ContinueDialog, PluginModal, LabelInput },
 
 		onBeforeMount(props) {
 			// fields of props are defined in plugin_newspaperRecognizer.xhtml
@@ -283,6 +332,15 @@
 			this.preventDuplicates = props.preventDuplicates;
 			this.configErrors = props.configErrors || [];
 			this.catalog = Object.fromEntries((props.typeCatalog || []).map(type => [type.name, type]));
+			const pagination = props.pagination;
+			this.settings = {
+				enabled: !!(pagination && pagination.enabled),
+				automatic: !pagination || pagination.automatic !== false,
+				withoutBlock: pagination && pagination.withoutBlock && pagination.withoutBlock.length ? pagination.withoutBlock : ['–'],
+				rules: (pagination && pagination.rules) || {},
+			};
+			this.last = null; // {text, undoable}: what just happened, shown in the help line
+			this.helpHidden = false;
 
 			this.msgs = {};
 			this.dataDirty = false; // true after any change, cleared only when the backend confirms a write
@@ -368,6 +426,9 @@
 			}
 			initStarts(this.pages, this.dateFormatPattern);
 			initFieldStates(this.pages, this.catalog);
+			initLabels(this.pages);
+			this.offers = []; // {first, pages, signature}: blocks that offer "Neu nach Regeln"
+			this.preview = null; // {index, text, mode, result}: the label being typed
 			this.refresh();
 		},
 
@@ -376,6 +437,7 @@
 			this.validation = validateBlocks(this.pages, this.catalog, this.volumeType, this.preventDuplicates);
 			this.flags = this.indexFlags(this.validation);
 			this.rows = this.buildRows(this.tree);
+			this.ownFlags = this.settings.enabled ? ownNumberingAll(this.pages, this.settings) : []; // per page the follow value of own numbering, else null
 		},
 
 		/* level-0 blocks and runs of pages without structure, in page order */
@@ -495,7 +557,7 @@
 		applyChange(newPages, options = {}) {
 			const conflicts = findConflicts(this.pages, newPages, this.catalog, this.volumeType);
 			if (conflicts.length === 0) {
-				this.commit(newPages);
+				this.commit(newPages, options.step);
 				if (options.afterCommit) {
 					options.afterCommit();
 				}
@@ -505,11 +567,211 @@
 			this.update();
 		},
 
-		commit(newPages) {
-			this.pages = newPages;
+		/* step: {text, paginate}; a structure change paginates what it needs (unless paginate is false), then says what happened */
+		commit(newPages, step = {}) {
+			let pages = newPages;
+			const parts = step.text ? [step.text] : [];
+			let offers = [];
+			if (this.settings.enabled && step.paginate !== false) {
+				const result = structureChanged(this.pages, newPages, this.settings);
+				pages = result.pages;
+				offers = result.offers;
+				parts.push(this.paginationInfo(result));
+			}
+			this.pages = pages;
 			this.dataDirty = true;
 			this.refresh();
+			this.offers = this.keepOffers(offers);
+			if (parts.length > 0) {
+				this.last = { text: parts.join(' · '), undoable: true };
+			}
+			this.updateKeepingFocus();
+		},
+
+		/* Riot may re-insert the nodes of a block while it updates, which takes the focus from a field the user is typing in; blur is
+		   no decision then (see isRendering) and the field gets its focus and cursor back */
+		updateKeepingFocus() {
+			const field = document.activeElement;
+			const keep = field && field.matches && field.matches('input, textarea, select') && field.isConnected ? field : null;
+			const selection = keep && typeof keep.selectionStart === 'number' ? [keep.selectionStart, keep.selectionEnd] : null;
+			this.rendering = true;
+			try {
+				this.update();
+			} finally {
+				this.rendering = false;
+			}
+			if (keep && keep.isConnected && document.activeElement !== keep) {
+				keep.focus({ preventScroll: true });
+				if (selection) {
+					keep.setSelectionRange(selection[0], selection[1]);
+				}
+			}
+		},
+
+		isRendering() {
+			return !!this.rendering;
+		},
+
+		paginationInfo(result) {
+			let text;
+			if (this.settings.automatic === false) {
+				text = this.t('plugin_newspaperRecognizer_pagination_autoOff');
+			} else if (result.changed.length > 0) {
+				text = this.fmt('plugin_newspaperRecognizer_pagination_adjusted', this.pagesText(result.changed));
+			} else {
+				text = this.t('plugin_newspaperRecognizer_pagination_unchanged');
+			}
+			if (result.offers.length > 0) {
+				text += ' · ' + (result.offers.length === 1 ? this.t('plugin_newspaperRecognizer_pagination_offerBlock')
+					: this.fmt('plugin_newspaperRecognizer_pagination_offerBlocks', result.offers.length));
+			}
+			return text;
+		},
+
+		/* "Seite 5", "Seiten 5–6, 9" from page indexes */
+		pagesText(indexes) {
+			const ranges = [];
+			for (const i of indexes) {
+				const last = ranges[ranges.length - 1];
+				if (last && last[1] === i - 1) {
+					last[1] = i;
+				} else {
+					ranges.push([i, i]);
+				}
+			}
+			const text = ranges.map(([from, to]) => (from === to ? `${from + 1}` : `${from + 1}–${to + 1}`)).join(', ');
+			return this.fmt(indexes.length === 1 ? 'plugin_newspaperRecognizer_pagination_pageOne' : 'plugin_newspaperRecognizer_pagination_pagesMany', text);
+		},
+
+		fmt(key, ...args) {
+			return this.t(key).replace(/\{(\d+)\}/g, (match, i) => (args[i] !== undefined ? args[i] : match));
+		},
+
+		/* an offer belongs to its block as it is: another structure change or label in the block makes it disappear */
+		offerSignature(first) {
+			const node = this.tree.roots.find(root => root.first === first);
+			if (!node) {
+				return null;
+			}
+			return JSON.stringify([node.last, node.start.type, this.pages.slice(node.first, node.last + 1).map(page => [page.label, page.depth])]);
+		},
+
+		keepOffers(fresh) {
+			const offers = fresh.map(offer => ({ ...offer, signature: this.offerSignature(offer.first) }));
+			for (const offer of this.offers) {
+				if (!offers.some(o => o.first === offer.first) && offer.signature === this.offerSignature(offer.first)) {
+					offers.push(offer);
+				}
+			}
+			return offers;
+		},
+
+		offerFor(row) {
+			return !row.loose && this.settings.enabled && this.offers.find(offer => offer.first === row.node.first) || null;
+		},
+
+		offerText(row) {
+			const offer = this.offerFor(row);
+			return this.fmt(offer.pages.length === 1 ? 'plugin_newspaperRecognizer_pagination_offerTextOne' : 'plugin_newspaperRecognizer_pagination_offerText',
+				this.pagesText(offer.pages));
+		},
+
+		offerButton(row) {
+			const count = this.offerFor(row).pages.length;
+			return this.fmt(count === 1 ? 'plugin_newspaperRecognizer_pagination_offerAcceptOne' : 'plugin_newspaperRecognizer_pagination_offerAccept', count);
+		},
+
+		acceptOffer(first) {
+			const offer = this.offers.find(o => o.first === first);
+			if (!offer) {
+				return;
+			}
+			const fresh = paginateBlock(this.pages, this.settings, first);
+			const pages = clonePages(this.pages);
+			offer.pages.forEach(i => { pages[i].label = fresh[i].label; });
+			this.commit(pages, { text: this.fmt('plugin_newspaperRecognizer_pagination_step_offer', this.pagesText(offer.pages)), paginate: false });
+		},
+
+		dismissOffer(first) {
+			this.offers = this.offers.filter(offer => offer.first !== first);
 			this.update();
+		},
+
+		hideHelp() {
+			this.helpHidden = true;
+			this.update();
+		},
+
+		/* a message in the help line without a change of the state */
+		say(text) {
+			this.last = { text, undoable: false };
+			this.update();
+		},
+
+		previewLabelAt(index, text, mode) {
+			this.preview = { index, text, mode, result: previewLabel(this.pages, this.settings, index, text, mode) };
+			this.updateKeepingFocus();
+		},
+
+		cancelLabel() {
+			if (this.preview) {
+				this.preview = null;
+				this.updateKeepingFocus();
+			}
+		},
+
+		commitLabel(index, text, mode) {
+			const result = previewLabel(this.pages, this.settings, index, text, mode);
+			this.preview = null;
+			const changes = result.pages.map((page, i) => i).filter(i => result.pages[i].label !== this.pages[i].label);
+			if (changes.length === 0) {
+				this.updateKeepingFocus();
+				return;
+			}
+			const following = changes.filter(i => i !== index).length;
+			let step = parseLabel(text).kind === 'empty'
+				? this.fmt('plugin_newspaperRecognizer_pagination_step_labelFollow', index + 1, result.value)
+				: this.fmt('plugin_newspaperRecognizer_pagination_step_label', index + 1, result.value);
+			if (following > 0) {
+				step += ' · ' + this.fmt(following === 1 ? 'plugin_newspaperRecognizer_pagination_step_runOne' : 'plugin_newspaperRecognizer_pagination_step_runMany', following);
+			}
+			this.commit(result.pages, { text: step, paginate: false });
+		},
+
+		moveLabelFocus(index, delta) {
+			const field = this.$(`[data-label-input="${index + delta + 1}"]`);
+			if (field) {
+				field.focus();
+			}
+		},
+
+		/* what is recognised and what follows while a label is typed; shown under the block of the page */
+		hintFor(row) {
+			const typed = this.preview;
+			if (!typed || !(row.loose ? row.pages.includes(typed.index) : typed.index >= row.node.first && typed.index <= row.node.last)) {
+				return '';
+			}
+			const result = typed.result;
+			const key = name => `plugin_newspaperRecognizer_pagination_hint_${name}`;
+			const changing = result.run.filter(i => result.pages[i].label !== this.pages[i].label);
+			const run = changing.length === 0 ? '' : this.fmt(changing.length === 1 ? key('runOne') : key('runMany'), changing.length, changing[changing.length - 1] + 1);
+			let text;
+			if (result.kind === 'empty') {
+				text = this.fmt(key('follow'), result.value) + (run ? ' · ' + run : '');
+			} else if (!isCounting(result.value)) {
+				const kind = this.t(key(result.kind === 'none' ? 'none' : 'text'));
+				text = this.fmt(key('recognized'), kind) + ' · ' + this.t(key('single'));
+			} else {
+				const parsed = parseLabel(result.value);
+				const kind = this.t(key(parsed.kind)) + (parsed.fictitious ? this.t(key('fictitious')) : '');
+				text = this.fmt(key('recognized'), kind) + ' · ' + (run || this.t(result.run.length > 0 ? key('noChange') : key('runNone')));
+				if (result.stop !== null && isCounting(this.pages[result.stop].label)) {
+					text += ' · ' + this.fmt(key('stop'), result.stop + 1);
+				} else if (result.stop === null && changing.length > 0) {
+					text += ' · ' + this.t(key('toEnd'));
+				}
+			}
+			return text + ' · ' + this.t(key('keys'));
 		},
 
 		resolveConflicts(choices) {
@@ -521,7 +783,7 @@
 				this.volumeHidden.structures.push(...volumeAdditions);
 				this.operations = upsertOperation(this.operations, conflict.blockId, conflict.kind, action);
 			}
-			this.commit(pages);
+			this.commit(pages, options.step);
 			if (options.afterCommit) {
 				options.afterCommit();
 			}
@@ -562,7 +824,7 @@
 					const pages = clonePages(this.pages);
 					applyResolution(pages, explicitConflict(node.start, node.first), 'REMOVE_ALL', this.catalog, this.volumeType);
 					this.operations = upsertOperation(this.operations, node.start.id, 'EXPLICIT', 'REMOVE_ALL');
-					this.commit(pages);
+					this.commit(pages, { text: this.t('plugin_newspaperRecognizer_pagination_step_hidden'), paginate: false });
 				}, 'trash');
 		},
 
@@ -601,24 +863,38 @@
 			const ref = this.dialog.ref;
 			this.dialog = null;
 			const total = siblingsFrom(this.tree, ref).length;
-			this.applyChange(applyTypePattern(this.pages, ref, pattern, this.catalog), { bulk: true, total });
+			this.applyChange(applyTypePattern(this.pages, ref, pattern, this.catalog), { bulk: true, total, step: { text: this.t('plugin_newspaperRecognizer_pagination_step_pattern') } });
 		},
 
 		applyGenerated(newPages) {
 			this.dialog = null;
 			syncDateInputs(newPages, this.dateFormatPattern);
-			this.applyChange(newPages, { bulk: true });
+			this.applyChange(newPages, { bulk: true, step: { text: this.t('plugin_newspaperRecognizer_pagination_step_generated') } });
 		},
 
 		onPageClick(e, index) {
 			if (e.shiftKey || this.saveInFlight) {
 				return; // shift is used for zooming
 			}
-			this.applyChange((e.altKey || e.ctrlKey) ? toggleChild(this.pages, index) : toggleBlock(this.pages, index), { bulk: false });
+			const number = index + 1;
+			if (e.altKey || e.ctrlKey) {
+				this.applyChange(toggleChild(this.pages, index, this.catalog), { bulk: false, step: { text: this.fmt('plugin_newspaperRecognizer_pagination_step_supplement', number) } });
+				return;
+			}
+			const blockStart = this.tree.roots.some(root => root.first === index);
+			if (blockStart && !canMerge(this.pages, index)) {
+				this.say(this.fmt('plugin_newspaperRecognizer_pagination_step_cannotMerge', number)); // no change, so no step to undo
+				return;
+			}
+			this.applyChange(toggleBlock(this.pages, index), { bulk: false, step: { text: this.fmt(blockStart ? 'plugin_newspaperRecognizer_pagination_step_merge' : 'plugin_newspaperRecognizer_pagination_step_newBlock', number) } });
 		},
 
 		changeType(node, type) {
-			this.applyChange(setType(this.pages, refOf(node), type, this.catalog), { bulk: false });
+			if (type === '__loose__') {
+				this.applyChange(makeLoose(this.pages, node.first), { bulk: false, step: { text: this.fmt('plugin_newspaperRecognizer_pagination_step_loose', node.first + 1) } });
+				return;
+			}
+			this.applyChange(setType(this.pages, refOf(node), type, this.catalog), { bulk: false, step: { text: this.fmt('plugin_newspaperRecognizer_pagination_step_type', node.first + 1) } });
 		},
 
 		changeDate(node, value) {
@@ -687,12 +963,12 @@
 
 		askResetToAnalysis() {
 			this.askConfirmation('plugin_newspaperRecognizer_action_takeAnalysis', 'plugin_newspaperRecognizer_confirmResetToAnalysis',
-				'plugin_newspaperRecognizer_action_takeAnalysis', () => this.applyChange(resetToAnalysis(this.pages), { bulk: true, total: flatten(this.tree.roots).length }));
+				'plugin_newspaperRecognizer_action_takeAnalysis', () => this.applyChange(resetToAnalysis(this.pages), { bulk: true, total: flatten(this.tree.roots).length, step: { text: this.t('plugin_newspaperRecognizer_pagination_step_resetToAnalysis') } }));
 		},
 
 		askRemoveAllBlocks() {
 			this.askConfirmation('plugin_newspaperRecognizer_removeAllBlocks', 'plugin_newspaperRecognizer_confirmAction',
-				'plugin_newspaperRecognizer_removeAllBlocks', () => this.applyChange(removeAllBlocks(this.pages), { bulk: true, total: flatten(this.tree.roots).length }), 'trash');
+				'plugin_newspaperRecognizer_removeAllBlocks', () => this.applyChange(removeAllBlocks(this.pages), { bulk: true, total: flatten(this.tree.roots).length, step: { text: this.t('plugin_newspaperRecognizer_pagination_step_removeAll') } }), 'trash');
 		},
 
 		askRecompute() {
@@ -712,6 +988,7 @@
 			const page = this.pages[index];
 			this.applyChange(removePage(this.pages, index), {
 				bulk: false,
+				step: { text: this.fmt('plugin_newspaperRecognizer_pagination_step_deleteImage', index + 1), paginate: false }, // deleting an image changes no other label
 				afterCommit: () => {
 					shiftStructures(this.volumeHidden.structures, index);
 					document.getElementById('delete_form:file_name_to_delete').value = page.filename;
@@ -791,13 +1068,21 @@
 		},
 
 		canSave() {
-			if (this.saveInFlight || !this.dataDirty || this.configErrors.length > 0) {
+			if (this.saveInFlight || !(this.dataDirty || this.hasOpenEdit()) || this.configErrors.length > 0) {
 				return false;
 			}
 			return this.validation.valid;
 		},
 
+		/* a label typed but not yet committed that would change something */
+		hasOpenEdit() {
+			return !!this.preview && this.preview.result.pages.some((page, i) => page.label !== this.pages[i].label);
+		},
+
 		save() {
+			if (this.preview) {
+				this.commitLabel(this.preview.index, this.preview.text, this.preview.mode); // the edit in the open field belongs to what is saved
+			}
 			if (!this.canSave()) {
 				return;
 			}
