@@ -12,6 +12,7 @@ import static org.junit.Assert.assertSame;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +22,13 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import de.intranda.goobi.plugins.newspaperRecognizer.LoadedState;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.PaginationConfiguration;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.PaginationRule;
+import de.intranda.goobi.plugins.newspaperRecognizer.config.PluginConfiguration;
 import de.intranda.goobi.plugins.newspaperRecognizer.PluginDataLoader;
 import de.intranda.goobi.plugins.newspaperRecognizer.SaveResult;
 import de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments;
@@ -162,6 +169,28 @@ public class NewspaperRecognizerPluginTest {
         plugin.save();
         assertEquals(SaveResult.ERROR, plugin.getSaveResult());
         PowerMock.verifyAll();
+    }
+
+    @Test
+    public void paginationJson_containsSettingsAndResolvedRules() {
+        PluginConfiguration base = TestDocuments.config(true);
+        PaginationConfiguration pagination = new PaginationConfiguration(true, false, List.of("\u2013"),
+                Map.of("NewspaperSupplement", new PaginationRule(List.of("i"), false)));
+        plugin.setConfiguration(new PluginConfiguration(base.loadAllImages(), base.showDeletePageButton(), base.preventDuplicates(), pagination,
+                base.fields(), base.defaults(), base.types(), base.parseErrors()));
+        JsonObject json = JsonParser.parseString(plugin.getPaginationJson()).getAsJsonObject();
+        assertEquals(true, json.get("enabled").getAsBoolean());
+        assertEquals(false, json.get("automatic").getAsBoolean());
+        assertEquals("[\"\u2013\"]", json.get("withoutBlock").toString());
+        JsonObject rules = json.getAsJsonObject("rules");
+        assertEquals("[\"1\"]", rules.getAsJsonObject("MorningIssue").get("beginsWith").toString());
+        assertEquals("[\"i\"]", rules.getAsJsonObject("NewspaperSupplement").get("beginsWith").toString());
+        assertEquals(false, rules.getAsJsonObject("NewspaperSupplement").get("continueInParent").getAsBoolean());
+    }
+
+    @Test
+    public void paginationJson_withoutRulesetOrConfiguration_isNull() {
+        assertEquals("null", new NewspaperRecognizerPlugin().getPaginationJson());
     }
 
     @Test

@@ -370,6 +370,33 @@ public class MetsWriterTest {
     }
 
     @Test
+    public void labels_hyphenWrittenAsUncounted() throws Exception {
+        enablePagination();
+        load(volume(strict, 1), filenames(2));
+        setLabel(0, "3");
+        writeLabels("-", "-");
+        assertEquals(List.of("uncounted", "uncounted"), labelsInMets());
+    }
+
+    @Test
+    public void labels_writtenTrimmed() throws Exception {
+        enablePagination();
+        load(volume(strict, 1), filenames(1));
+        setLabel(0, "3");
+        writeLabels(" 7 ");
+        assertEquals(List.of("7"), labelsInMets());
+    }
+
+    @Test
+    public void apply_labelsAndFilenamesDifferInLength_rejected() throws Exception {
+        enablePagination();
+        load(volume(strict, 2), filenames(2));
+        String before = snapshot(dd);
+        assertThrows(IllegalArgumentException.class, () -> writeLabels("1"));
+        assertEquals(before, snapshot(dd));
+    }
+
+    @Test
     public void labels_enabled_emptyLabels_noAutomaticPaginationOnSave() throws Exception {
         config = TestDocuments.config(false, true);
         DigitalDocument document = volume(strict, 6);

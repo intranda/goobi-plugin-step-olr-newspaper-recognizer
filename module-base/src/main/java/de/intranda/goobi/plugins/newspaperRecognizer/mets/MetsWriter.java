@@ -54,6 +54,9 @@ public class MetsWriter {
 
     public void apply(DigitalDocument dd, DocStructRegistry registry, List<BlockNode> roots, List<HiddenOperation> operations,
             List<String> filenames, List<String> labels) throws UnresolvedHiddenDataException, UGHException {
+        if (labels.size() != filenames.size()) {
+            throw new IllegalArgumentException("Got " + labels.size() + " labels for " + filenames.size() + " pages");
+        }
         long startTime = System.nanoTime();
         DocStruct volume = VolumeLocator.find(dd);
         Resolution resolution = resolver.resolve(volume.getType().getName(), registry, roots, operations, PageIndex.of(dd, filenames));
@@ -124,8 +127,9 @@ public class MetsWriter {
     }
 
     private void writeLabel(DocStruct page, String label) throws UGHException {
-        boolean uncounted = label.isEmpty() || "\u2013".equals(label);
-        MetadataAccess.setFirst(page, ruleset.metadataType(LOG_PAGE_NO), uncounted ? UNCOUNTED : label);
+        String normalized = PageLabels.normalize(label);
+        boolean uncounted = normalized.isEmpty() || "\u2013".equals(normalized);
+        MetadataAccess.setFirst(page, ruleset.metadataType(LOG_PAGE_NO), uncounted ? UNCOUNTED : label.trim());
     }
 
     private static void removePage(DigitalDocument dd, DocStruct boundBook, DocStruct page) {
