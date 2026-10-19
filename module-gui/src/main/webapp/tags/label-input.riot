@@ -3,8 +3,8 @@
 	<div data-label={props.index + 1} class="label-input {stateClasses()}">
 		<input type="text" class="form-control form-control-sm" data-label-input={props.index + 1} autocomplete="off"
 			placeholder={props.t('plugin_newspaperRecognizer_pagination_label_placeholder')}
-			aria-label={props.t('plugin_newspaperRecognizer_pagination_label_aria').replace('{0}', props.index + 1)}
-			title={props.own ? props.t('plugin_newspaperRecognizer_pagination_label_own').replace('{0}', props.follow) : ''}
+			aria-label={props.t('plugin_newspaperRecognizer_pagination_label_aria').replace('{0}', () => props.index + 1)}
+			title={props.own ? props.t('plugin_newspaperRecognizer_pagination_label_own').replace('{0}', () => props.follow) : ''}
 			onfocus={onFocus} oninput={onInput} onkeydown={onKeyDown} onblur={onBlur} />
 	</div>
 
@@ -94,9 +94,11 @@
 				this.dirty = false;
 				this.props.handleCancel();
 			} else if (e.key === 'Tab') {
-				e.preventDefault();
 				this.finish('follow');
-				this.props.handleMove(e.shiftKey ? -1 : 1);
+				// at the first and the last field the browser's own Tab goes on, so the field is no keyboard trap
+				if (this.props.handleMove(e.shiftKey ? -1 : 1)) {
+					e.preventDefault();
+				}
 			}
 		},
 

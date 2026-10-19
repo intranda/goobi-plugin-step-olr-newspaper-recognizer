@@ -64,9 +64,9 @@
 						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
 					</button>
 				</div>
-				<div if={last} data-last class="newspaper-help__last text-muted" aria-live="polite">
-					{t('plugin_newspaperRecognizer_pagination_last').replace('{0}', last.text)}
-					<button if={last.undoable && undoStep} type="button" data-undo class="btn btn-link btn-sm p-0 align-baseline" onclick={undoStep}>
+				<div data-last class="newspaper-help__last text-muted {last ? '' : 'newspaper-help__last--empty'}" aria-live="polite">
+					{last ? fmt('plugin_newspaperRecognizer_pagination_last', last.text) : ''}
+					<button if={last && last.undoable && undoStep} type="button" data-undo class="btn btn-link btn-sm p-0 align-baseline" onclick={undoStep}>
 						{t('plugin_newspaperRecognizer_pagination_undo')}
 					</button>
 				</div>
@@ -555,6 +555,9 @@
 
 		/* the single entry point for every change of the page list: asks about hidden data before committing */
 		applyChange(newPages, options = {}) {
+			if (this.sameState(this.pages, newPages)) {
+				return; // nothing changed: no dirty state, no step, no message
+			}
 			const conflicts = findConflicts(this.pages, newPages, this.catalog, this.volumeType);
 			if (conflicts.length === 0) {
 				this.commit(newPages, options.step);
@@ -565,6 +568,11 @@
 			}
 			this.pendingChange = { pages: newPages, conflicts, options };
 			this.update();
+		},
+
+		sameState(before, after) {
+			const plain = pages => JSON.stringify(pages.map(({ depth, label, starts }) => [depth, label, starts]));
+			return before.length === after.length && plain(before) === plain(after);
 		},
 
 		/* step: {text, paginate}; a structure change paginates what it needs (unless paginate is false), then says what happened */
@@ -738,11 +746,13 @@
 			this.commit(result.pages, { text: step, paginate: false });
 		},
 
+		/* true if there is a label field to go to */
 		moveLabelFocus(index, delta) {
 			const field = this.$(`[data-label-input="${index + delta + 1}"]`);
 			if (field) {
 				field.focus();
 			}
+			return !!field;
 		},
 
 		/* what is recognised and what follows while a label is typed; shown under the block of the page */
@@ -1079,10 +1089,15 @@
 			return !!this.preview && this.preview.result.pages.some((page, i) => page.label !== this.pages[i].label);
 		},
 
-		save() {
+		/* the edit in the open label field belongs to what is saved */
+		commitOpenEdit() {
 			if (this.preview) {
-				this.commitLabel(this.preview.index, this.preview.text, this.preview.mode); // the edit in the open field belongs to what is saved
+				this.commitLabel(this.preview.index, this.preview.text, this.preview.mode);
 			}
+		},
+
+		save() {
+			this.commitOpenEdit();
 			if (!this.canSave()) {
 				return;
 			}
@@ -1096,6 +1111,7 @@
 			if (this.saveInFlight) {
 				return;
 			}
+			this.commitOpenEdit();
 			if (!this.dataDirty) {
 				this.finish_button.click();
 				return;

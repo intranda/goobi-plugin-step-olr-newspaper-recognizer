@@ -408,6 +408,10 @@ progress {
 	gap: 0 0.5rem;
 }
 
+.newspaper-help__last--empty {
+	padding: 0;
+}
+
 /* the label of a page under its thumbnail: unobtrusive until hovered or focused */
 .label-input {
 	margin-top: 0.25rem;
