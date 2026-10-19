@@ -58,7 +58,7 @@ export function streams(pages, settings) {
 }
 
 /** The value for page index by the rule of its stream: the n-th beginsWith value, else the next value after the last counting label before it, else the first counting rule value, else –. */
-function valueIn(pages, stream, index) {
+export function valueIn(pages, stream, index) {
   if (!stream.rule) {
     return null;
   }
