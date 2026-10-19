@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { catalog, VOLUME, start, pages, shape } from './fixtures.mjs';
 import {
   buildTree, flatten, validatePages, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
-  removeAllBlocks, resetToAnalysis, removePage, toSaveRequest, siblingsFrom,
+  removeAllBlocks, resetToAnalysis, removePage, toSaveRequest, siblingsFrom, canMerge, makeLoose, clonePages,
 } from '../blocks.mjs';
 
 const issueWithSupplement = () => pages(
@@ -42,7 +42,7 @@ test('toggleBlock adds a block and keeps the input unchanged', () => {
   const before = issueWithSupplement();
   const after = toggleBlock(before, 1);
   assert.equal(shape(after), '1/1 1/1 2/1 2/0 1/0 1/1');
-  assert.equal(after[1].starts[0].type, null);
+  assert.equal(after[1].starts[0].type, 'MorningIssue');
   assert.equal(shape(before), '1/1 1/0 2/1 2/0 1/0 1/1');
 });
 
@@ -58,10 +58,6 @@ test('toggleBlock on a child start moves the child into the new block', () => {
 
 test('toggleBlock removes a block; its pages join the previous block', () => {
   assert.equal(shape(toggleBlock(issueWithSupplement(), 5)), '1/1 1/0 2/1 2/0 1/0 1/0');
-});
-
-test('toggleBlock removes the first block; its pages become pages without structure', () => {
-  assert.equal(shape(toggleBlock(issueWithSupplement(), 0)), '0/0 0/0 0/0 0/0 0/0 1/1');
 });
 
 test('toggleBlock on a page without structure takes the following pages without structure', () => {
@@ -190,8 +186,10 @@ test('validateBlocks accepts morning and evening issue with the same date and nu
   assert.equal(validateBlocks(list, catalog, VOLUME, true).valid, true);
 });
 
-test('removeAllBlocks leaves one untyped block over all pages', () => {
-  assert.equal(shape(removeAllBlocks(issueWithSupplement())), '1/1 1/0 1/0 1/0 1/0 1/0');
+test('removeAllBlocks makes every page a page without block', () => {
+  const after = removeAllBlocks(issueWithSupplement());
+  assert.equal(shape(after), '0/0 0/0 0/0 0/0 0/0 0/0');
+  assert.deepEqual(buildTree(after).loose, [0, 1, 2, 3, 4, 5]);
 });
 
 test('resetToAnalysis starts untyped blocks on the first page and detected pages', () => {
@@ -215,7 +213,80 @@ test('toSaveRequest sends only the transfer fields', () => {
   list[0].image = { thumbnailUrl: 'x' };
   const request = JSON.parse(toSaveRequest(list, [{ blockId: 'b1', kind: 'TYPE', action: 'KEEP_ALLOWED' }]));
   assert.deepEqual(request, {
-    pages: [{ filename: '0001.tif', depth: 1, starts: [{ id: 'b1', type: 'MorningIssue', date: '1890-03-01', dateRaw: null, prefix: null, number: null, suffix: null }] }],
+    pages: [{ filename: '0001.tif', depth: 1, label: '', starts: [{ id: 'b1', type: 'MorningIssue', date: '1890-03-01', dateRaw: null, prefix: null, number: null, suffix: null }] }],
     operations: [{ blockId: 'b1', kind: 'TYPE', action: 'KEEP_ALLOWED' }],
   });
+});
+
+test('toggleBlock on the first block start does nothing', () => {
+  const list = issueWithSupplement();
+  const after = toggleBlock(list, 0);
+  assert.equal(shape(after), '1/1 1/0 2/1 2/0 1/0 1/1');
+  assert.deepEqual(after, clonePages(list));
+  assert.equal(canMerge(list, 0), false);
+  assert.equal(canMerge(list, 5), true);
+});
+
+test('toggleBlock on a block start after pages without block does nothing', () => {
+  const list = pages({ depth: 0 }, { depth: 1, starts: [start('MorningIssue', { id: 'b1' })] }, { depth: 1 });
+  const after = toggleBlock(list, 1);
+  assert.equal(shape(after), '0/0 1/1 1/0');
+  assert.deepEqual(after, clonePages(list));
+  assert.equal(canMerge(list, 1), false); // derived
+});
+
+test('a new block takes the type of the block it was split from', () => {
+  const list = pages({ depth: 1, starts: [start('MorningIssue', { id: 'b1', date: '1890-03-01', number: '1', hidden: { structures: [{ key: 'h1', type: 'TableOfContents', firstPage: 0, lastPage: 1 }], metadata: [] } })] }, { depth: 1 }, { depth: 0 });
+  const split = toggleBlock(list, 1)[1].starts[0];
+  assert.deepEqual([split.id, split.type, split.date, split.dateInput, split.number, split.prefix, split.suffix], [null, 'MorningIssue', null, '', null, null, null]);
+  assert.deepEqual(split.hidden, { structures: [], metadata: [] });
+  assert.equal(toggleBlock(list, 2)[2].starts[0].type, null);
+});
+
+test('a new block from inside a child block takes the type of the enclosing block', () => { // derived
+  const split = toggleBlock(issueWithSupplement(), 3)[3].starts[0];
+  assert.equal(split.type, 'MorningIssue');
+});
+
+test('toggleChild with the catalog picks the only allowed child type', () => {
+  const evening = pages({ depth: 1, starts: [start('EveningIssue', { id: 'b1' })] }, { depth: 1 }, { depth: 1 });
+  assert.equal(toggleChild(evening, 1, catalog)[1].starts[0].type, 'NewspaperSupplement');
+  const morning = pages({ depth: 1, starts: [start('MorningIssue', { id: 'b1' })] }, { depth: 1 }, { depth: 1 });
+  assert.equal(toggleChild(morning, 1, catalog)[1].starts[0].type, null);
+  assert.equal(toggleChild(morning, 1)[1].starts[0].type, null); // derived: no catalog
+  const split = pages({ depth: 1, starts: [start('EveningIssue', { id: 'b1' })] }, { depth: 2, starts: [start('NewspaperSupplement', { id: 'b2' })] }, { depth: 2 });
+  assert.equal(toggleChild(split, 2, catalog)[2].starts[0].type, 'NewspaperSupplement');
+});
+
+const threeIssues = () => pages(
+  { depth: 1, starts: [start('MorningIssue', { id: 'a' })] },
+  { depth: 1 },
+  { depth: 1, starts: [start('EveningIssue', { id: 'b' })] },
+  { depth: 2, starts: [start('NewspaperSupplement', { id: 'c' })] },
+  { depth: 2 },
+  { depth: 1 },
+  { depth: 1, starts: [start('MorningIssue', { id: 'd' })] },
+  { depth: 1 },
+);
+
+test('makeLoose dissolves a block with its children at start, middle and end', () => {
+  const list = threeIssues();
+  assert.equal(shape(makeLoose(list, 0)), '0/0 0/0 1/1 2/1 2/0 1/0 1/1 1/0');
+  assert.equal(shape(makeLoose(list, 2)), '1/1 1/0 0/0 0/0 0/0 0/0 1/1 1/0');
+  assert.equal(shape(makeLoose(list, 6)), '1/1 1/0 1/1 2/1 2/0 1/0 0/0 0/0');
+  assert.equal(shape(list), '1/1 1/0 1/1 2/1 2/0 1/0 1/1 1/0', 'input unchanged'); // derived
+  assert.deepEqual(buildTree(makeLoose(list, 2)).loose, [2, 3, 4, 5]);
+  assert.deepEqual(buildTree(makeLoose(list, 0)).roots.map(n => n.start.id), ['b', 'd']);
+});
+
+test('makeLoose next to loose pages makes one run', () => {
+  const list = pages({ depth: 0 }, ...threeIssues().slice(0, 2));
+  assert.deepEqual(buildTree(makeLoose(list, 1)).loose, [0, 1, 2]);
+});
+
+test('toSaveRequest sends the label', () => {
+  const list = pages({ depth: 0, label: '5' }, { depth: 0 });
+  const request = JSON.parse(toSaveRequest(list, []));
+  assert.deepEqual(request.pages.map(page => page.label), ['5', '']);
+  assert.ok(toSaveRequest(list, []).includes('"label":"5"'));
 });

@@ -94,22 +94,24 @@ export function siblingsFrom(tree, ref) {
 
 const hasLevelZeroStart = page => page.starts.length > 0 && page.depth === page.starts.length;
 
-/** Click: add or remove a level-0 block starting on the page. */
+/** The block of the given level that covers the page, or null. */
+function blockCovering(pages, index, level) {
+  return flatten(buildTree(pages).roots).find(n => n.level === level && n.first <= index && index <= n.last) || null;
+}
+
+/** Whether a click on the page merges its level-0 block into the block directly before (only possible with a block before). */
+export function canMerge(pages, index) {
+  const page = pages[index];
+  return index > 0 && hasLevelZeroStart({ starts: page.starts || [], depth: page.depth || 0 }) && (pages[index - 1].depth || 0) >= 1;
+}
+
+/** Click: add or remove a level-0 block starting on the page. Removing only merges into the block before; a new block takes the type of the block it was split from. */
 export function toggleBlock(pages, index) {
   const out = clonePages(pages);
   const page = out[index];
   if (hasLevelZeroStart(page)) {
-    page.starts.shift();
-    const previousDepth = index > 0 ? out[index - 1].depth : 0;
-    if (previousDepth === 0) {
-      // no block before: the pages of the removed block (with its child blocks) are without structure now
-      for (let i = index; i < out.length; i++) {
-        if (i > index && (hasLevelZeroStart(out[i]) || out[i].depth === 0)) {
-          break;
-        }
-        out[i].starts = [];
-        out[i].depth = 0;
-      }
+    if (canMerge(out, index)) {
+      page.starts.shift();
     }
     return out;
   }
@@ -121,6 +123,7 @@ export function toggleBlock(pages, index) {
     }
     return out;
   }
+  const type = blockCovering(out, index, 0)?.start.type || null;
   if (page.starts.length === 0 && page.depth >= 2) {
     // inside a child block: the child ends before this page
     page.depth = 1;
@@ -128,12 +131,25 @@ export function toggleBlock(pages, index) {
       out[i].depth = 1;
     }
   }
-  page.starts.unshift(newStart());
+  page.starts.unshift(newStart(type));
   return out;
 }
 
-/** Ctrl/Alt-click: add or remove a level-1 block (child block) starting on the page; a new child runs to the end of the block or the next child. */
-export function toggleChild(pages, index) {
+/** Level-0 block starting on page first, with its children, becomes pages without block. */
+export function makeLoose(pages, first) {
+  const out = clonePages(pages);
+  const node = buildTree(out).roots.find(n => n.first === first);
+  if (node) {
+    for (let i = node.first; i <= node.last; i++) {
+      out[i].starts = [];
+      out[i].depth = 0;
+    }
+  }
+  return out;
+}
+
+/** Ctrl/Alt-click: add or remove a level-1 block (child block) starting on the page; a new child runs to the end of the block or the next child. With the catalog a new child gets the only type its block allows; a split child keeps the type of the child it splits. */
+export function toggleChild(pages, index, catalog = null) {
   const out = clonePages(pages);
   const page = out[index];
   const count = page.starts.length;
@@ -151,11 +167,12 @@ export function toggleChild(pages, index) {
     return out;
   }
   if (depth >= 2) {
-    page.starts.push(newStart());
+    page.starts.push(newStart(blockCovering(out, index, 1)?.start.type || null));
     return out;
   }
   if (!(count === 0 && index > 0 && out[index - 1].depth >= 2)) {
-    page.starts.push(newStart());
+    const allowed = catalog ? catalog[blockCovering(out, index, 0)?.start.type]?.children || [] : [];
+    page.starts.push(newStart(allowed.length === 1 ? allowed[0] : null));
   }
   // a new child (or the child right before the page) takes the following pages up to the end of the block or the next child
   for (let i = index; i < out.length && out[i].depth === 1 && (i === index || out[i].starts.length === 0); i++) {
@@ -269,11 +286,7 @@ export function validateBlocks(pages, catalog, volumeType, preventDuplicates) {
 }
 
 export function removeAllBlocks(pages) {
-  const out = clonePages(pages).map(page => ({ ...page, depth: 1, starts: [] }));
-  if (out.length) {
-    out[0].starts = [newStart()];
-  }
-  return out;
+  return clonePages(pages).map(page => ({ ...page, depth: 0, starts: [] }));
 }
 
 export function resetToAnalysis(pages) {
@@ -333,6 +346,7 @@ export function toSaveRequest(pages, operations, catalog = null) {
     pages: pages.map(page => ({
       filename: page.filename,
       depth: page.depth || 0,
+      label: page.label || '',
       starts: (page.starts || []).map(s => ({
         id: s.id || null, type: s.type || null, date: s.date || null, dateRaw: s.dateRaw || null,
         prefix: s.prefix || null, number: s.number || null, suffix: s.suffix || null,
