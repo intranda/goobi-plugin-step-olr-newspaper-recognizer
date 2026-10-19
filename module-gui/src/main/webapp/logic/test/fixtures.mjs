@@ -33,3 +33,16 @@ export function pages(...specs) {
 
 /** Depth and number of starts per page, for compact assertions. */
 export const shape = list => list.map(p => `${p.depth}/${p.starts.length}`).join(' ');
+
+export const DEFAULT_RULES = {
+  MorningIssue: { beginsWith: ['1'] },
+  EveningIssue: { beginsWith: ['1'] },
+  ExtraEdition: { beginsWith: ['1'] },
+  NewspaperSupplement: { beginsWith: ['i'] },
+};
+
+/** Pagination settings as the server sends them; extra overrides single fields (e.g. {automatic: false}). */
+export const settings = (rules = DEFAULT_RULES, extra = {}) => ({ enabled: true, automatic: true, withoutBlock: ['–'], rules, ...extra });
+
+/** Page labels on one line, empty labels as '·'. */
+export const labels = list => list.map(p => p.label || '·').join(' ');
