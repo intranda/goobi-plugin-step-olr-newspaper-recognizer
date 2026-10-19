@@ -1,6 +1,6 @@
 // Pagination streams and rule values, pure functions on the page list; rules mirror the pagination v2 design (Streams, Rule value of a page).
 import { buildTree, flatten, clonePages } from './blocks.mjs';
-import { normalizeLabel, isCounting, nextLabel } from './labels.mjs';
+import { normalizeLabel, isCounting, nextLabel, follows } from './labels.mjs';
 
 const ruleOfType = (settings, type) => (type && settings.rules?.[type]?.beginsWith) || null;
 
@@ -93,6 +93,95 @@ export function paginateBlock(pages, settings, first) {
     }
   }
   return out;
+}
+
+/** Indices of the labelled pages that paginateBlock would change in the block starting on page first. */
+export function blockOffer(pages, settings, first) {
+  const paginated = paginateBlock(pages, settings, first);
+  return pages.map((page, i) => i).filter(i => pages[i].label !== '' && paginated[i].label !== pages[i].label);
+}
+
+const sameRule = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+/** Per page: whether it changed stream (block, rule, or its predecessor in the stream is not in its stream any more) and whether only the rule changed. */
+function movedPages(before, after, settings) {
+  const streamsOf = list => {
+    const byPage = new Array(list.length);
+    streams(list, settings).list.forEach(s => s.pages.forEach(i => { byPage[i] = s; }));
+    return byPage;
+  };
+  const was = streamsOf(before);
+  const now = streamsOf(after);
+  return after.map((page, i) => {
+    const old = was[i];
+    if (!old) {
+      return { moved: true, onlyRule: false };
+    }
+    const predecessor = old.pages[old.pages.indexOf(i) - 1];
+    const newPredecessor = now[i].pages[now[i].pages.indexOf(i) - 1];
+    const ruleChanged = !sameRule(old.rule, now[i].rule);
+    const otherChanged = old.block !== now[i].block
+      || (predecessor === undefined ? newPredecessor !== undefined : !now[i].pages.includes(predecessor));
+    return { moved: ruleChanged || otherChanged, onlyRule: ruleChanged && !otherChanged };
+  });
+}
+
+/**
+ * Paginates only what a structure change needs. In every stream the first page of a run of moved pages gets its rule value and
+ * the pages after it count on as long as their old labels formed a sequence; the first page after a run gets the continuation
+ * of its stream. Pages of a stream without counting rule value (–) all get that value. Offers: typed blocks of the moved pages
+ * and, unless only types changed, the block before the first moved page, where the rules would change a labelled page.
+ */
+export function structureChanged(before, after, settings) {
+  if (settings.automatic === false) {
+    return { pages: after, changed: [], offers: [] };
+  }
+  const out = clonePages(after);
+  const old = out.map(page => page.label);
+  const flags = movedPages(before, after, settings);
+  const result = streams(out, settings);
+  for (const stream of result.list) {
+    if (!stream.rule) {
+      continue;
+    }
+    let flowing = false;
+    let previousOld = null;
+    stream.pages.forEach((i, k) => {
+      const moved = flags[i].moved;
+      const previousMoved = k > 0 && flags[stream.pages[k - 1]].moved;
+      const set = () => {
+        out[i].label = valueIn(out, stream, i);
+        flowing = isCounting(out[i].label);
+        previousOld = old[i];
+      };
+      if (moved !== previousMoved) {
+        set();
+      } else if (moved && (k < stream.rule.length || !isCounting(valueIn(out, stream, i)))) {
+        set();
+      } else if (flowing && follows(previousOld, old[i])) {
+        out[i].label = valueIn(out, stream, i);
+        previousOld = old[i];
+      } else {
+        flowing = false;
+      }
+    });
+  }
+  const changed = out.map((page, i) => i).filter(i => out[i].label !== old[i]);
+  const movedIndexes = flags.map((flag, i) => i).filter(i => flags[i].moved);
+  const blocks = new Set();
+  if (movedIndexes.length) {
+    const owner = new Array(out.length);
+    result.list.forEach(s => s.pages.forEach(i => { owner[i] = s.block; }));
+    movedIndexes.forEach(i => owner[i] >= 0 && blocks.add(owner[i]));
+    const first = movedIndexes[0];
+    if (first > 0 && owner[first - 1] >= 0 && !movedIndexes.every(i => flags[i].onlyRule)) {
+      blocks.add(owner[first - 1]);
+    }
+  }
+  const offers = [...blocks].sort((a, b) => a - b)
+    .map(first => ({ first, pages: blockOffer(out, settings, first) }))
+    .filter(offer => offer.pages.length);
+  return { pages: out, changed, offers };
 }
 
 export function initLabels(pages) {

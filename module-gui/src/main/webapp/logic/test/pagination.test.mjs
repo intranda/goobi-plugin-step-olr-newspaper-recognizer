@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { streams, ruleValue, paginateBlock, initLabels } from '../pagination.mjs';
+import { streams, ruleValue, paginateBlock, initLabels, structureChanged, blockOffer } from '../pagination.mjs';
 import { pages, start, settings, labels, DEFAULT_RULES } from './fixtures.mjs';
 
 const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });
@@ -115,4 +115,172 @@ test('paginateBlock numbers a page of free text as uncounted and does not let it
 test('ruleValue continues bracketed labels', () => {
   const list = pages(I('MorningIssue', '1'), p('[2]'), p());
   assert.equal(ruleValue(list, settings(), 2), '[3]');
+});
+
+// structureChanged: before and after are page lists carrying the old labels; labels(result.pages) is the outcome.
+
+/** Page list from page specs without labels and a label line ('·' = empty). */
+const lab = (specs, text) => {
+  const words = text.split(' ');
+  return pages(...specs.map((spec, i) => ({ ...spec, label: words[i] === '·' ? '' : words[i] })));
+};
+const loose = () => p('', 0);
+const M = 'MorningIssue';
+const offerShape = offers => offers.map(o => ({ first: o.first, pages: o.pages }));
+const EXTRA_RULES = { ...DEFAULT_RULES, ExtraEdition: { beginsWith: ['[1]'] } };
+
+test('structureChanged: new block takes its rule', () => {
+  const before = lab([I(M), p(), p(), p(), p(), p()], '1 2 3 4 5 6');
+  const after = lab([I(M), p(), p(), I(M), p(), p()], '1 2 3 4 5 6');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 3 1 2 3');
+  assert.deepEqual(result.changed, [3, 4, 5]);
+  assert.deepEqual(result.offers, []);
+});
+
+test('structureChanged: run stops at a broken old sequence and the block gets an offer', () => {
+  const before = lab([I(M), p(), p(), p(), p(), p()], '1 2 3 4 9 10');
+  const after = lab([I(M), p(), I(M), p(), p(), p()], '1 2 3 4 9 10');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 1 2 9 10');
+  assert.deepEqual(result.changed, [2, 3]);
+  assert.deepEqual(offerShape(result.offers), [{ first: 2, pages: [4, 5] }]);
+});
+
+test('structureChanged: supplement inserted continues the parent after it', () => {
+  const before = lab([I(M), p(), p(), p(), p(), p(), p()], '1 2 3 4 5 6 7');
+  const after = lab([I(M), p(), p(), p(), C('NewspaperSupplement'), p('', 2), p()], '1 2 3 4 5 6 7');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 3 4 i ii 5');
+  assert.deepEqual(result.changed, [4, 5, 6]); // derived
+});
+
+test('structureChanged: supplement extended, the page leaves the issue and the issue continues after it', () => {
+  const before = lab([I(M), p(), p(), C('NewspaperSupplement'), p('', 2), p(), p()], '1 2 3 i ii 4 5');
+  const after = lab([I(M), p(), p(), C('NewspaperSupplement'), p('', 2), p('', 2), p()], '1 2 3 i ii 4 5');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 3 i ii iii 4');
+  assert.deepEqual(result.changed, [5, 6]); // derived
+});
+
+test('structureChanged: supplement split, the second part restarts', () => {
+  const before = lab([I(M), p(), p(), C('NewspaperSupplement'), p('', 2), p('', 2), p('', 2), p()], '1 2 3 i ii iii iv 4');
+  const after = lab([I(M), p(), p(), C('NewspaperSupplement'), p('', 2), C('NewspaperSupplement'), p('', 2), p()], '1 2 3 i ii iii iv 4');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 3 i ii i ii 4');
+  assert.deepEqual(result.changed, [5, 6]); // derived
+});
+
+test('structureChanged: supplement removed, its pages rejoin the issue', () => {
+  const before = lab([I(M), p(), p(), C('NewspaperSupplement'), p('', 2), p(), p()], '1 2 3 i ii 4 5');
+  const after = lab([I(M), p(), p(), p(), p(), p(), p()], '1 2 3 i ii 4 5');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 3 4 5 6 7');
+  assert.deepEqual(result.changed, [3, 4, 5, 6]); // derived
+});
+
+test('structureChanged: type change with the same rule changes nothing', () => {
+  const before = lab([I(M), p(), p()], '1 2 3');
+  const after = lab([I('EveningIssue'), p(), p()], '1 2 3');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 3');
+  assert.deepEqual(result.changed, []);
+  assert.deepEqual(result.offers, []); // derived
+});
+
+test('structureChanged: type change with a different rule follows the new rule', () => {
+  const before = lab([I(M), p(), p()], '1 2 3');
+  const after = lab([I('ExtraEdition'), p(), p()], '1 2 3');
+  const result = structureChanged(before, after, settings(EXTRA_RULES));
+  assert.equal(labels(result.pages), '[1] [2] [3]');
+  assert.deepEqual(result.offers, []);
+});
+
+test('structureChanged: untyped blocks keep their labels', () => {
+  const before = lab([I(null), p(), p()], '5 6 7');
+  const after = lab([I(null), I(null), p()], '5 6 7');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '5 6 7');
+  assert.deepEqual(result.changed, []); // derived
+  assert.deepEqual(result.offers, []); // derived
+});
+
+test('structureChanged: pages without block get the rule for pages without block', () => {
+  const before = lab([I(M), p(), I(M), p(), I(M), p()], '1 2 4 5 1 2');
+  const after = lab([I(M), p(), loose(), loose(), I(M), p()], '1 2 4 5 1 2');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 – – 1 2');
+  assert.deepEqual(result.offers, []); // derived
+});
+
+test('structureChanged: automatic off changes nothing', () => {
+  const before = lab([I(M), p(), p(), p(), p(), p()], '1 2 3 4 9 10');
+  const after = lab([I(M), p(), I(M), p(), p(), p()], '1 2 3 4 9 10');
+  const result = structureChanged(before, after, settings(DEFAULT_RULES, { automatic: false }));
+  assert.equal(labels(result.pages), '1 2 3 4 9 10');
+  assert.deepEqual(result.pages, after);
+  assert.deepEqual(result.changed, []);
+  assert.deepEqual(result.offers, []);
+});
+
+test('structureChanged: bulk, remove all blocks paginates everything as pages without block', () => {
+  const before = lab([I(M), p(), I(M), p(), I(M), p()], '1 2 1 2 1 2');
+  const after = lab([loose(), loose(), loose(), loose(), loose(), loose()], '1 2 1 2 1 2');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '– – – – – –');
+});
+
+test('structureChanged: bulk, a type pattern counts as one type change per block', () => {
+  const before = lab([I(M), p(), I(M), p()], '1 2 1 2');
+  const after = lab([I('ExtraEdition'), p(), I('ExtraEdition'), p()], '1 2 1 2');
+  const result = structureChanged(before, after, settings(EXTRA_RULES));
+  assert.equal(labels(result.pages), '[1] [2] [1] [2]');
+});
+
+test('structureChanged: offers exclude pages without label', () => {
+  const before = lab([I(M), p(), p(), p()], '1 2 · 9');
+  const after = lab([I(M), I(M), p(), p()], '1 2 · 9');
+  const result = structureChanged(before, after, settings());
+  assert.equal(result.offers.length, 1);
+  assert.ok(!result.offers[0].pages.includes(2));
+  assert.deepEqual(result.offers[0].pages, [3]); // derived
+});
+
+test('structureChanged handles degenerate volumes', () => {
+  const single = structureChanged(lab([I(M)], '1'), lab([loose()], '1'), settings());
+  assert.equal(labels(single.pages), '–');
+
+  const lastBlock = structureChanged(lab([loose(), loose(), loose()], '– – –'), lab([loose(), loose(), I(M)], '– – –'), settings());
+  assert.equal(labels(lastBlock.pages), '– – 1');
+
+  const onePage = structureChanged(lab([I(M), p()], '1 2'), lab([I(M), I(M)], '1 2'), settings());
+  assert.equal(labels(onePage.pages), '1 1');
+
+  const looseStart = structureChanged(lab([loose(), loose(), I(M), p()], '– – 1 2'), lab([loose(), I(M), I(M), p()], '– – 1 2'), settings());
+  assert.equal(labels(looseStart.pages), '– 1 1 2');
+});
+
+// Extra tests for spec behaviour not covered by the brief; every expected value is derived from the spec.
+
+test('structureChanged: a type change makes no offer for the block before', () => {
+  const before = lab([I(M), p(), I(M), p(), p()], '1 5 1 2 3');
+  const after = lab([I(M), p(), I('ExtraEdition'), p(), p()], '1 5 1 2 3');
+  const result = structureChanged(before, after, settings(EXTRA_RULES));
+  assert.equal(labels(result.pages), '1 5 [1] [2] [3]');
+  assert.deepEqual(result.offers, []);
+});
+
+test('structureChanged: a new block offers the block before when its own numbering differs from the rules', () => {
+  const before = lab([I(M), p(), p(), p()], '1 2 7 8');
+  const after = lab([I(M), p(), p(), I(M)], '1 2 7 8');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 7 1');
+  assert.deepEqual(offerShape(result.offers), [{ first: 0, pages: [2] }]);
+});
+
+test('blockOffer lists the labelled pages the rules would change', () => {
+  assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 5 6'), settings(), 0), [1, 2]);
+  assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 5 ·'), settings(), 0), [1]);
+  assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 2 3'), settings(), 0), []);
+  assert.deepEqual(blockOffer(lab([I(null), p()], '5 7'), settings(), 0), []);
 });
