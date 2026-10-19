@@ -284,3 +284,21 @@ test('blockOffer lists the labelled pages the rules would change', () => {
   assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 2 3'), settings(), 0), []);
   assert.deepEqual(blockOffer(lab([I(null), p()], '5 7'), settings(), 0), []);
 });
+
+// Fix round 1: after the continuation the old sequence rule still applies.
+
+test('structureChanged: supplement inserted keeps own numbering after the continuation', () => {
+  const before = lab([I(M), p(), p(), p(), p(), p(), p()], '1 2 3 4 5 6 9');
+  const after = lab([I(M), p(), p(), C('NewspaperSupplement'), p('', 2), p(), p()], '1 2 3 4 5 6 9');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 3 i ii 4 9');
+  assert.deepEqual(offerShape(result.offers), [{ first: 0, pages: [6] }]); // derived
+});
+
+test('structureChanged: supplement extended keeps own numbering after the continuation', () => {
+  const before = lab([I(M), p(), p(), C('NewspaperSupplement'), p('', 2), p(), p(), p()], '1 2 3 i ii 4 5 9');
+  const after = lab([I(M), p(), p(), C('NewspaperSupplement'), p('', 2), p('', 2), p(), p()], '1 2 3 i ii 4 5 9');
+  const result = structureChanged(before, after, settings());
+  assert.equal(labels(result.pages), '1 2 3 i ii iii 4 9');
+  assert.deepEqual(offerShape(result.offers), [{ first: 0, pages: [7] }]); // derived
+});

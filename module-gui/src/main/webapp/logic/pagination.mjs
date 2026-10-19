@@ -103,7 +103,7 @@ export function blockOffer(pages, settings, first) {
 
 const sameRule = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-/** Per page: whether it changed stream (block, rule, or its predecessor in the stream is not in its stream any more) and whether only the rule changed. */
+/** Per page: whether it changed stream (block, rule, or its predecessor in the stream is not in its stream any more), whether only the rule changed, and whether it really joined another block or rule. */
 function movedPages(before, after, settings) {
   const streamsOf = list => {
     const byPage = new Array(list.length);
@@ -115,14 +115,16 @@ function movedPages(before, after, settings) {
   return after.map((page, i) => {
     const old = was[i];
     if (!old) {
-      return { moved: true, onlyRule: false };
+      return { moved: true, onlyRule: false, strong: true };
     }
     const predecessor = old.pages[old.pages.indexOf(i) - 1];
     const newPredecessor = now[i].pages[now[i].pages.indexOf(i) - 1];
     const ruleChanged = !sameRule(old.rule, now[i].rule);
-    const otherChanged = old.block !== now[i].block
+    const blockChanged = old.block !== now[i].block;
+    const otherChanged = blockChanged
       || (predecessor === undefined ? newPredecessor !== undefined : !now[i].pages.includes(predecessor));
-    return { moved: ruleChanged || otherChanged, onlyRule: ruleChanged && !otherChanged };
+    // strong: the page really joined another block or rule; weak: only its predecessor in the stream left
+    return { moved: ruleChanged || otherChanged, onlyRule: ruleChanged && !otherChanged, strong: ruleChanged || blockChanged };
   });
 }
 
@@ -149,12 +151,13 @@ export function structureChanged(before, after, settings) {
     stream.pages.forEach((i, k) => {
       const moved = flags[i].moved;
       const previousMoved = k > 0 && flags[stream.pages[k - 1]].moved;
+      const previousStrong = k > 0 && flags[stream.pages[k - 1]].strong;
       const set = () => {
         out[i].label = valueIn(out, stream, i);
         flowing = isCounting(out[i].label);
         previousOld = old[i];
       };
-      if (moved !== previousMoved) {
+      if (moved ? !previousMoved : previousStrong) {
         set();
       } else if (moved && (k < stream.rule.length || !isCounting(valueIn(out, stream, i)))) {
         set();
