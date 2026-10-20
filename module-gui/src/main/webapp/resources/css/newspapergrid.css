@@ -385,7 +385,7 @@ progress {
 	.preview-table td:nth-child(2) { white-space: normal; }
 }
 
-/* the help line stays visible under the plugin's title bar while scrolling; below it what just happened */
+/* the help line stays visible under the plugin's title bar while scrolling */
 .newspaper-help {
 	position: sticky;
 	top: 0;
@@ -394,22 +394,13 @@ progress {
 	border-bottom: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color);
 }
 
-.newspaper-help__hints,
-.newspaper-help__last {
+.newspaper-help__hints {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 0.25rem 1.25rem;
 	padding: 0.4rem var(--section-padding, 1rem);
 	font-size: 0.875rem;
-}
-
-.newspaper-help__last {
-	gap: 0 0.5rem;
-}
-
-.newspaper-help__last--empty {
-	padding: 0;
 }
 
 /* the label of a page under its thumbnail: unobtrusive until hovered or focused */

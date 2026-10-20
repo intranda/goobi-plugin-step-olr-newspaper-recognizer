@@ -64,12 +64,6 @@
 						<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('x')}" /></svg></span>
 					</button>
 				</div>
-				<div data-last class="newspaper-help__last text-muted {last ? '' : 'newspaper-help__last--empty'}" aria-live="polite">
-					{last ? fmt('plugin_newspaperRecognizer_pagination_last', last.text) : ''}
-					<button if={last && last.undoable && undoStep} type="button" data-undo class="btn btn-link btn-sm p-0 align-baseline" onclick={undoStep}>
-						{t('plugin_newspaperRecognizer_pagination_undo')}
-					</button>
-				</div>
 			</div>
 
 			<div>
@@ -339,7 +333,6 @@
 				withoutBlock: pagination && pagination.withoutBlock && pagination.withoutBlock.length ? pagination.withoutBlock : ['–'],
 				rules: (pagination && pagination.rules) || {},
 			};
-			this.last = null; // {text, undoable}: what just happened, shown in the help line
 			this.helpHidden = false;
 
 			this.msgs = {};
@@ -556,11 +549,11 @@
 		/* the single entry point for every change of the page list: asks about hidden data before committing */
 		applyChange(newPages, options = {}) {
 			if (this.sameState(this.pages, newPages)) {
-				return; // nothing changed: no dirty state, no step, no message
+				return; // nothing changed: no dirty state
 			}
 			const conflicts = findConflicts(this.pages, newPages, this.catalog, this.volumeType);
 			if (conflicts.length === 0) {
-				this.commit(newPages, options.step);
+				this.commit(newPages, options);
 				if (options.afterCommit) {
 					options.afterCommit();
 				}
@@ -575,24 +568,19 @@
 			return before.length === after.length && plain(before) === plain(after);
 		},
 
-		/* step: {text, paginate}; a structure change paginates what it needs (unless paginate is false), then says what happened */
-		commit(newPages, step = {}) {
+		/* a structure change paginates what it needs (unless options.paginate is false) */
+		commit(newPages, options = {}) {
 			let pages = newPages;
-			const parts = step.text ? [step.text] : [];
 			let offers = [];
-			if (this.settings.enabled && step.paginate !== false) {
+			if (this.settings.enabled && options.paginate !== false) {
 				const result = structureChanged(this.pages, newPages, this.settings);
 				pages = result.pages;
 				offers = result.offers;
-				parts.push(this.paginationInfo(result));
 			}
 			this.pages = pages;
 			this.dataDirty = true;
 			this.refresh();
 			this.offers = this.keepOffers(offers);
-			if (parts.length > 0) {
-				this.last = { text: parts.join(' · '), undoable: true };
-			}
 			this.updateKeepingFocus();
 		},
 
@@ -618,22 +606,6 @@
 
 		isRendering() {
 			return !!this.rendering;
-		},
-
-		paginationInfo(result) {
-			let text;
-			if (this.settings.automatic === false) {
-				text = this.t('plugin_newspaperRecognizer_pagination_autoOff');
-			} else if (result.changed.length > 0) {
-				text = this.fmt('plugin_newspaperRecognizer_pagination_adjusted', this.pagesText(result.changed));
-			} else {
-				text = this.t('plugin_newspaperRecognizer_pagination_unchanged');
-			}
-			if (result.offers.length > 0) {
-				text += ' · ' + (result.offers.length === 1 ? this.t('plugin_newspaperRecognizer_pagination_offerBlock')
-					: this.fmt('plugin_newspaperRecognizer_pagination_offerBlocks', result.offers.length));
-			}
-			return text;
 		},
 
 		/* "Seite 5", "Seiten 5–6, 9" from page indexes */
@@ -697,7 +669,7 @@
 			const fresh = paginateBlock(this.pages, this.settings, first);
 			const pages = clonePages(this.pages);
 			offer.pages.forEach(i => { pages[i].label = fresh[i].label; });
-			this.commit(pages, { text: this.fmt('plugin_newspaperRecognizer_pagination_step_offer', this.pagesText(offer.pages)), paginate: false });
+			this.commit(pages, { paginate: false });
 		},
 
 		dismissOffer(first) {
@@ -707,12 +679,6 @@
 
 		hideHelp() {
 			this.helpHidden = true;
-			this.update();
-		},
-
-		/* a message in the help line without a change of the state */
-		say(text) {
-			this.last = { text, undoable: false };
 			this.update();
 		},
 
@@ -736,14 +702,7 @@
 				this.updateKeepingFocus();
 				return;
 			}
-			const following = changes.filter(i => i !== index).length;
-			let step = parseLabel(text).kind === 'empty'
-				? this.fmt('plugin_newspaperRecognizer_pagination_step_labelFollow', index + 1, result.value)
-				: this.fmt('plugin_newspaperRecognizer_pagination_step_label', index + 1, result.value);
-			if (following > 0) {
-				step += ' · ' + this.fmt(following === 1 ? 'plugin_newspaperRecognizer_pagination_step_runOne' : 'plugin_newspaperRecognizer_pagination_step_runMany', following);
-			}
-			this.commit(result.pages, { text: step, paginate: false });
+			this.commit(result.pages, { paginate: false });
 		},
 
 		/* true if there is a label field to go to */
@@ -793,7 +752,7 @@
 				this.volumeHidden.structures.push(...volumeAdditions);
 				this.operations = upsertOperation(this.operations, conflict.blockId, conflict.kind, action);
 			}
-			this.commit(pages, options.step);
+			this.commit(pages, options);
 			if (options.afterCommit) {
 				options.afterCommit();
 			}
@@ -834,7 +793,7 @@
 					const pages = clonePages(this.pages);
 					applyResolution(pages, explicitConflict(node.start, node.first), 'REMOVE_ALL', this.catalog, this.volumeType);
 					this.operations = upsertOperation(this.operations, node.start.id, 'EXPLICIT', 'REMOVE_ALL');
-					this.commit(pages, { text: this.t('plugin_newspaperRecognizer_pagination_step_hidden'), paginate: false });
+					this.commit(pages, { paginate: false });
 				}, 'trash');
 		},
 
@@ -873,13 +832,13 @@
 			const ref = this.dialog.ref;
 			this.dialog = null;
 			const total = siblingsFrom(this.tree, ref).length;
-			this.applyChange(applyTypePattern(this.pages, ref, pattern, this.catalog), { bulk: true, total, step: { text: this.t('plugin_newspaperRecognizer_pagination_step_pattern') } });
+			this.applyChange(applyTypePattern(this.pages, ref, pattern, this.catalog), { bulk: true, total });
 		},
 
 		applyGenerated(newPages) {
 			this.dialog = null;
 			syncDateInputs(newPages, this.dateFormatPattern);
-			this.applyChange(newPages, { bulk: true, step: { text: this.t('plugin_newspaperRecognizer_pagination_step_generated') } });
+			this.applyChange(newPages, { bulk: true });
 		},
 
 		onPageClick(e, index) {
@@ -888,23 +847,22 @@
 			}
 			const number = index + 1;
 			if (e.altKey || e.ctrlKey) {
-				this.applyChange(toggleChild(this.pages, index, this.catalog), { bulk: false, step: { text: this.fmt('plugin_newspaperRecognizer_pagination_step_supplement', number) } });
+				this.applyChange(toggleChild(this.pages, index, this.catalog), { bulk: false });
 				return;
 			}
 			const blockStart = this.tree.roots.some(root => root.first === index);
 			if (blockStart && !canMerge(this.pages, index)) {
-				this.say(this.fmt('plugin_newspaperRecognizer_pagination_step_cannotMerge', number)); // no change, so no step to undo
 				return;
 			}
-			this.applyChange(toggleBlock(this.pages, index), { bulk: false, step: { text: this.fmt(blockStart ? 'plugin_newspaperRecognizer_pagination_step_merge' : 'plugin_newspaperRecognizer_pagination_step_newBlock', number) } });
+			this.applyChange(toggleBlock(this.pages, index), { bulk: false });
 		},
 
 		changeType(node, type) {
 			if (type === '__loose__') {
-				this.applyChange(makeLoose(this.pages, node.first), { bulk: false, step: { text: this.fmt('plugin_newspaperRecognizer_pagination_step_loose', node.first + 1) } });
+				this.applyChange(makeLoose(this.pages, node.first), { bulk: false });
 				return;
 			}
-			this.applyChange(setType(this.pages, refOf(node), type, this.catalog), { bulk: false, step: { text: this.fmt('plugin_newspaperRecognizer_pagination_step_type', node.first + 1) } });
+			this.applyChange(setType(this.pages, refOf(node), type, this.catalog), { bulk: false });
 		},
 
 		changeDate(node, value) {
@@ -973,12 +931,12 @@
 
 		askResetToAnalysis() {
 			this.askConfirmation('plugin_newspaperRecognizer_action_takeAnalysis', 'plugin_newspaperRecognizer_confirmResetToAnalysis',
-				'plugin_newspaperRecognizer_action_takeAnalysis', () => this.applyChange(resetToAnalysis(this.pages), { bulk: true, total: flatten(this.tree.roots).length, step: { text: this.t('plugin_newspaperRecognizer_pagination_step_resetToAnalysis') } }));
+				'plugin_newspaperRecognizer_action_takeAnalysis', () => this.applyChange(resetToAnalysis(this.pages), { bulk: true, total: flatten(this.tree.roots).length }));
 		},
 
 		askRemoveAllBlocks() {
 			this.askConfirmation('plugin_newspaperRecognizer_removeAllBlocks', 'plugin_newspaperRecognizer_confirmAction',
-				'plugin_newspaperRecognizer_removeAllBlocks', () => this.applyChange(removeAllBlocks(this.pages), { bulk: true, total: flatten(this.tree.roots).length, step: { text: this.t('plugin_newspaperRecognizer_pagination_step_removeAll') } }), 'trash');
+				'plugin_newspaperRecognizer_removeAllBlocks', () => this.applyChange(removeAllBlocks(this.pages), { bulk: true, total: flatten(this.tree.roots).length }), 'trash');
 		},
 
 		askRecompute() {
@@ -998,7 +956,7 @@
 			const page = this.pages[index];
 			this.applyChange(removePage(this.pages, index), {
 				bulk: false,
-				step: { text: this.fmt('plugin_newspaperRecognizer_pagination_step_deleteImage', index + 1), paginate: false }, // deleting an image changes no other label
+				paginate: false, // deleting an image changes no other label
 				afterCommit: () => {
 					shiftStructures(this.volumeHidden.structures, index);
 					document.getElementById('delete_form:file_name_to_delete').value = page.filename;
