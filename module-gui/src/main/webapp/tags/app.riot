@@ -911,21 +911,21 @@
 			setDateInput(node.start, value, this.dateFormatPattern);
 			this.dataDirty = true;
 			this.refresh();
-			this.update();
+			this.updateKeepingFocus();
 		},
 
 		changeField(node, name, value) {
 			node.start[name] = value === '' ? null : value;
 			this.dataDirty = true;
 			this.refresh();
-			this.update();
+			this.updateKeepingFocus();
 		},
 
 		changeValue(node, key, value) {
 			setFieldValue(node, key, value, this.catalog);
 			this.dataDirty = true;
 			this.refresh();
-			this.update();
+			this.updateKeepingFocus();
 		},
 
 		fieldsOf(node) {
