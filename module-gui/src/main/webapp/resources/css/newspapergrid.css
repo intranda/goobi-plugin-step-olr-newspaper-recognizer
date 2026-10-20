@@ -470,3 +470,21 @@ label-input {
 .newspaper-thumbnail .label-input {
 	max-width: var(--thumb-size, 80px);
 }
+
+/* the label fields of the pages a jump leads to light up briefly (no focus) */
+@keyframes newspaper-flash {
+	from {
+		border-color: #2b9a5a;
+		box-shadow: 0 0 0 0.2rem color-mix(in srgb, #2b9a5a 35%, transparent);
+	}
+}
+
+.newspaper-flash > .form-control {
+	animation: newspaper-flash 1.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.newspaper-flash > .form-control {
+		animation: none;
+	}
+}

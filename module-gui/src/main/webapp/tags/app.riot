@@ -73,6 +73,22 @@
 						<ul class="mb-0"><li each={error in configErrors}>{error}</li></ul>
 					</div>
 				</div>
+				<div if={showMissingBanner()} data-banner-missing class="p-3">
+					<div class="alert alert-info d-flex flex-wrap align-items-center gap-3 mb-0">
+						<span>{missingText()}</span>
+						<button type="button" data-generate class="btn btn-primary btn-sm text-nowrap" onclick={generateMissing}>{t('plugin_newspaperRecognizer_pagination_missing_generate')}</button>
+						<button type="button" data-decline class="btn btn-blank btn-sm text-nowrap" onclick={declineMissing}>{t('plugin_newspaperRecognizer_pagination_missing_decline')}</button>
+						<button type="button" data-jump class="btn btn-blank btn-sm text-nowrap" onclick={jumpToMissing}>
+							{t(missingRunList().length > 1 ? 'plugin_newspaperRecognizer_pagination_missing_jumpNext' : 'plugin_newspaperRecognizer_pagination_missing_jump')}
+						</button>
+					</div>
+				</div>
+				<div if={showChangedBanner()} data-banner-changed class="p-3">
+					<div class="alert alert-info d-flex flex-wrap align-items-center gap-3 mb-0">
+						<span>{changedText()}</span>
+						<button type="button" data-restore class="btn btn-blank btn-sm text-nowrap" onclick={restoreLabels}>{t('plugin_newspaperRecognizer_pagination_changed_restore')}</button>
+					</div>
+				</div>
 				<div if={otherNotices().length > 0} class="p-3">
 					<div class="alert alert-warning">
 						<ul class="mb-0"><li each={notice in otherNotices()}>{formatNotice(notice)}</li></ul>
@@ -259,6 +275,8 @@
 								</template>
 							</template>
 						</div>
+						<!-- room below the last block, so that it too can scroll to just below the help line -->
+						<div data-bottom-spacer style="height: 100vh;"></div>
 					</div>
 				</template>
 			</div>
@@ -298,6 +316,7 @@
 		canMerge, makeLoose,
 	} from '../logic/blocks.mjs'
 	import { initLabels, structureChanged, paginateBlock } from '../logic/pagination.mjs'
+	import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets } from '../logic/pagination-tools.mjs'
 	import { previewLabel, ownNumberingAll } from '../logic/typing.mjs'
 	import { parseLabel, isCounting } from '../logic/labels.mjs'
 	import TypePatternDialog from './type-pattern-dialog.riot'
@@ -345,6 +364,8 @@
 			this.hiddenCursor = -1;
 			this.actionsOpen = false;
 			this.dialog = null; // {kind: 'pattern' | 'continue', ref, typeOptions}
+			this.missingDeclined = false; // "Nicht erzeugen": the banner stays hidden until the plugin is opened again (not reset by loadData)
+			this.lastJumped = -1; // index of the first page of the run the last jump led to
 			this.loadData(JSON.parse(this.data_el.value));
 
 			var path = window.location.pathname;
@@ -677,6 +698,78 @@
 			this.update();
 		},
 
+		showMissingBanner() {
+			return this.settings.enabled && !this.missingDeclined && this.missingRunList().length > 0;
+		},
+
+		missingRunList() {
+			return missingRuns(this.pages);
+		},
+
+		missingText() {
+			const count = this.missingRunList().reduce((sum, [first, last]) => sum + last - first + 1, 0);
+			return count === 1 ? this.t('plugin_newspaperRecognizer_pagination_missing_one') : this.fmt('plugin_newspaperRecognizer_pagination_missing_many', count);
+		},
+
+		showChangedBanner() {
+			return this.settings.enabled && changedSinceOpening(this.pages).length > 0;
+		},
+
+		changedText() {
+			const count = changedSinceOpening(this.pages).length;
+			return count === 1 ? this.t('plugin_newspaperRecognizer_pagination_changed_one') : this.fmt('plugin_newspaperRecognizer_pagination_changed_many', count);
+		},
+
+		/* every page without label gets its rule value */
+		generateMissing() {
+			this.applyChange(fillMissing(this.pages, this.settings), { paginate: false });
+		},
+
+		/* hides the banner until the plugin is opened again */
+		declineMissing() {
+			this.missingDeclined = true;
+			this.update();
+		},
+
+		/* all labels from the METS as last loaded, all offers gone */
+		restoreLabels() {
+			this.applyChange(restoreFromMets(this.pages), { paginate: false, afterCommit: () => { this.offers = []; this.update(); } });
+		},
+
+		/* scrolls to the first run of pages without label after the last jumped one (else the first run), centres its first page and lets
+		   its label fields flash; no focus */
+		jumpToMissing() {
+			const runs = this.missingRunList();
+			const run = runs.find(([first]) => first > this.lastJumped) || runs[0];
+			if (!run) {
+				return;
+			}
+			const [first, last] = run;
+			const field = index => this.$(`[data-label="${index + 1}"]`);
+			const target = field(first);
+			if (!target) {
+				return;
+			}
+			this.lastJumped = first;
+			(target.closest('.newspaper-thumbnail, .thumbnail-image') || target).scrollIntoView({ behavior: 'smooth', block: 'center' });
+			this.$$('.newspaper-flash').forEach(element => element.classList.remove('newspaper-flash')); // the flash of an earlier jump is over
+			void document.body.offsetWidth; // restart the animation
+			for (let i = first; i <= last; i++) {
+				field(i)?.classList.add('newspaper-flash');
+			}
+		},
+
+		/* scrolls smoothly so that the row of the block starts just below the sticky help line */
+		scrollToBlock(first) {
+			const element = document.getElementById(this.blockElementId({ first, level: 0 }));
+			const help = this.$('[data-help]');
+			if (!element) {
+				return;
+			}
+			const below = help ? (parseFloat(getComputedStyle(help).top) || 0) + help.offsetHeight : 0;
+			window.scrollTo({ top: element.getBoundingClientRect().top + window.scrollY - below, behavior: 'smooth' });
+		},
+
 		hideHelp() {
 			this.helpHidden = true;
 			this.update();
@@ -854,7 +947,7 @@
 			if (blockStart && !canMerge(this.pages, index)) {
 				return;
 			}
-			this.applyChange(toggleBlock(this.pages, index), { bulk: false });
+			this.applyChange(toggleBlock(this.pages, index), { bulk: false, afterCommit: blockStart ? undefined : () => this.scrollToBlock(index) });
 		},
 
 		changeType(node, type) {
