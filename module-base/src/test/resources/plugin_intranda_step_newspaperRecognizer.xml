@@ -9,9 +9,10 @@
     <pagination enabled="true" automatic="true">
         <!-- values pages outside any block begin with, separated by blanks (– = uncounted, [1] = in brackets) -->
         <withoutBlock beginsWith="–" />
-        <!-- numbering per structure type: beginsWith = 1, i, I, a, A, – or a bracketed form like [1]; several values are separated by blanks.
+        <!-- numbering per structure type: beginsWith = 1, i, I, – or a bracketed form like [1]; several values are separated by blanks.
              Types without a rule that the ruleset allows only directly in the volume begin with 1; types allowed as a child keep the
-             numbering of their parent unless they have a rule. continueInParent="true" continues the numbering of the parent. -->
+             numbering of their parent unless they have a rule. continueInParent="true": the child blocks of this
+             type inside the same parent continue each other's numbering (i ii | iii iv). -->
         <rule docstruct="MorningIssue" beginsWith="1" />
         <rule docstruct="NewspaperSupplement" beginsWith="i" continueInParent="false" />
     </pagination>
