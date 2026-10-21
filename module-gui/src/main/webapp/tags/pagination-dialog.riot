@@ -72,7 +72,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr each={row in view().rows} data-preview-row={row.page}>
+						<tr each={row in visibleRows()} data-preview-row={row.page}>
 							<td>{row.page}</td>
 							<td data-preview-block>
 								<span if={row.dot} data-preview-dot class="position-dot" style="background: {row.dot};" aria-hidden="true"></span>{row.block}
@@ -82,6 +82,7 @@
 						</tr>
 					</tbody>
 				</table>
+				<p if={hiddenRows() > 0} class="small text-muted mt-2 mb-0">{props.t('plugin_newspaperRecognizer_preview_more').replace('{0}', hiddenRows())}</p>
 			</div>
 		</div>
 		<template slot="footer">
@@ -102,6 +103,7 @@
 	const PRESET_KEYS = { '1': 'arabic', 'i': 'roman', 'I': 'romanUpper', '[1]': 'fictitious', '– 1': 'firstNone', '–': 'none' };
 	const PRESETS = Object.keys(PRESET_KEYS);
 	const LOOSE = '__loose__';
+	const PREVIEW_ROWS = 20; // like the type pattern dialog; count and button still cover all pages of the scope
 
 	const ruleToPreset = beginsWith => {
 		if (!beginsWith || beginsWith.length === 0) {
@@ -124,6 +126,14 @@
 			}
 			rows[LOOSE] = ruleToPreset(props.settings.withoutBlock);
 			this.state = { rows, automatic: props.settings.automatic !== false, scope: props.first === null || props.first === undefined ? 'none' : 'block' };
+		},
+
+		visibleRows() {
+			return this.view().rows.slice(0, PREVIEW_ROWS);
+		},
+
+		hiddenRows() {
+			return Math.max(0, this.view().rows.length - PREVIEW_ROWS);
 		},
 
 		/* the preview of the current state, computed once for every state (the template asks for it several times) */
