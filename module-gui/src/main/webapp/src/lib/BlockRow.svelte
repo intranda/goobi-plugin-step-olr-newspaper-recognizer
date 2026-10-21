@@ -38,22 +38,6 @@
 <div class="issue-controls d-flex flex-column gap-3 px-3 pb-3" style="min-height: {app.thumbHeight}px;">
 	<BlockFields {node} main typeOptions={app.typeOptions(app.volumeType)} />
 
-	{#if node.children.length > 0}
-		<div class="block-tree">
-			{#each node.children as child, childIndex (child.first)}
-				<div class="block-tree__item" id={app.blockElementId(child)}>
-					<BlockFields node={child} typeOptions={app.typeOptions(node.start.type)} color={app.childColor(childIndex + 1)} />
-				</div>
-			{/each}
-		</div>
-	{/if}
-</div>
-
-<div class="thumbnails px-3 pb-3" style="--thumb-size: {app.thumbHeight / 2.5}px;">
-	{#each app.pagesOf(node) as entry (app.pages[entry.index].filename + ':' + entry.child)}
-		<PageCell index={entry.index} child={entry.child} />
-	{/each}
-	<div data-typing-hint class="newspaper-hint" aria-live="polite">{app.hintFor(row)}</div>
 	{#if app.settings.enabled}
 		<div class="newspaper-foot">
 			<Button data-block-pagination={node.first} icon="list-numbers" onclick={() => app.openRulesDialog(node.first)}>
@@ -72,4 +56,21 @@
 			</Button>
 		</div>
 	{/if}
+
+	{#if node.children.length > 0}
+		<div class="block-tree">
+			{#each node.children as child, childIndex (child.first)}
+				<div class="block-tree__item" id={app.blockElementId(child)}>
+					<BlockFields node={child} typeOptions={app.typeOptions(node.start.type)} color={app.childColor(childIndex + 1)} />
+				</div>
+			{/each}
+		</div>
+	{/if}
+</div>
+
+<div class="thumbnails px-3 pb-3" style="--thumb-size: {app.thumbHeight / 2.5}px;">
+	{#each app.pagesOf(node) as entry (app.pages[entry.index].filename + ':' + entry.child)}
+		<PageCell index={entry.index} child={entry.child} />
+	{/each}
+	<div data-typing-hint class="newspaper-hint" aria-live="polite">{app.hintFor(row)}</div>
 </div>
