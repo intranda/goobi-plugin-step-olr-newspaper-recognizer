@@ -1074,7 +1074,7 @@
 		},
 
 		askRemoveAllBlocks() {
-			this.askConfirmation('plugin_newspaperRecognizer_removeAllBlocks', 'plugin_newspaperRecognizer_confirmAction',
+			this.askConfirmation('plugin_newspaperRecognizer_removeAllBlocks', 'plugin_newspaperRecognizer_removeAllBlocks_confirm',
 				'plugin_newspaperRecognizer_removeAllBlocks', () => this.applyChange(removeAllBlocks(this.pages), { bulk: true, total: flatten(this.tree.roots).length }), 'trash');
 		},
 
