@@ -351,6 +351,17 @@ progress {
 	border-radius: 50%;
 }
 
+/* rules dialog: pages whose label changes, in the colour of changed fields (the selector beats the cell colour of Bootstrap tables) */
+.preview-table .preview-changed {
+	color: var(--clr-action);
+	font-weight: 700;
+}
+
+.preview-col-page { width: 4rem; }
+.preview-col-name { width: 10rem; }
+.rules-preset { max-width: 17rem; }
+.rules-custom { max-width: 7rem; }
+
 /* preview columns; on narrow screens without thumbnail and note column (the note follows the type) */
 .preview-col-block { width: 7rem; }
 .preview-col-date { width: 7.5rem; }
@@ -442,6 +453,7 @@ progress {
 
 /* hint line and offer of a block under its thumbnails */
 .newspaper-hint,
+.newspaper-foot,
 .newspaper-offer {
 	grid-column: 1 / -1;
 	font-size: 0.875rem;

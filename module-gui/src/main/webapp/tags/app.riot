@@ -29,6 +29,8 @@
 					<!-- the menu comes first: the button must stay the last child, else Goobi's :not(:last-child) margin moves it -->
 					<div class="position-relative me-2">
 						<ul if={actionsOpen} class="dropdown-menu dropdown-menu-end show" style="position: absolute; right: 0; top: 100%;">
+							<li if={settings.enabled}><button type="button" data-action-pagination class="dropdown-item" onclick={() => runAction(() => openRulesDialog(null))}>{t('plugin_newspaperRecognizer_pagination_rules_menu')}</button></li>
+							<li if={settings.enabled}><hr class="dropdown-divider" /></li>
 							<li><button type="button" class="dropdown-item" onclick={() => runAction(askResetToAnalysis)}>{t('plugin_newspaperRecognizer_action_takeAnalysis')}</button></li>
 							<li><button type="button" class="dropdown-item" onclick={() => runAction(askRemoveAllBlocks)}>{t('plugin_newspaperRecognizer_removeAllBlocks')}</button></li>
 							<li><hr class="dropdown-divider" /></li>
@@ -262,6 +264,12 @@
 													handle-cancel={cancelLabel} is-rendering={isRendering} handle-move={delta => moveLabelFocus(entry.index, delta)}></label-input>
 										</div>
 										<div data-typing-hint class="newspaper-hint" aria-live="polite">{hintFor(row)}</div>
+										<div if={settings.enabled} class="newspaper-foot">
+											<button type="button" data-block-pagination={row.node.first} class="btn btn-blank btn-sm d-flex align-items-center gap-1" onclick={() => openRulesDialog(row.node.first)}>
+												<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('list-numbers')}" /></svg></span>
+												<span>{t('plugin_newspaperRecognizer_pagination_rules_title')}</span>
+											</button>
+										</div>
 										<div if={offerFor(row)} data-offer class="newspaper-offer">
 											<span aria-hidden="true" class="icon-wrapper"><svg><use href="{GoobiIcons.iconHref('list-numbers')}" /></svg></span>
 											<span>{offerText(row)}</span>
@@ -289,6 +297,11 @@
 	<continue-dialog if={dialog && dialog.kind === 'continue'} pages={pages} start-ref={dialog.ref} catalog={catalog}
 		type-options={dialog.typeOptions} t={t} date-format-pattern={dateFormatPattern}
 		handle-apply={applyGenerated} handle-cancel={closeDialog}></continue-dialog>
+	<!-- the wrapper covers the window like the modal it holds, so that the whole dialog (body and footer buttons) is one visible element -->
+	<div if={dialog && dialog.kind === 'rules'} data-pagination-dialog class="position-fixed top-0 start-0 w-100 h-100" style="z-index: 1055;">
+		<pagination-dialog pages={pages} settings={settings} catalog={catalog} types={dialog.types} first={dialog.first} t={t}
+			handle-apply={applyRules} handle-cancel={closeDialog}></pagination-dialog>
+	</div>
 	<conflict-dialog if={pendingChange} conflicts={pendingChange.conflicts} total={pendingChange.options.total} catalog={catalog} t={t}
 		handle-confirm={resolveConflicts} handle-cancel={cancelConflicts}></conflict-dialog>
 
@@ -316,11 +329,12 @@
 		canMerge, makeLoose,
 	} from '../logic/blocks.mjs'
 	import { initLabels, structureChanged, paginateBlock } from '../logic/pagination.mjs'
-	import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets } from '../logic/pagination-tools.mjs'
+	import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules } from '../logic/pagination-tools.mjs'
 	import { previewLabel, ownNumberingAll } from '../logic/typing.mjs'
 	import { parseLabel, isCounting } from '../logic/labels.mjs'
 	import TypePatternDialog from './type-pattern-dialog.riot'
 	import ContinueDialog from './continue-dialog.riot'
+	import PaginationDialog from './pagination-dialog.riot'
 	import { applyTypePattern } from '../logic/generation.mjs'
 	import { fieldStates, initFieldStates, keepFieldValue, resetFieldValue, setFieldValue } from '../logic/fields.mjs'
 	import { positionColor } from '../logic/colors.mjs'
@@ -328,7 +342,7 @@
 
 
 	export default {
-		components: { Thumbcanvas, BlockFields, HiddenPopover, ConflictDialog, TypePatternDialog, ContinueDialog, PluginModal, LabelInput },
+		components: { Thumbcanvas, BlockFields, HiddenPopover, ConflictDialog, TypePatternDialog, ContinueDialog, PaginationDialog, PluginModal, LabelInput },
 
 		onBeforeMount(props) {
 			// fields of props are defined in plugin_newspaperRecognizer.xhtml
@@ -914,6 +928,41 @@
 		openDialog(kind, node) {
 			this.dialog = { kind, ref: refOf(node), typeOptions: this.typeOptions(node.parent ? node.parent.start.type : this.volumeType) };
 			this.update();
+		},
+
+		/* the rules dialog; first is the first page of the block it was opened from, null from the actions menu */
+		openRulesDialog(first) {
+			this.dialog = { kind: 'rules', first, types: this.ruleTypes() };
+			this.update();
+		},
+
+		/* the types of the drop-downs of the volume (its own types first, then their children) in ruleset order */
+		ruleTypes() {
+			const types = [];
+			const queue = [this.volumeType];
+			while (queue.length > 0) {
+				for (const name of ((this.catalog[queue.shift()] || {}).children || [])) {
+					if (!types.includes(name)) {
+						types.push(name);
+						queue.push(name);
+					}
+				}
+			}
+			return types;
+		},
+
+		/* the rules of the dialog replace the settings of this session; the scope decides which labels they overwrite, open offers are void */
+		applyRules(settings, scope) {
+			this.dialog = null;
+			this.settings = settings;
+			this.offers = [];
+			const pages = scope.kind === 'none' ? this.pages : simulateRules(this.pages, settings, scope);
+			if (this.sameState(this.pages, pages)) {
+				this.refresh();
+				this.update();
+				return;
+			}
+			this.applyChange(pages, { paginate: false });
 		},
 
 		closeDialog() {
