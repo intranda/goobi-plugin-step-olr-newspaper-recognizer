@@ -23,6 +23,12 @@
 		},
 
 		onUpdated() {
+			if (this.deferred && !this.props.preview) {
+				// the edit was committed while the field had already lost its focus (see onBlur)
+				this.deferred = false;
+				this.editing = false;
+				this.dirty = false;
+			}
 			this.sync();
 		},
 
@@ -105,6 +111,12 @@
 		onBlur() {
 			if (this.props.isRendering && this.props.isRendering()) {
 				return; // the page is only being re-rendered around the field
+			}
+			if (this.editing && this.dirty && this.props.isPointerDown && this.props.isPointerDown()) {
+				// a click is on its way: committing now would re-render between mousedown and mouseup and the browser would drop the
+				// click; the app commits the edit when the click comes (commitDeferredEdit)
+				this.deferred = true;
+				return;
 			}
 			if (this.editing) {
 				this.finish('follow');

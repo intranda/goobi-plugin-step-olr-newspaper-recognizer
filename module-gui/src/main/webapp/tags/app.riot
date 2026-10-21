@@ -164,7 +164,7 @@
 											<label-input if={settings.enabled} page={pages[index]} index={index} preview={preview ? preview.result : null}
 												own={!!ownFlags[index]} follow={ownFlags[index]} changed={pages[index].label !== pages[index].metsLabel} t={t}
 												handle-preview={(text, mode) => previewLabelAt(index, text, mode)} handle-commit={(text, mode) => commitLabel(index, text, mode)}
-												handle-cancel={cancelLabel} is-rendering={isRendering} handle-move={delta => moveLabelFocus(index, delta)}></label-input>
+												handle-cancel={cancelLabel} is-rendering={isRendering} is-pointer-down={isPointerDown} handle-move={delta => moveLabelFocus(index, delta)}></label-input>
 										</div>
 										<div data-typing-hint class="newspaper-hint" aria-live="polite">{hintFor(row)}</div>
 									</div>
@@ -191,7 +191,7 @@
 										<label-input if={settings.enabled} page={pages[row.node.first]} index={row.node.first} preview={preview ? preview.result : null}
 											own={!!ownFlags[row.node.first]} follow={ownFlags[row.node.first]} changed={pages[row.node.first].label !== pages[row.node.first].metsLabel} t={t}
 											handle-preview={(text, mode) => previewLabelAt(row.node.first, text, mode)} handle-commit={(text, mode) => commitLabel(row.node.first, text, mode)}
-											handle-cancel={cancelLabel} is-rendering={isRendering} handle-move={delta => moveLabelFocus(row.node.first, delta)}></label-input>
+											handle-cancel={cancelLabel} is-rendering={isRendering} is-pointer-down={isPointerDown} handle-move={delta => moveLabelFocus(row.node.first, delta)}></label-input>
 									</div>
 
 									<div class="issue-controls d-flex flex-column gap-3 px-3 pb-3" style="min-height: {thumb_height}px;">
@@ -261,7 +261,7 @@
 												<label-input if={settings.enabled} page={pages[entry.index]} index={entry.index} preview={preview ? preview.result : null}
 													own={!!ownFlags[entry.index]} follow={ownFlags[entry.index]} changed={pages[entry.index].label !== pages[entry.index].metsLabel} t={t}
 													handle-preview={(text, mode) => previewLabelAt(entry.index, text, mode)} handle-commit={(text, mode) => commitLabel(entry.index, text, mode)}
-													handle-cancel={cancelLabel} is-rendering={isRendering} handle-move={delta => moveLabelFocus(entry.index, delta)}></label-input>
+													handle-cancel={cancelLabel} is-rendering={isRendering} is-pointer-down={isPointerDown} handle-move={delta => moveLabelFocus(entry.index, delta)}></label-input>
 										</div>
 										<div data-typing-hint class="newspaper-hint" aria-live="polite">{hintFor(row)}</div>
 										<div if={settings.enabled} class="newspaper-foot">
@@ -398,6 +398,21 @@
 		onMounted(props) {
 			this.addAjaxEvent();
 			// close the actions menu on a click outside of it or on Escape
+			// an edited label field loses its focus on mousedown; its edit is committed with the click, not before, because a re-render
+			// between mousedown and mouseup makes the browser drop the click
+			document.addEventListener('pointerdown', () => {
+				this.pointerDown = true;
+			}, true);
+			const pointerEnded = () => {
+				// after the click, which follows the pointerup in the same task
+				setTimeout(() => {
+					this.pointerDown = false;
+					this.commitDeferredEdit();
+				}, 0);
+			};
+			document.addEventListener('pointerup', pointerEnded, true);
+			document.addEventListener('pointercancel', pointerEnded, true);
+			document.addEventListener('click', () => this.commitDeferredEdit(), true);
 			document.addEventListener('click', e => {
 				if (this.actionsOpen && !e.target.closest('.dropdown-menu') && !e.target.closest('[aria-haspopup]')) {
 					this.actionsOpen = false;
@@ -1184,6 +1199,18 @@
 		/* a label typed but not yet committed that would change something */
 		hasOpenEdit() {
 			return !!this.preview && this.preview.result.pages.some((page, i) => page.label !== this.pages[i].label);
+		},
+
+		isPointerDown() {
+			return !!this.pointerDown;
+		},
+
+		/* the edit of a label field that lost its focus to a pointer press; runs before the handler of the click */
+		commitDeferredEdit() {
+			const field = document.activeElement;
+			if (this.preview && !(field && field.dataset && field.dataset.labelInput === String(this.preview.index + 1))) {
+				this.commitOpenEdit();
+			}
 		},
 
 		/* the edit in the open label field belongs to what is saved */
