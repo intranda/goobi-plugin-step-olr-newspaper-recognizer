@@ -93,7 +93,8 @@
 		onKeyDown(e) {
 			if (e.key === 'Enter') {
 				e.preventDefault();
-				this.finish(e.ctrlKey || e.metaKey ? 'toEnd' : e.shiftKey ? 'single' : 'follow');
+				// Enter is a decision even without an edit (empty field: follow the page before, Ctrl: count on to the end of the stream)
+				this.finish(e.ctrlKey || e.metaKey ? 'toEnd' : e.shiftKey ? 'single' : 'follow', true);
 			} else if (e.key === 'Escape') {
 				e.preventDefault();
 				this.editing = false;
@@ -124,9 +125,9 @@
 		},
 
 		/* leaving a field without having changed its text is no edit */
-		finish(mode) {
+		finish(mode, decided = false) {
 			const text = this.text;
-			const edited = this.dirty;
+			const edited = this.dirty || decided;
 			this.editing = false;
 			this.dirty = false;
 			if (edited) {
