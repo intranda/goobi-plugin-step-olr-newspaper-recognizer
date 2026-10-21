@@ -90,10 +90,6 @@
 	overflow: hidden;
 }
 
-.newspaper-thumbnail__image a {
-
-}
-
 .btn-icon-right {
 	margin-left: 3px;
 }
@@ -474,8 +470,9 @@ progress {
 	border-radius: var(--bs-border-radius);
 }
 
-/* the field must not be wider than its column, even where the image is */
-label-input {
+
+/* a custom element is inline by default */
+goobi-plugin-step-newspaper-recognizer {
 	display: block;
 }
 

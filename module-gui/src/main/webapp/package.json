@@ -1,28 +1,22 @@
 {
-  "name": "goobi-plugin-step-pagination-frontend",
+  "name": "goobi-plugin-step-newspaper-recognizer-frontend",
   "version": "1.0.0",
-  "description": "JS frontend for goobi pagination plugin",
-  "main": "main.js",
+  "description": "Svelte frontend for the Goobi newspaper recognizer plugin",
+  "type": "module",
   "scripts": {
-    "build": "webpack-cli --mode=production",
-    "dev": "webpack-cli --mode=development --watch",
-    "test": "node --test \"logic/test/*.test.mjs\""
+    "build": "vite build",
+    "dev": "vite build --watch --mode development",
+    "test": "node --test \"logic/test/*.test.mjs\" \"src/**/*.test.mjs\"",
+    "check": "svelte-check --tsconfig ./tsconfig.json --compiler-warnings options_missing_custom_element:ignore"
   },
   "author": "Oliver Paetzel",
   "license": "GPL-2.0-or-later",
-  "dependencies": {
-    "riot": "^6.0.4",
-    "webpack-cli": "^5.1.4"
-  },
   "devDependencies": {
-    "@babel/core": "^7.4.5",
-    "@babel/preset-env": "^7.4.5",
-    "@riotjs/compiler": "^5.0.0",
-    "@riotjs/webpack-loader": "^5.0.0",
-    "babel-loader": "^8.0.6",
-    "copy-webpack-plugin": "^13.0.0",
-    "css-loader": "^7.1.2",
-    "style-loader": "^4.0.0",
-    "webpack": "^5.91.0"
+    "@sveltejs/vite-plugin-svelte": "^6.0.0",
+    "svelte": "^5.49.0",
+    "svelte-check": "^4.7.7",
+    "terser": "^5.51.2",
+    "typescript": "^6.0.3",
+    "vite": "^7.0.0"
   }
 }

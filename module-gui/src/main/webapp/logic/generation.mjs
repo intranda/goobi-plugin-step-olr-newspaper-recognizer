@@ -81,6 +81,7 @@ export function movePatternEntry(pattern, from, to) {
 }
 
 /** How many of the blocks after the start block on its level have each type (untyped blocks are not counted). */
+/** @returns {Record<string, number>} */
 export function followingTypeCounts(pages, startRef) {
   const counts = {};
   for (const node of siblingsFrom(buildTree(pages), startRef).slice(1)) {

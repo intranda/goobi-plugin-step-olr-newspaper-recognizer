@@ -16,6 +16,7 @@ function cloneHidden(hidden) {
   return { structures: (hidden?.structures || []).map(s => ({ ...s })), metadata: (hidden?.metadata || []).map(m => ({ ...m })) };
 }
 
+/** @param {import('../src/types').Page[]} pages @returns {import('../src/types').Page[]} */
 export function clonePages(pages) {
   return pages.map(page => ({
     ...page,
@@ -40,6 +41,7 @@ export function validatePages(pages) {
   return null;
 }
 
+/** @param {import('../src/types').Page[]} pages @returns {import('../src/types').Tree} */
 export function buildTree(pages) {
   const invalid = validatePages(pages);
   if (invalid) {
@@ -70,6 +72,7 @@ export function buildTree(pages) {
   return { roots, loose };
 }
 
+/** @param {import('../src/types').BlockNode[]} roots @returns {import('../src/types').BlockNode[]} */
 export function flatten(roots) {
   const result = [];
   const walk = nodes => nodes.forEach(node => { result.push(node); walk(node.children); });
@@ -83,6 +86,7 @@ export function nodeAt(tree, ref) {
   return flatten(tree.roots).find(n => n.first === ref.page && n.level === ref.level) || null;
 }
 
+/** @param {import('../src/types').Tree} tree @param {import('../src/types').BlockRef} ref @returns {import('../src/types').BlockNode[]} */
 export function siblingsFrom(tree, ref) {
   const node = nodeAt(tree, ref);
   if (!node) {
@@ -149,6 +153,7 @@ export function makeLoose(pages, first) {
 }
 
 /** Ctrl/Alt-click: add or remove a level-1 block (child block) starting on the page; a new child runs to the end of the block or the next child. With the catalog a new child gets the only type its block allows; a split child keeps the type of the child it splits. */
+/** @param {import('../src/types').Page[]} pages @param {number} index @param {import('../src/types').Catalog | null} [catalog] @returns {import('../src/types').Page[]} */
 export function toggleChild(pages, index, catalog = null) {
   const out = clonePages(pages);
   const page = out[index];
@@ -240,6 +245,7 @@ export function initStarts(pages, pattern) {
   syncDateInputs(pages, pattern);
 }
 
+/** @returns {import('../src/types').Validation} */
 export function validateBlocks(pages, catalog, volumeType, preventDuplicates) {
   const result = { missingType: [], notAllowed: [], invalidDate: [], missingRequired: [], duplicates: [] };
   const visit = (siblings, parentType) => {
@@ -336,6 +342,7 @@ export function removePage(pages, index) {
 }
 
 /** With the catalog, every start sends the value shown for each visible field of its type (BlockStart.values). */
+/** @param {import('../src/types').Page[]} pages @param {import('../src/types').Operation[]} operations @param {import('../src/types').Catalog | null} [catalog] @returns {string} */
 export function toSaveRequest(pages, operations, catalog = null) {
   const nodes = catalog ? new Map(flatten(buildTree(pages).roots).map(node => [node.start, node])) : null;
   const values = start => Object.fromEntries([

@@ -47,6 +47,7 @@ export function ownNumberingAll(pages, settings) {
  * 'toEnd' to the end of the stream regardless, 'single' changes only this page. run = following pages that change, stop = the
  * page with own numbering that ended the run, end = last page of the stream, value = what the page itself gets.
  */
+/** @returns {import('../src/types').LabelPreviewResult} */
 export function previewLabel(pages, settings, index, text, mode) {
   const stream = streamOf(streams(pages, settings), index);
   const kind = parseLabel(text).kind;
