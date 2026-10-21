@@ -47,20 +47,25 @@ export function restoreFromMets(pages) {
   return clonePages(pages).map(page => ({ ...page, label: page.metsLabel }));
 }
 
+/** Whether a stream is covered by the scope: none, block (the block starting on page scope.first), fromBlock (that block and all after it), volume. */
+export function inScope(scope) {
+  return {
+    none: () => false,
+    block: stream => stream.block === scope.first,
+    fromBlock: stream => stream.block >= scope.first,
+    volume: () => true,
+  }[scope.kind];
+}
+
 /**
  * New page list with the rules applied in the scope: none, block (the block starting on page first), fromBlock (that block and all after it),
  * volume (everything including pages without block). Streams without a rule (untyped blocks) keep their labels.
  */
 export function simulateRules(pages, settings, scope) {
   const out = clonePages(pages);
-  const inScope = {
-    none: () => false,
-    block: stream => stream.block === scope.first,
-    fromBlock: stream => stream.block >= scope.first,
-    volume: () => true,
-  }[scope.kind];
+  const covered = inScope(scope);
   for (const stream of streams(out, settings).list) {
-    if (!stream.rule || !inScope(stream)) {
+    if (!stream.rule || !covered(stream)) {
       continue;
     }
     for (const i of stream.pages) {

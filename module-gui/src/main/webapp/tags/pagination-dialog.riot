@@ -1,5 +1,5 @@
 <pagination-dialog>
-	<plugin-modal title={props.t('plugin_newspaperRecognizer_pagination_rules_title')} size="xl" close-label={props.t('cancel')} handle-close={() => props.handleCancel()}>
+	<plugin-modal title={props.t('plugin_newspaperRecognizer_pagination_rules_title')} size="xl" attributes={{ 'data-pagination-dialog': 'true' }} close-label={props.t('cancel')} handle-close={() => props.handleCancel()}>
 		<!-- rules and preview side by side, stacked on small screens -->
 		<div class="row g-4">
 			<div class="col-12 col-lg-6 d-flex flex-column gap-3">
@@ -93,7 +93,7 @@
 	<script>
 	import { buildTree, flatten } from '../logic/blocks.mjs'
 	import { streams } from '../logic/pagination.mjs'
-	import { simulateRules } from '../logic/pagination-tools.mjs'
+	import { inScope, simulateRules } from '../logic/pagination-tools.mjs'
 	import { positionColor } from '../logic/colors.mjs'
 
 	import PluginModal from './plugin-modal.riot'
@@ -165,13 +165,7 @@
 			const props = this.props;
 			const draft = this.draft();
 			const scope = this.scope();
-			const inScope = {
-				none: () => false,
-				block: stream => stream.block === scope.first,
-				fromBlock: stream => stream.block >= scope.first,
-				volume: () => true,
-			}[scope.kind];
-			const indexes = streams(props.pages, draft).list.filter(inScope).flatMap(stream => stream.pages).sort((a, b) => a - b);
+			const indexes = streams(props.pages, draft).list.filter(inScope(scope)).flatMap(stream => stream.pages).sort((a, b) => a - b);
 			const simulated = simulateRules(props.pages, draft, scope);
 			const owners = this.blockOwners();
 			const rows = indexes.map(i => ({

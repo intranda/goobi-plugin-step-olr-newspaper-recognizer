@@ -297,11 +297,8 @@
 	<continue-dialog if={dialog && dialog.kind === 'continue'} pages={pages} start-ref={dialog.ref} catalog={catalog}
 		type-options={dialog.typeOptions} t={t} date-format-pattern={dateFormatPattern}
 		handle-apply={applyGenerated} handle-cancel={closeDialog}></continue-dialog>
-	<!-- the wrapper covers the window like the modal it holds, so that the whole dialog (body and footer buttons) is one visible element -->
-	<div if={dialog && dialog.kind === 'rules'} data-pagination-dialog class="position-fixed top-0 start-0 w-100 h-100" style="z-index: 1055;">
-		<pagination-dialog pages={pages} settings={settings} catalog={catalog} types={dialog.types} first={dialog.first} t={t}
-			handle-apply={applyRules} handle-cancel={closeDialog}></pagination-dialog>
-	</div>
+	<pagination-dialog if={dialog && dialog.kind === 'rules'} pages={pages} settings={settings} catalog={catalog} types={dialog.types} first={dialog.first} t={t}
+		handle-apply={applyRules} handle-cancel={closeDialog}></pagination-dialog>
 	<conflict-dialog if={pendingChange} conflicts={pendingChange.conflicts} total={pendingChange.options.total} catalog={catalog} t={t}
 		handle-confirm={resolveConflicts} handle-cancel={cancelConflicts}></conflict-dialog>
 

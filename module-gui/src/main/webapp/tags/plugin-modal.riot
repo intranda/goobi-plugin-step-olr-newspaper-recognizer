@@ -1,6 +1,6 @@
 <plugin-modal>
 	<!-- the modal markup Goobi uses (e.g. institution_edit.xhtml): Bootstrap modal, primary header, footer buttons -->
-	<div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby={modalId + 'Title'} onkeydown={onKeyDown}>
+	<div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby={modalId + 'Title'} onkeydown={onKeyDown} {...props.attributes}>
 		<div class="modal-dialog modal-dialog-scrollable {props.size ? 'modal-' + props.size : ''}" role="document">
 			<div class="modal-content">
 				<div class="modal-header bg-primary text-white">
