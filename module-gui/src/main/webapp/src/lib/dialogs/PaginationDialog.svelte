@@ -9,6 +9,7 @@
 	import Icon from '../ui/Icon.svelte';
 	import Check from '../ui/Check.svelte';
 	import PreviewTable from '../ui/PreviewTable.svelte';
+	import PageRef from '../ui/PageRef.svelte';
 	import MoreRows from '../ui/MoreRows.svelte';
 	import type { BlockNode, Page, PaginationSettings, RulesScope } from '../../types';
 
@@ -23,7 +24,8 @@
 
 	/**
 	 * The pagination rules of the session: how the labels of a type of block begin, whether they follow automatically and which
-	 * labels the new rules overwrite. The preview shows the labels before and after for the pages of that scope.
+	 * labels the new rules overwrite. Only types with a rule are listed, the others can be added with the button (like the steps of the
+	 * type pattern dialog). The preview shows the labels before and after, and the rule that applied, for the pages of that scope.
 	 */
 	let { pages, settings, types, first, oncancel, onapply }: Props = $props();
 
@@ -62,15 +64,36 @@
 	const initialScope = (): RulesScope['kind'] => (fromBlock ? 'block' : 'none');
 	const initialAutomatic = () => settings.automatic !== false;
 
-	let rows = $state(initialRows());
+	const initial = initialRows();
+	let rows = $state(initial);
+	// the table lists the rules of the session; the other types stay out of it until they are added
+	const configured = Object.keys(initial).filter(key => initial[key].preset !== ''); // these cannot be removed, only the added ones
+	let shown: string[] = $state([...configured]);
 	let automatic = $state(initialAutomatic());
 	let scopeKind: RulesScope['kind'] = $state(initialScope());
 
 	const children = $derived(new Set(types.flatMap(type => (catalog[type] || {}).children || [])));
-	const ruleRows = $derived([
+	// everything that can have a rule, in the order of the types; the pages without block come last
+	const allRows = $derived([
 		...types.map(type => ({ key: type, label: typeLabel(type), child: children.has(type), ...rows[type] })),
 		{ key: LOOSE, label: t(P + 'pagination_withoutBlock'), child: false, ...rows[LOOSE] },
 	]);
+	const ruleRows = $derived(allRows.filter(entry => shown.includes(entry.key)));
+	const addable = $derived(allRows.filter(entry => !shown.includes(entry.key)));
+	let addChoice = $state('');
+	const addKey = $derived(addable.some(entry => entry.key === addChoice) ? addChoice : addable[0]?.key);
+
+	function addRule() {
+		if (addKey !== undefined) {
+			setRow(addKey, { preset: PRESETS[0] });
+			shown = [...shown, addKey];
+		}
+	}
+
+	function removeRule(key: string) {
+		setRow(key, { preset: '', custom: '', continueInParent: false });
+		shown = shown.filter(entry => entry !== key);
+	}
 
 	/* the settings as they are edited: the rules of the types and the rule of the pages without block */
 	const draft = $derived.by(() => {
@@ -95,14 +118,16 @@
 			for (const node of flatten([root])) {
 				const child = node.level === 0 ? 0 : root.children.findIndex(c => c.first <= node.first && node.first <= c.last) + 1;
 				for (let i = node.first; i <= node.last; i++) {
-					owners[i] = { node, child };
+					owners[i] = { node, child, rootType: root.start.type ?? '' };
 				}
 			}
 		}
 		return owners;
 	}
 
-	function blockCell(owner: { node: BlockNode, child: number } | null) {
+	type Owner = { node: BlockNode, child: number, rootType: string } | null;
+
+	function blockCell(owner: Owner) {
 		if (!owner) {
 			return { block: t(P + 'pagination_withoutBlock'), dot: null };
 		}
@@ -112,11 +137,30 @@
 
 	const owners = $derived(blockOwners());
 
+	// how a rule reads in the table: the name of its preset or the text itself
+	function ruleText(beginsWith: string[] | undefined) {
+		if (!beginsWith || beginsWith.length === 0) {
+			return t(R + 'ruleNone');
+		}
+		const text = beginsWith.join(' ');
+		return text in PRESET_KEYS ? t(R + 'preset_' + PRESET_KEYS[text]) : text;
+	}
+
+	/* the rule that labels the pages of a block: a child that continues in its parent follows the rule of the parent */
+	function ruleOf(owner: Owner) {
+		if (!owner) {
+			return ruleText(draft.withoutBlock);
+		}
+		const own = (draft.rules || {})[owner.node.start.type ?? ''];
+		const rule = owner.child > 0 && own && own.continueInParent ? (draft.rules || {})[owner.rootType] : own;
+		return ruleText(rule && rule.beginsWith);
+	}
+
 	/* the pages the scope covers with their label now and after the rules, in page order */
 	const view = $derived.by(() => {
 		const indexes = streams(pages, draft).list.filter(inScope(scope)).flatMap(stream => stream.pages).sort((a, b) => a - b);
 		const simulated = simulateRules(pages, draft, scope);
-		const all = indexes.map(i => ({ page: i + 1, ...blockCell(owners[i]), before: pages[i].label ?? '', after: simulated[i].label ?? '' }));
+		const all = indexes.map(i => ({ page: i + 1, ...blockCell(owners[i]), rule: ruleOf(owners[i]), start: owners[i]?.node.first === i, child: (owners[i]?.child ?? 0) > 0, thumb: pages[i].image?.thumbnailUrl || null, before: pages[i].label ?? '', after: simulated[i].label ?? '' }));
 		return { rows: all, changed: all.filter(row => row.before !== row.after).length };
 	});
 
@@ -126,11 +170,11 @@
 	const applyText = $derived(scopeKind === 'none' || view.changed === 0 ? t(R + 'apply')
 		: fmt(R + (view.changed === 1 ? 'applyOverwriteOne' : 'applyOverwrite'), view.changed));
 
-	// a type without rule keeps the labels of its blocks (or the parent's stream); that stays selectable only as long as it is the current choice
-	function presetsOf(entry: { preset: string }) {
+	// a type that is not listed keeps the labels of its blocks (or the parent's stream)
+	function presetsOf() {
 		const options = PRESETS.map(value => ({ value, label: t(R + 'preset_' + PRESET_KEYS[value]) }));
 		options.push({ value: 'custom', label: t(R + 'custom') });
-		return entry.preset === '' ? [{ value: '', label: t(R + 'noRule') }, ...options] : options;
+		return options;
 	}
 
 	const setRow = (key: string, change: object) => (rows = { ...rows, [key]: { ...rows[key], ...change } });
@@ -148,6 +192,7 @@
 						<tr>
 							<th scope="col">{t(R + 'block')}</th>
 							<th scope="col">{t(R + 'beginsWith')}</th>
+							<th scope="col" class="visually-hidden">{t(R + 'remove')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -156,9 +201,9 @@
 								<td>{entry.label}</td>
 								<td>
 									<div class="d-flex gap-2 flex-wrap align-items-center">
-										<select class="form-select form-select-sm rules-preset" data-rule-preset aria-label={entry.label} value={entry.preset}
+										<select class="form-select form-select-sm" data-rule-preset aria-label={entry.label} value={entry.preset}
 											onchange={e => setRow(entry.key, { preset: e.currentTarget.value })}>
-											{#each presetsOf(entry) as option (option.value)}<option value={option.value}>{option.label}</option>{/each}
+											{#each presetsOf() as option (option.value)}<option value={option.value}>{option.label}</option>{/each}
 										</select>
 										{#if entry.preset === 'custom'}
 											<input type="text" class="form-control form-control-sm rules-custom" data-rule-custom value={entry.custom}
@@ -173,10 +218,26 @@
 										</Check>
 									{/if}
 								</td>
+								<td class="text-end">
+									{#if !configured.includes(entry.key)}
+										<Button size="sm" data-rule-remove title={t(R + 'remove')} aria-label="{t(R + 'remove')}: {entry.label}" onclick={() => removeRule(entry.key)}>
+											<Icon name="x" />
+										</Button>
+									{/if}
+								</td>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
+				{#if addable.length > 0}
+					<div class="input-group mb-3" role="group">
+						<select class="form-select form-select-sm" data-rule-add-select aria-label={t(R + 'addSelect')} value={addKey}
+							onchange={e => (addChoice = e.currentTarget.value)}>
+							{#each addable as entry (entry.key)}<option value={entry.key}>{entry.label}</option>{/each}
+						</select>
+						<Button size="sm" variant="outline-secondary" icon="plus" data-rule-add onclick={addRule}>{t(R + 'add')}</Button>
+					</div>
+				{/if}
 				<Check id="rules-automatic" data-automatic checked={automatic} onchange={e => (automatic = e.currentTarget.checked)}>{t(R + 'automatic')}</Check>
 			</fieldset>
 			<fieldset>
@@ -203,15 +264,18 @@
 				<PreviewTable columns={[
 					{ label: t(P + 'preview_block'), col: 'preview-col-page' },
 					{ label: t(R + 'block'), col: 'preview-col-name' },
+					{ label: t(R + 'rule'), col: 'preview-col-rule' },
 					{ label: t(P + 'preview_before') },
 					{ label: t(P + 'preview_after') },
 				]}>
 					{#each view.rows.slice(0, PREVIEW_ROWS) as row (row.page)}
-						<tr data-preview-row={row.page}>
-							<td>{row.page}</td>
-							<td data-preview-block>
+						<tr data-preview-row={row.page} data-preview-start={row.start || undefined}
+							class={row.start ? (row.child ? 'preview-start preview-start--child' : 'preview-start') : undefined}>
+							<td><PageRef number={row.page} thumb={row.thumb} /></td>
+							<td data-preview-block class={[row.child && 'preview-child', row.start ? 'fw-bold' : 'text-muted']}>
 								{#if row.dot}<span data-preview-dot class="position-dot" style="background: {row.dot};" aria-hidden="true"></span>{/if}{row.block}
 							</td>
+							<td data-preview-rule class="text-muted">{row.rule}</td>
 							<td data-preview-before class="text-muted">{row.before}</td>
 							<td data-preview-new class={row.before !== row.after ? 'preview-changed' : undefined}>{row.after}</td>
 						</tr>

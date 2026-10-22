@@ -63,7 +63,7 @@
 		<div data-offer class="newspaper-offer">
 			<Icon name="list-numbers" />
 			<span>{app.offerText(row)}</span>
-			<Button variant="primary" size="sm" data-offer-accept onclick={() => app.acceptOffer(node.first)}>{app.offerButton(row)}</Button>
+			<Button variant="action" size="sm" data-offer-accept onclick={() => app.acceptOffer(node.first)}>{app.offerButton(row)}</Button>
 			<Button size="sm" class="p-0 px-1" data-offer-dismiss title={t('plugin_newspaperRecognizer_pagination_offer_dismiss')}
 				aria-label={t('plugin_newspaperRecognizer_pagination_offer_dismiss')} onclick={() => app.dismissOffer(node.first)}>
 				<Icon name="x" />
