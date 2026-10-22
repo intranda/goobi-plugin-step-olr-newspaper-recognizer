@@ -11,6 +11,6 @@
 	let { icon, disabled = false, ...rest }: Props = $props();
 </script>
 
-<a class={['btn d-flex align-items-center btn--title-action', disabled && 'disabled']} {...rest}>
+<button type="button" class="btn d-flex align-items-center btn--title-action" {disabled} {...rest}>
 	<Icon name={icon} />
-</a>
+</button>
