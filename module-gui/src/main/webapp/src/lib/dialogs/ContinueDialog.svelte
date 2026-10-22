@@ -67,6 +67,9 @@
 	const numberMode = $derived(matters ? mode : 'perIssue');
 	const result = $derived(continueFrom(pages, startRef, { include: $state.snapshot(include), mode, dateMode, weekdays: $state.snapshot(weekdays), biweekly }, catalog));
 
+	// the preset the selected weekdays equal, if any
+	const activePreset = $derived(PRESETS.find(preset => WEEKDAY_PRESETS[preset.name].every((on, i) => on === weekdays[i]))?.name ?? null);
+
 	const thumb = (index: number) => pages[index]?.image?.thumbnailUrl || null;
 	const formatDate = (iso: string | null) => {
 		const date = fromIso(iso);
@@ -119,23 +122,27 @@
 			</fieldset>
 			<fieldset>
 				<legend class="fs-6 fw-bold">{t(P + 'continue_weekdays')}</legend>
-				<div class="d-flex flex-wrap gap-2" role="group" aria-label={t(P + 'continue_weekdays')}>
+				<!-- seven equal segments, one per weekday -->
+				<div class="weekday-picker" role="group" aria-label={t(P + 'continue_weekdays')}>
 					{#each DAYS as day (day.index)}
-						<Toggle class="d-inline-flex align-items-center gap-1" pressed={weekdays[day.index]} title={t(day.key)} aria-label={t(day.key)} onclick={() => toggleDay(day.index)}>
-							<span aria-hidden="true">{t(day.key).slice(0, 2)}</span>
-						</Toggle>
+						<button type="button" class="weekday-picker__day" aria-pressed={weekdays[day.index] ? 'true' : 'false'} title={t(day.key)} aria-label={t(day.key)}
+							onclick={() => toggleDay(day.index)}>
+							{t(day.key).slice(0, 2)}
+						</button>
 					{/each}
 				</div>
-				<div class="d-flex flex-wrap column-gap-3 mt-1">
-					{#each PRESETS as preset (preset.name)}
-						<Button variant="link" size="sm" class="p-0 text-decoration-none" onclick={() => (weekdays = [...WEEKDAY_PRESETS[preset.name]])}>{t(preset.key)}</Button>
-					{/each}
+				<div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+					<span class="small text-muted">{t(P + 'continue_weekdaysPresets')}</span>
+					<div class="btn-group" role="group" aria-label={t(P + 'continue_weekdaysPresets')}>
+						{#each PRESETS as preset (preset.name)}
+							<button type="button" class={['btn btn-sm weekday-preset', activePreset === preset.name && 'is-active']} aria-pressed={activePreset === preset.name ? 'true' : 'false'}
+								onclick={() => (weekdays = [...WEEKDAY_PRESETS[preset.name]])}>{t(preset.key)}</button>
+						{/each}
+					</div>
 				</div>
-				<div class="d-flex mt-2">
-					<Toggle class="d-inline-flex align-items-center gap-1" pressed={biweekly} onclick={() => (biweekly = !biweekly)}>
-						<span>{t(P + 'biWeekly')}</span>
-					</Toggle>
-				</div>
+				<Check class="form-switch mt-3" id="continue-biweekly" checked={biweekly} onchange={() => (biweekly = !biweekly)} role="switch">
+					{t(P + 'biWeekly')}
+				</Check>
 			</fieldset>
 		</div>
 
@@ -172,7 +179,7 @@
 	{#snippet footer()}
 		<span class="me-auto text-muted">{t(P + 'continue_footer')}</span>
 		<Button onclick={oncancel}>{t('cancel')}</Button>
-		<Button variant="success" disabled={!!result.error || result.count === 0} onclick={() => !result.error && onapply(result.pages)}>
+		<Button variant="primary" disabled={!!result.error || result.count === 0} onclick={() => !result.error && onapply(result.pages)}>
 			{fmt(P + 'apply', result.count || 0)}
 		</Button>
 	{/snippet}

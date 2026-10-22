@@ -14,6 +14,5 @@
 </script>
 
 <button type="button" class={['btn gw-table__filters__option newspaper-toggle', className]} aria-pressed={pressed ? 'true' : 'false'} {...rest}>
-	<Icon name={pressed ? 'checkbox' : 'square'} />
 	{@render children?.()}
 </button>

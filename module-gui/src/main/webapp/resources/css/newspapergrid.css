@@ -534,3 +534,50 @@ goobi-plugin-step-newspaper-recognizer {
 		animation: none;
 	}
 }
+
+/* weekday picker: seven equal segments, pressed ones in the primary colour */
+.weekday-picker {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	border: 1px solid var(--clr-neutral-300, #ccc);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.weekday-picker__day {
+	padding: 4px 0;
+	border: 0;
+	border-left: 1px solid var(--clr-neutral-300, #ccc);
+	background: var(--clr-white, #fff);
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.weekday-picker__day:first-child {
+	border-left: 0;
+}
+
+.weekday-preset:hover,
+.weekday-picker__day:hover {
+	background-color: var(--clr-neutral-100, #f2f2f2);
+}
+
+.weekday-picker__day[aria-pressed="true"] {
+	background-color: var(--clr-primary-400);
+	color: var(--clr-white, #fff);
+}
+
+.weekday-picker__day[aria-pressed="true"]:hover {
+	background-color: var(--clr-primary-600);
+}
+
+/* weekday presets: outlined, the one matching the selection is highlighted */
+.weekday-preset {
+	border: 1px solid var(--clr-neutral-300, #ccc);
+	background: transparent;
+}
+
+.weekday-preset.is-active {
+	background-color: var(--clr-primary-400);
+	color: var(--clr-white, #fff);
+}
