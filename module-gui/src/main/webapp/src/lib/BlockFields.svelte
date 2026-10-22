@@ -28,24 +28,6 @@
 	const flags = $derived(app.flagsFor(node));
 	const fields = $derived(app.fieldsOf(node));
 	const canContinue = $derived(main && app.isGeneratable(node));
-
-	// shown values that follow the generated value, per type and field, to notice when a change of date or number updates them
-	let shownGenerated: Record<string, string> = {};
-	const flashUpdated = (root: HTMLElement) => {
-		for (const field of fields) {
-			const key = start.type + ':' + field.key;
-			if (field.pattern == null || field.overwritten || !(key in shownGenerated) || shownGenerated[key] === field.value) {
-				continue;
-			}
-			const wrapper = (root.querySelector(`[data-field-wrapper="${field.key}"]`) as HTMLElement | null);
-			if (wrapper) {
-				wrapper.classList.remove('newspaper-field--updated');
-				void wrapper.offsetWidth; // restart the animation
-				wrapper.classList.add('newspaper-field--updated');
-			}
-		}
-		shownGenerated = Object.fromEntries(fields.filter(f => f.pattern != null && !f.overwritten).map(f => [start.type + ':' + f.key, f.value]));
-	};
 </script>
 
 {#snippet continueButton()}
@@ -54,7 +36,7 @@
 	</Button>
 {/snippet}
 
-<div {@attach flashUpdated} class="d-flex flex-column gap-2">
+<div class="d-flex flex-column gap-2">
 	<!-- type, hidden data and tools share one input group, so they line up with the field -->
 	<FormRow id="{uid}-type" label={t('plugin_newspaperRecognizer_preview_type')} icon="category" {color}
 		errors={[flags.missingType && t('plugin_newspaperRecognizer_validation_missingType'), flags.notAllowed && t('plugin_newspaperRecognizer_validation_notAllowed')]}

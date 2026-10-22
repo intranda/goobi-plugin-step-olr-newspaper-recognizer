@@ -21,7 +21,7 @@
 
 	const app = getApp();
 
-	let canvas: HTMLCanvasElement | null = $state.raw(null);
+	let canvas: HTMLCanvasElement | null = null;
 	let drawn = $state(false);
 	let smallImage: HTMLImageElement | null = null;
 	let largeImage: HTMLImageElement | null = null;
@@ -34,7 +34,10 @@
 		image.src = url;
 	}
 
-	function drawSmall() {
+	// what the drawing of the small image depends on, besides the image itself
+	const view = $derived({ width, height, text, size, bg });
+
+	function drawSmall({ width, height, text, size, bg } = view) {
 		const image = smallImage;
 		const ctx = canvas?.getContext('2d');
 		if (!canvas || !image || !ctx) {
@@ -62,8 +65,9 @@
 	}
 
 	// (re)draws whenever the image, the size or the badge changes; the image comes from the loader, in the order of the page
-	$effect(() => {
-		void [canvas, width, height, text, size, bg]; // tracked although the drawing may wait for the image
+	const draw = (element: HTMLCanvasElement) => {
+		canvas = element;
+		const current = view; // tracked although the drawing may wait for the image
 		const url = small;
 		if (url !== currentUrl) {
 			currentUrl = url;
@@ -71,21 +75,21 @@
 			largeImage = null;
 		}
 		if (smallImage) {
-			drawSmall();
+			drawSmall(current);
 			return;
 		}
 		return app.thumbnails.request(url, image => {
 			smallImage = image;
-			drawSmall();
+			drawSmall(current);
 		});
-	});
+	};
 
 	// the large image only once the thumbnails are there, so that it does not take their place in the queue
-	$effect(() => {
+	const preload = () => {
 		if (preloadLarge && !largeImage && !app.thumbnails.busy) {
 			load(large, image => { largeImage = image; });
 		}
-	});
+	};
 
 	function onmousemove(event: MouseEvent) {
 		if (!event.shiftKey && !event.getModifierState('CapsLock')) {
@@ -137,5 +141,5 @@
 <!-- svelte-ignore a11y_mouse_events_have_key_events -->
 <div class="observable thumb-box" {title} style="width: {width}px; height: {height}px;">
 	{#if !drawn}<img src="newspaper_placeholder2.png" alt="" />{/if}
-	<canvas class="thumb-canvas" {@attach el => { canvas = el; }} {onmousemove} {onmouseout}></canvas>
+	<canvas class="thumb-canvas" {@attach draw} {@attach preload} {onmousemove} {onmouseout}></canvas>
 </div>

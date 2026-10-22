@@ -1,10 +1,10 @@
 <script lang="ts">
+	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import Icon from './Icon.svelte';
 
-	interface Props {
+	interface Props extends Omit<HTMLButtonAttributes, 'children'> {
 		icon: string;
 		disabled?: boolean;
-		[attribute: string]: any;
 	}
 
 	/** An icon button in the title bar of a Goobi box. */

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-		interface Props {
+
+	interface Props {
 		title: string;
 		align?: 'start' | 'end';
 		onclose: () => void;

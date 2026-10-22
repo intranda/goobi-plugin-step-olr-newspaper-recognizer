@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-		interface Props {
+
+	interface Props {
 		columns: { label: string, col?: string, th?: string }[];
 		children: Snippet;
 	}

@@ -27,6 +27,22 @@
 	const missing = $derived(field.required && !String(field.value).trim());
 	const oninput = (e: Event & { currentTarget: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement }) => app.changeValue(node, field.key, e.currentTarget.value);
 
+	// the generated value shown last and the type it belongs to, to notice when a change of date or number updates it
+	let shownGenerated: string | null = null;
+	let shownType: string | null = null;
+	const flashUpdated = (wrapper: HTMLElement) => {
+		const type = node.start.type ?? null;
+		const generated = field.pattern != null && !field.overwritten;
+		const updated = generated && shownGenerated !== null && shownType === type && shownGenerated !== field.value;
+		shownGenerated = generated ? field.value : null;
+		shownType = type;
+		if (updated) {
+			wrapper.classList.remove('newspaper-field--updated');
+			void wrapper.offsetWidth; // restart the animation
+			wrapper.classList.add('newspaper-field--updated');
+		}
+	};
+
 	function decide(action: () => void) {
 		bubble = false;
 		action();
@@ -34,7 +50,7 @@
 </script>
 
 <FormRow {id} {icon} label={field.label + (field.required ? ' *' : '')} errors={[missing && t('plugin_newspaperRecognizer_validation_missingRequired')]}>
-	<div class={['newspaper-field', field.display === 'textarea' && 'grow-wrap', field.overwritten && 'newspaper-field--overwritten']}
+	<div {@attach flashUpdated} class={['newspaper-field', field.display === 'textarea' && 'grow-wrap', field.overwritten && 'newspaper-field--overwritten']}
 		data-content={field.value} data-field-wrapper={field.key}>
 		{#if field.display === 'select1'}
 			<select class="form-select" {id} value={field.value} onchange={oninput}>

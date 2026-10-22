@@ -1,14 +1,14 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import type { HTMLAttributes } from 'svelte/elements';
 	import { getApp } from '../recognizer.svelte';
 
-	interface Props {
+	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'title' | 'children'> {
 		title: string;
 		size?: string;
 		onclose: () => void;
 		children: Snippet;
 		footer?: Snippet;
-		[attribute: string]: any;
 	}
 
 	/** The modal markup Goobi uses (e.g. institution_edit.xhtml): Bootstrap modal, primary header, footer buttons. */

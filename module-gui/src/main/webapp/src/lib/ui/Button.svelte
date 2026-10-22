@@ -1,14 +1,14 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import Icon from './Icon.svelte';
 
-	interface Props {
+	interface Props extends Omit<HTMLButtonAttributes, 'class' | 'children'> {
 		variant?: string;
 		size?: string;
 		icon?: string | null;
 		class?: string;
 		children?: Snippet;
-		[attribute: string]: any;
 	}
 
 	/** A button with an optional icon in front of its text (or content). `variant` is the Bootstrap/Goobi suffix: blank, primary, success, danger, hot … */

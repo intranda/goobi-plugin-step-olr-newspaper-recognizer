@@ -1,13 +1,14 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-		interface Props {
+	import type { HTMLInputAttributes } from 'svelte/elements';
+
+	interface Props extends Omit<HTMLInputAttributes, 'type' | 'id' | 'checked' | 'onchange' | 'class' | 'children'> {
 		type?: 'checkbox' | 'radio';
 		id: string;
 		checked: boolean;
 		onchange: (e: Event & { currentTarget: HTMLInputElement }) => void;
 		class?: string;
 		children: Snippet;
-		[attribute: string]: any;
 	}
 
 	/** A radio button or check box with its label (Bootstrap form-check). Extra attributes go to the input. */

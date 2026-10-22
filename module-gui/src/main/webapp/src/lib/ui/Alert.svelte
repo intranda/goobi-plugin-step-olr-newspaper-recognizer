@@ -1,10 +1,12 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-		interface Props {
+	import type { HTMLAttributes } from 'svelte/elements';
+
+	// the other attributes go to the outer div
+	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'class' | 'children'> {
 		type?: 'info' | 'danger' | 'warning';
 		class?: string;
 		children: Snippet;
-		[attribute: string]: any;
 	}
 
 	/** A Bootstrap alert in the padded strip the plugin uses for its notices. */

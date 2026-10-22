@@ -32,11 +32,15 @@
 
 	const siblings = $derived(siblingsFrom(buildTree(pages), startRef));
 
+	// every step has an id of its own, so that the each block keeps the element of a step that is moved or removed
+	let nextId = 0;
+	const step = (type: string) => ({ id: nextId++, type });
+
 	// the pattern starts with the type of the first block, if it is one of the options
 	const initialPattern = () => {
 		const names = typeOptions.map(option => option.name);
 		const type = siblings[0]?.start.type ?? '';
-		return [names.includes(type) ? type : names[0]];
+		return [step(names.includes(type) ? type : names[0])];
 	};
 
 	let pattern = $state(initialPattern());
@@ -49,7 +53,7 @@
 		page: node.first + 1,
 		thumb: pages[node.first]?.image?.thumbnailUrl || null,
 		before: typeLabel(node.start.type),
-		after: typeLabel(pattern[i % pattern.length]),
+		after: typeLabel(pattern[i % pattern.length].type),
 		position: i % pattern.length,
 	})));
 
@@ -76,7 +80,7 @@
 		target?.focus();
 	}
 
-	const setEntry = (index: number, type: string) => (pattern = pattern.map((entry, i) => (i === index ? type : entry)));
+	const setEntry = (index: number, type: string) => (pattern = pattern.map((entry, i) => (i === index ? { ...entry, type } : entry)));
 </script>
 
 <Modal title={t(P + 'typePattern_title')} size="xl" onclose={oncancel}>
@@ -85,7 +89,7 @@
 		<div class="col-12 col-lg-5">
 			<h5 class="mb-2">{t(P + 'typePattern_steps')}</h5>
 			<ol bind:this={list} class="list-unstyled d-flex flex-column gap-2 mb-2">
-				{#each pattern as type, index (index)}
+				{#each pattern as { id, type }, index (id)}
 					<li class={['pattern-step', dragging === index && 'pattern-step--dragging']} style="--position-color: {positionColor(index)};" draggable="true"
 						ondragstart={e => { if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); } dragging = index; }}
 						ondragover={e => dragOver(e, index)} ondragend={() => (dragging = null)}>
@@ -111,7 +115,7 @@
 				{/each}
 			</ol>
 			<div class="visually-hidden" role="status" aria-live="polite">{announcement}</div>
-			<Button size="sm" icon="plus" onclick={() => (pattern = [...pattern, pattern[pattern.length - 1]])}>{t(P + 'typePattern_add')}</Button>
+			<Button size="sm" icon="plus" onclick={() => (pattern = [...pattern, step(pattern[pattern.length - 1].type)])}>{t(P + 'typePattern_add')}</Button>
 			<p class="small text-muted mt-3 mb-2 d-flex gap-2">
 				<Icon name="repeat" />
 				<span>{fmt(P + 'typePattern_repeats', pattern.length)}</span>
@@ -142,6 +146,6 @@
 	</div>
 	{#snippet footer()}
 		<Button onclick={oncancel}>{t('cancel')}</Button>
-		<Button variant="primary" onclick={() => onapply(pattern)}>{fmt(P + 'apply', siblings.length)}</Button>
+		<Button variant="primary" onclick={() => onapply(pattern.map(entry => entry.type))}>{fmt(P + 'apply', siblings.length)}</Button>
 	{/snippet}
 </Modal>

@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import Icon from './Icon.svelte';
 
-	interface Props {
+	interface Props extends Omit<HTMLButtonAttributes, 'class' | 'children'> {
 		pressed: boolean;
 		class?: string;
 		children?: Snippet;
-		[attribute: string]: any;
 	}
 
 	/** A pressable option in the look of Goobi's table filter options, with a check box icon. */
