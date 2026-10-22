@@ -319,8 +319,9 @@ progress {
 	opacity: 0.5;
 }
 
-.pattern-step__grip {
+.pattern-step .icon-wrapper {
 	cursor: grab;
+	padding: 0 0.25rem;
 	color: var(--clr-neutral-500, #888);
 }
 

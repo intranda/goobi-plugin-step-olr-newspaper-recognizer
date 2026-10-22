@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { getApp } from '../recognizer.svelte';
 	import { buildTree, siblingsFrom } from '../../../logic/blocks.mjs';
 	import { positionColor } from '../../../logic/colors.mjs';
@@ -21,7 +22,7 @@
 
 	/**
 	 * Gives the blocks of a level a repeating pattern of types (e.g. morning, evening edition): the steps can be reordered by dragging
-	 * or with the arrow keys, the preview shows the result for the first blocks.
+	 * or with the move up/down buttons (the buttons are the pointer-only-free alternative required by WCAG 2.5.7), the preview shows the result for the first blocks.
 	 */
 	let { pages, startRef, typeOptions, oncancel, onapply }: Props = $props();
 
@@ -40,7 +41,9 @@
 
 	let pattern = $state(initialPattern());
 	let dragging: number | null = $state(null);
-	let grips: HTMLElement[] = [];
+	let list: HTMLElement | undefined = $state();
+	// spoken after a move, as the new order is otherwise only visible
+	let announcement = $state('');
 
 	const rows = $derived(siblings.slice(0, PREVIEW_ROWS).map((node, i) => ({
 		page: node.first + 1,
@@ -59,14 +62,18 @@
 		}
 	}
 
-	function moveByKey(e: KeyboardEvent, index: number) {
-		const to = e.key === 'ArrowUp' ? index - 1 : e.key === 'ArrowDown' ? index + 1 : null;
-		if (to === null || to < 0 || to >= pattern.length) {
+	/* moves an entry one place and keeps the focus on the button that was used (or its counterpart if that one is now disabled at the edge) */
+	async function move(index: number, direction: -1 | 1) {
+		const to = index + direction;
+		if (to < 0 || to >= pattern.length) {
 			return;
 		}
-		e.preventDefault();
 		pattern = movePatternEntry(pattern, index, to);
-		grips[to].focus();
+		announcement = fmt(P + 'typePattern_moved', index + 1, to + 1);
+		await tick();
+		const atEdge = direction === -1 ? to === 0 : to === pattern.length - 1;
+		const target = list?.querySelector<HTMLElement>(`[data-move="${to}:${atEdge ? -direction : direction}"]`);
+		target?.focus();
 	}
 
 	const setEntry = (index: number, type: string) => (pattern = pattern.map((entry, i) => (i === index ? type : entry)));
@@ -77,20 +84,25 @@
 	<div class="row g-4">
 		<div class="col-12 col-lg-5">
 			<h5 class="mb-2">{t(P + 'typePattern_steps')}</h5>
-			<ol class="list-unstyled d-flex flex-column gap-2 mb-2">
+			<ol bind:this={list} class="list-unstyled d-flex flex-column gap-2 mb-2">
 				{#each pattern as type, index (index)}
 					<li class={['pattern-step', dragging === index && 'pattern-step--dragging']} style="--position-color: {positionColor(index)};" draggable="true"
 						ondragstart={e => { if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); } dragging = index; }}
 						ondragover={e => dragOver(e, index)} ondragend={() => (dragging = null)}>
-						<button type="button" bind:this={grips[index]} class="btn btn-blank btn-sm pattern-step__grip" title={t(P + 'typePattern_move')}
-							aria-label="{t(P + 'typePattern_move')} {index + 1}" onkeydown={e => moveByKey(e, index)}>
-							<Icon name="grip-vertical" />
-						</button>
+						<Icon name="grip-vertical" />
 						<span class="pattern-step__no" aria-hidden="true">{index + 1}</span>
 						<select class="form-select form-select-sm" aria-label="{t(P + 'typePattern_entry')} {index + 1}" value={type}
 							onchange={e => setEntry(index, e.currentTarget.value)}>
 							{#each typeOptions as option (option.name)}<option value={option.name}>{option.label}</option>{/each}
 						</select>
+						<Button size="sm" disabled={index === 0} data-move="{index}:-1" title={t(P + 'typePattern_moveUp')} aria-label="{t(P + 'typePattern_moveUp')} {index + 1}"
+							onclick={() => move(index, -1)}>
+							<Icon name="arrow-up" />
+						</Button>
+						<Button size="sm" disabled={index === pattern.length - 1} data-move="{index}:1" title={t(P + 'typePattern_moveDown')} aria-label="{t(P + 'typePattern_moveDown')} {index + 1}"
+							onclick={() => move(index, 1)}>
+							<Icon name="arrow-down" />
+						</Button>
 						<Button size="sm" disabled={pattern.length < 2} title={t(P + 'typePattern_removeEntry')} aria-label="{t(P + 'typePattern_removeEntry')} {index + 1}"
 							onclick={() => (pattern = pattern.filter((_, i) => i !== index))}>
 							<Icon name="x" />
@@ -98,6 +110,7 @@
 					</li>
 				{/each}
 			</ol>
+			<div class="visually-hidden" role="status" aria-live="polite">{announcement}</div>
 			<Button size="sm" icon="plus" onclick={() => (pattern = [...pattern, pattern[pattern.length - 1]])}>{t(P + 'typePattern_add')}</Button>
 			<p class="small text-muted mt-3 mb-2 d-flex gap-2">
 				<Icon name="repeat" />
@@ -117,7 +130,9 @@
 						<td><PageRef number={row.page} thumb={row.thumb} /></td>
 						<td class="text-muted">{row.before}</td>
 						<td class={row.before !== row.after ? 'fw-bold' : undefined}>
-							<span class="position-dot" style="background: {positionColor(row.position)};" aria-hidden="true"></span>{row.after}
+							<span class="pattern-step__no" style="background: {positionColor(row.position)};">
+								{row.position + 1}
+							</span> {row.after}
 						</td>
 					</tr>
 				{/each}
@@ -127,6 +142,6 @@
 	</div>
 	{#snippet footer()}
 		<Button onclick={oncancel}>{t('cancel')}</Button>
-		<Button variant="success" onclick={() => onapply(pattern)}>{fmt(P + 'apply', siblings.length)}</Button>
+		<Button variant="primary" onclick={() => onapply(pattern)}>{fmt(P + 'apply', siblings.length)}</Button>
 	{/snippet}
 </Modal>
