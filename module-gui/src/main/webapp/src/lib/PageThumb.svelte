@@ -18,15 +18,16 @@
 	let { index, size, preloadLarge = false, text = null, bg = null }: Props = $props();
 
 	const app = getApp();
+	const { fmt } = app;
 	const image = $derived(app.pages[index].image);
 </script>
 
-<!-- the thumbnail has no keyboard equivalent: the block fields next to it offer the same changes -->
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions, a11y_missing_attribute -->
-<a onclick={e => app.onPageClick(e, index)}>
+<!-- a button, so that the block structure can be changed with the keyboard too; Alt or Ctrl with Enter or Space makes a child block, as with the mouse -->
+<button type="button" class="btn btn-blank d-block p-0 border-0 page-thumb" aria-label={fmt('plugin_newspaperRecognizer_page_toggle', index + 1)}
+	onclick={e => app.onPageClick(e, index)}>
 	<Thumbcanvas width={size} height={size} small={image.thumbnailUrl} large={image.largeThumbnailUrl} title={image.tooltip}
 		{preloadLarge} {text} {bg} />
-</a>
+</button>
 {#if app.showDeletePageButton}
 	<button type="button" class="btn btn-image position-absolute top-0" aria-label={app.t('loeschen')} onclick={() => app.askDeletePage(index)}>
 		<Icon name="trash" />

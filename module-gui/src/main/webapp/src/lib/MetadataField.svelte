@@ -50,42 +50,44 @@
 </script>
 
 <FormRow {id} {icon} label={field.label + (field.required ? ' *' : '')} errors={[missing && t('plugin_newspaperRecognizer_validation_missingRequired')]}>
-	<div {@attach flashUpdated} class={['newspaper-field', field.display === 'textarea' && 'grow-wrap', field.overwritten && 'newspaper-field--overwritten']}
-		data-content={field.value} data-field-wrapper={field.key}>
-		{#if field.display === 'select1'}
-			<select class="form-select" {id} value={field.value} onchange={oninput}>
-				<option value="">{t('plugin_newspaperRecognizer_pleaseSelect')}</option>
-				{#if field.value && !field.items.some(item => item.value === field.value)}
-					<option value={field.value}>{field.value}</option>
-				{/if}
-				{#each field.items as item (item.value)}<option value={item.value}>{item.label}</option>{/each}
-			</select>
-		{:else if field.display === 'textarea'}
-			<textarea class="form-control" rows="1" {id} value={field.value} {oninput}></textarea>
-		{:else}
-			<input type="text" class="form-control" {id} value={field.value} {readonly} {oninput} />
-		{/if}
-		{#if field.overwritten && !field.stale && !readonly}
-			<button type="button" class="btn btn-blank newspaper-field__reset" title={t('plugin_newspaperRecognizer_field_reset')}
-				aria-label={t('plugin_newspaperRecognizer_field_reset')} onclick={() => app.resetValue(node, field.key)}>
-				<Icon name="arrow-back-up" />
-			</button>
-		{/if}
-		<!-- the generated value changed after the value was overwritten: offer it without a dialog -->
-		{#if field.stale && !readonly}
-			<button type="button" class="btn btn-blank newspaper-field__reset newspaper-field__reset--stale" title={t('plugin_newspaperRecognizer_field_changed')}
-				aria-label={t('plugin_newspaperRecognizer_field_changed')} aria-expanded={bubble ? 'true' : 'false'} onclick={() => (bubble = !bubble)}>
-				<Icon name="refresh" />
-			</button>
-			{#if bubble}
-				<Popover title={t('plugin_newspaperRecognizer_field_changed')} onclose={() => (bubble = false)}>
-					<div class="fw-semibold mb-2 text-break">{field.generated}</div>
-					<div class="d-flex gap-2 justify-content-end">
-						<Button size="sm" onclick={() => decide(() => app.keepValue(node, field.key))}>{t('plugin_newspaperRecognizer_field_keep')}</Button>
-						<Button variant="primary" size="sm" onclick={() => decide(() => app.resetValue(node, field.key))}>{t('uebernehmen')}</Button>
-					</div>
-				</Popover>
+	{#snippet children(aria)}
+		<div {@attach flashUpdated} class={['newspaper-field', field.display === 'textarea' && 'grow-wrap', field.overwritten && 'newspaper-field--overwritten']}
+			data-content={field.value} data-field-wrapper={field.key}>
+			{#if field.display === 'select1'}
+				<select class="form-select" {id} value={field.value} onchange={oninput} {...aria}>
+					<option value="">{t('plugin_newspaperRecognizer_pleaseSelect')}</option>
+					{#if field.value && !field.items.some(item => item.value === field.value)}
+						<option value={field.value}>{field.value}</option>
+					{/if}
+					{#each field.items as item (item.value)}<option value={item.value}>{item.label}</option>{/each}
+				</select>
+			{:else if field.display === 'textarea'}
+				<textarea class="form-control" rows="1" {id} value={field.value} {oninput} {...aria}></textarea>
+			{:else}
+				<input type="text" class="form-control" {id} value={field.value} {readonly} {oninput} {...aria} />
 			{/if}
-		{/if}
-	</div>
+			{#if field.overwritten && !field.stale && !readonly}
+				<button type="button" class="btn btn-blank newspaper-field__reset" title={t('plugin_newspaperRecognizer_field_reset')}
+					aria-label={t('plugin_newspaperRecognizer_field_reset')} onclick={() => app.resetValue(node, field.key)}>
+					<Icon name="arrow-back-up" />
+				</button>
+			{/if}
+			<!-- the generated value changed after the value was overwritten: offer it without a dialog -->
+			{#if field.stale && !readonly}
+				<button type="button" class="btn btn-blank newspaper-field__reset newspaper-field__reset--stale" title={t('plugin_newspaperRecognizer_field_changed')}
+					aria-label={t('plugin_newspaperRecognizer_field_changed')} aria-expanded={bubble ? 'true' : 'false'} onclick={() => (bubble = !bubble)}>
+					<Icon name="refresh" />
+				</button>
+				{#if bubble}
+					<Popover title={t('plugin_newspaperRecognizer_field_changed')} onclose={() => (bubble = false)}>
+						<div class="fw-semibold mb-2 text-break">{field.generated}</div>
+						<div class="d-flex gap-2 justify-content-end">
+							<Button size="sm" onclick={() => decide(() => app.keepValue(node, field.key))}>{t('plugin_newspaperRecognizer_field_keep')}</Button>
+							<Button variant="primary" size="sm" onclick={() => decide(() => app.resetValue(node, field.key))}>{t('uebernehmen')}</Button>
+						</div>
+					</Popover>
+				{/if}
+			{/if}
+		</div>
+	{/snippet}
 </FormRow>

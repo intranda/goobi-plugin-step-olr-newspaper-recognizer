@@ -15,11 +15,12 @@
 </script>
 
 <div class="thumbnail-image px-3 pb-3"></div>
-<div class="issue-controls d-flex flex-column gap-2 px-3 pb-3">
+<div class="issue-controls d-flex flex-column gap-2 px-3 pb-3" role="group" aria-label={app.t('plugin_newspaperRecognizer_pagesWithoutStructure')}>
 	<strong>{app.t('plugin_newspaperRecognizer_pagesWithoutStructure')}</strong>
 	<span class="small text-muted">{app.pagesSummary(row.pages[0] + 1, last + 1)}</span>
 </div>
-<div class="thumbnails px-3 pb-3" style="--thumb-size: {app.thumbHeight / 2.5}px;">
+<div class="thumbnails px-3 pb-3" style="--thumb-size: {app.thumbHeight / 2.5}px;" role="group"
+	aria-label={app.t('plugin_newspaperRecognizer_pagesWithoutStructure')}>
 	{#each row.pages as index (app.pages[index].filename)}
 		<PageCell {index} />
 	{/each}

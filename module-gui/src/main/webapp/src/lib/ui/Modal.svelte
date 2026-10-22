@@ -17,12 +17,49 @@
 	const { t } = getApp();
 	const id = $props.id();
 
-	// focus the dialog so that Escape works and screen readers announce it
-	const focus = (element: HTMLElement) => element.focus();
+	const FOCUSABLE = 'a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])';
+
+	// focus the dialog so that Escape works and screen readers announce it; on closing the focus goes back to where it was
+	const focus = (element: HTMLElement) => {
+		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		element.focus();
+		return () => {
+			if (opener?.isConnected) {
+				opener.focus({ preventScroll: true });
+			}
+		};
+	};
+
+	/* Escape closes; Tab and Shift+Tab stay within the dialog (the page behind it is not reachable) */
+	function onkeydown(e: KeyboardEvent & { currentTarget: HTMLElement }) {
+		if (e.key === 'Escape') {
+			onclose();
+			return;
+		}
+		if (e.key !== 'Tab') {
+			return;
+		}
+		const dialog = e.currentTarget;
+		const items = [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(el => !el.matches(':disabled') && el.getClientRects().length > 0);
+		if (items.length === 0) {
+			e.preventDefault();
+			return;
+		}
+		const first = items[0];
+		const last = items[items.length - 1];
+		const active = document.activeElement;
+		if (e.shiftKey && (active === first || active === dialog || !dialog.contains(active))) {
+			e.preventDefault();
+			last.focus();
+		} else if (!e.shiftKey && (active === last || !dialog.contains(active))) {
+			e.preventDefault();
+			first.focus();
+		}
+	}
 </script>
 
 <div {@attach focus} class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="{id}-title"
-	onkeydown={e => e.key === 'Escape' && onclose()} {...rest}>
+	{onkeydown} {...rest}>
 	<div class={['modal-dialog modal-dialog-scrollable', size && `modal-${size}`]} role="document">
 		<div class="modal-content">
 			<div class="modal-header bg-primary text-white">

@@ -1,3 +1,11 @@
+<script module lang="ts">
+	/** What the control(s) of the row take over, so that a screen reader connects them with the messages: spread it on them. */
+	export interface ControlAria {
+		'aria-invalid'?: 'true';
+		'aria-describedby'?: string;
+	}
+</script>
+
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Icon from './Icon.svelte';
@@ -9,20 +17,26 @@
 		color?: string | null;
 		invalid?: boolean;
 		errors?: (string | false | null | undefined)[];
-		children: Snippet;
+		children: Snippet<[ControlAria]>;
 	}
 
 	/**
 	 * A labelled field of a block: icon (or colour dot) and label in front of the control, validation messages below.
 	 * `errors` lists the messages; the row is marked as invalid as soon as there is one or `invalid` is set.
 	 * All labels get the same width, so the fields of a block line up.
+	 * The content is a snippet that receives the ARIA attributes for its controls (`aria-invalid`, `aria-describedby` for the messages).
 	 */
 	let { id, label, icon = null, color = null, invalid = false, errors = [], children }: Props = $props();
 
 	const messages = $derived(errors.filter(Boolean));
+	const marked = $derived(invalid || messages.length > 0);
+	const aria: ControlAria = $derived({
+		'aria-invalid': marked ? 'true' : undefined,
+		'aria-describedby': messages.length > 0 ? messages.map((_, i) => `${id}-error-${i}`).join(' ') : undefined,
+	});
 </script>
 
-<div class={['form-group p-0 m-0', (invalid || messages.length > 0) && 'has-validation-error']}>
+<div class={['form-group p-0 m-0', marked && 'has-validation-error']}>
 	<div class="input-group flex-nowrap">
 		<label class="input-group-text" style="min-width: 6.5rem;" for={id}>
 			{#if color}
@@ -32,9 +46,9 @@
 			{/if}
 			{label}
 		</label>
-		{@render children()}
+		{@render children(aria)}
 	</div>
-	{#each messages as message (message)}
-		<span class="help-inline text-danger">{message}</span>
+	{#each messages as message, i (message)}
+		<span class="help-inline text-danger" id="{id}-error-{i}">{message}</span>
 	{/each}
 </div>

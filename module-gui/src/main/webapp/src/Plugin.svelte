@@ -25,6 +25,7 @@
 	const app = new Recognizer(config);
 	setApp(app);
 	const { t } = app;
+	const P = 'plugin_newspaperRecognizer_';
 
 	onMount(() => {
 		app.listenToFaces();
@@ -58,7 +59,7 @@
 	{onclick}
 	onkeydown={e => app.actionsOpen && e.key === 'Escape' && (app.actionsOpen = false)} />
 
-<div {@attach el => { app.root = el; }}>
+<div {@attach el => { app.root = el; }} aria-busy={!app.msgsLoaded || app.ajaxBusy ? 'true' : 'false'}>
 	{#if !app.msgsLoaded}
 		<div class="box box--neutral section">
 			<div class="box__content">
@@ -103,4 +104,7 @@
 	{/if}
 
 	<Dialogs />
+
+	<!-- the spinner of a running request is an image without text; this tells a screen reader that something is going on -->
+	<div class="visually-hidden" role="status">{#if app.msgsLoaded && app.ajaxBusy}{t(P + 'busy')}{/if}</div>
 </div>

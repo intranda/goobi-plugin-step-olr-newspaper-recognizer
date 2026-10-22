@@ -20,7 +20,7 @@
 	let { row }: Props = $props();
 
 	const app = getApp();
-	const { t } = app;
+	const { t, fmt } = app;
 	const node = $derived(row.node);
 	const offer = $derived(app.offerFor(row));
 </script>
@@ -36,13 +36,15 @@
 	{#if app.settings.enabled}<LabelInput index={node.first} />{/if}
 </div>
 
-<div class="issue-controls d-flex flex-column gap-3 px-3 pb-3" style="min-height: {app.thumbHeight}px;">
+<div class="issue-controls d-flex flex-column gap-3 px-3 pb-3" style="min-height: {app.thumbHeight}px;" role="group"
+	aria-label={fmt('plugin_newspaperRecognizer_block_group', node.first + 1)}>
 	<BlockFields {node} main typeOptions={app.typeOptions(app.volumeType)} />
 
 	{#if node.children.length > 0}
 		<div class="block-tree">
 			{#each node.children as child, childIndex (child.first)}
-				<div class="block-tree__item d-flex flex-column gap-2" id={app.blockElementId(child)}>
+				<div class="block-tree__item d-flex flex-column gap-2" id={app.blockElementId(child)} role="group"
+					aria-label={fmt('plugin_newspaperRecognizer_block_childGroup', child.first + 1)}>
 					<BlockFields node={child} typeOptions={app.typeOptions(node.start.type)} color={app.childColor(childIndex + 1)} />
 					<BlockFooter node={child} />
 				</div>
@@ -72,7 +74,8 @@
 	{/if}
 </div>
 
-<div class="thumbnails px-3 pb-3" style="--thumb-size: {app.thumbHeight / 2.5}px;">
+<div class="thumbnails px-3 pb-3" style="--thumb-size: {app.thumbHeight / 2.5}px;" role="group"
+	aria-label={fmt('plugin_newspaperRecognizer_block_pages', node.first + 1)}>
 	{#each app.pagesOf(node) as entry (app.pages[entry.index].filename + ':' + entry.child)}
 		<PageCell index={entry.index} child={entry.child} />
 	{/each}
