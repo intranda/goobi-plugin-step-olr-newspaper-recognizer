@@ -8,8 +8,3 @@ declare const faces: {
 		addOnError(callback: (data: { source?: { id: string } }) => void): void;
 	};
 };
-
-interface Window {
-	/** the thumbnails loaded up front (option loadallimages), by URL */
-	npImages?: Record<string, HTMLImageElement>;
-}

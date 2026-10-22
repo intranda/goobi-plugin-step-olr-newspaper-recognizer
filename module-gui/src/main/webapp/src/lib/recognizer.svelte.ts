@@ -12,6 +12,7 @@ import { applyTypePattern } from '../../logic/generation.mjs'
 import { fieldStates, initFieldStates, keepFieldValue, resetFieldValue, setFieldValue } from '../../logic/fields.mjs'
 import { positionColor } from '../../logic/colors.mjs'
 import { FacesBridge } from './faces-bridge.js'
+import { ThumbnailLoader } from './thumbnails.svelte'
 import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from '../../logic/hidden.mjs'
 import type { BlockFlags, Catalog, BlockNode, BlockRef, ChangeOptions, Confirmation, DialogState, FieldState, FreshOffer, Hidden, LabelMode, LabelPreview, Notice, Offer, Operation, Page, PaginationSettings, PendingChange, PluginProps, Problem, Row, RulesScope, Tree, TypeOption, Validation } from '../types';
 
@@ -41,6 +42,7 @@ export class Recognizer {
 	readonly bridge: FacesBridge
 	readonly thumbHeight: number
 	readonly loadAllImages: boolean
+	readonly thumbnails = new ThumbnailLoader()
 	readonly showDeletePageButton: boolean
 	readonly dateFormatPattern: string
 	readonly volumeType: string
@@ -72,8 +74,6 @@ export class Recognizer {
 	dataDirty = $state(false) // true after any change, cleared only when the backend confirms a write
 	saveInFlight = $state(false) // true while a save request is on its way; blocks everything that would abort it
 	ajaxBusy = $state(false)
-	imagesLoaded = $state(false)
-	loadedImages = $state(0)
 	helpHidden = $state(false)
 	actionsOpen = $state(false)
 	missingDeclined = $state(false) // "Nicht erzeugen": the banner stays hidden until the plugin is opened again (not reset by loadData)
@@ -125,7 +125,6 @@ export class Recognizer {
 			withoutBlock: pagination && pagination.withoutBlock && pagination.withoutBlock.length ? pagination.withoutBlock : ['–'],
 			rules: (pagination && pagination.rules) || {},
 		}
-		this.imagesLoaded = !props.loadallimages
 		this.loadData(bridge.readData())
 	}
 
@@ -830,31 +829,6 @@ export class Recognizer {
 			return
 		}
 		this.bridge.finish()
-	}
-
-	// ---- loading all thumbnails first (option loadallimages)
-
-	/* returns the function that stops the polling */
-	preloadImages() {
-		if (!this.loadAllImages) {
-			return () => {}
-		}
-		const images: Record<string, HTMLImageElement> = (window.npImages = {})
-		for (const page of this.pages) {
-			const image = new Image()
-			image.onload = () => {
-				images[page.image.thumbnailUrl] = image
-			}
-			image.src = page.image.thumbnailUrl
-		}
-		const checker = setInterval(() => {
-			this.loadedImages = Object.keys(images).length
-			if (this.loadedImages === this.pages.length) {
-				clearInterval(checker)
-				setTimeout(() => { this.imagesLoaded = true }, 100)
-			}
-		}, 500)
-		return () => clearInterval(checker)
 	}
 }
 

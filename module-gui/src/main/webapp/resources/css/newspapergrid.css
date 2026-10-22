@@ -400,6 +400,42 @@ progress {
 	border-bottom: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color);
 }
 
+.newspaper-help__progress {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 3px;
+	border: 0;
+	appearance: none;
+	background: transparent;
+}
+
+.newspaper-help__progress::-webkit-progress-bar {
+	background: transparent;
+}
+
+/* the box of a thumbnail has its final size from the start; the image is fitted into it, so no image can change the layout */
+.thumb-box {
+	position: relative;
+	overflow: hidden;
+	max-width: 100%;
+}
+
+.thumb-box > img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.thumb-box > canvas {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
 .newspaper-help__hints {
 	display: flex;
 	flex-wrap: wrap;

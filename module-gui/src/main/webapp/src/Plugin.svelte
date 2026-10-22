@@ -29,7 +29,6 @@
 	onMount(() => {
 		app.listenToFaces();
 		app.loadMessages();
-		return app.preloadImages();
 	});
 
 	const onpointerend = () => {
@@ -89,24 +88,15 @@
 				<div>
 					<Banners />
 
-					{#if !app.imagesLoaded}
-						<div class="row">
-							<div class="section-body-padded">
-								<h3>{t('plugin_newspaperRecognizer_loadingImages')}...</h3>
-								<progress max={app.pages.length} value={app.loadedImages}></progress>
-							</div>
+					<div class="section-body">
+						<div class="issues">
+							{#each app.rows as row (row.key)}
+								{#if row.loose}<LooseRow {row} />{:else}<BlockRow {row} />{/if}
+							{/each}
 						</div>
-					{:else}
-						<div class="section-body">
-							<div class="issues">
-								{#each app.rows as row (row.key)}
-									{#if row.loose}<LooseRow {row} />{:else}<BlockRow {row} />{/if}
-								{/each}
-							</div>
-							<!-- room below the last block, so that it too can scroll to just below the help line -->
-							<div data-bottom-spacer style="height: 100vh;"></div>
-						</div>
-					{/if}
+						<!-- room below the last block, so that it too can scroll to just below the help line -->
+						<div data-bottom-spacer style="height: 100vh;"></div>
+					</div>
 				</div>
 			</div>
 		</div>

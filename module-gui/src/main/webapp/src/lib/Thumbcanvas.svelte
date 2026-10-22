@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { getApp } from './recognizer.svelte';
+
 	interface Props {
 		small: string;
 		large: string;
@@ -17,14 +19,14 @@
 	 */
 	let { small, large, width, height, text = null, size = 24, bg = null, preloadLarge = false, title = '' }: Props = $props();
 
-	// set by the attachment
-	let canvas: HTMLCanvasElement;
+	const app = getApp();
+
+	let canvas: HTMLCanvasElement | null = $state.raw(null);
 	let drawn = $state(false);
 	let smallImage: HTMLImageElement | null = null;
 	let largeImage: HTMLImageElement | null = null;
+	let currentUrl = '';
 	let zooming = false;
-
-	const cached = (url: string) => window.npImages?.[url] ?? null;
 
 	function load(url: string, done: (image: HTMLImageElement) => void) {
 		const image = new Image();
@@ -34,8 +36,8 @@
 
 	function drawSmall() {
 		const image = smallImage;
-		const ctx = canvas.getContext('2d');
-		if (!image || !ctx) {
+		const ctx = canvas?.getContext('2d');
+		if (!canvas || !image || !ctx) {
 			return;
 		}
 		let scale = width / image.width;
@@ -59,31 +61,28 @@
 		}
 	}
 
-	// (re)draws whenever the image, the size or the badge changes; a changed image is looked up again
-	const draw = (element: HTMLCanvasElement) => {
-		canvas = element;
+	// (re)draws whenever the image, the size or the badge changes; the image comes from the loader, in the order of the page
+	$effect(() => {
+		void [canvas, width, height, text, size, bg]; // tracked although the drawing may wait for the image
 		const url = small;
-		void [width, height, text, size, bg]; // tracked although the drawing may wait for the image
-		let cancelled = false;
-		if (smallImage?.src !== url && !(smallImage && cached(url) === smallImage)) {
-			smallImage = cached(url);
+		if (url !== currentUrl) {
+			currentUrl = url;
+			smallImage = app.thumbnails.peek(url);
 			largeImage = null;
 		}
 		if (smallImage) {
 			drawSmall();
-		} else {
-			load(url, image => {
-				if (!cancelled) {
-					smallImage = image;
-					drawSmall();
-				}
-			});
+			return;
 		}
-		return () => { cancelled = true; };
-	};
+		return app.thumbnails.request(url, image => {
+			smallImage = image;
+			drawSmall();
+		});
+	});
 
+	// the large image only once the thumbnails are there, so that it does not take their place in the queue
 	$effect(() => {
-		if (preloadLarge) {
+		if (preloadLarge && !largeImage && !app.thumbnails.busy) {
 			load(large, image => { largeImage = image; });
 		}
 	});
@@ -119,6 +118,9 @@
 		if (!zooming || !smallImage || !largeImage) {
 			return;
 		}
+		if (!canvas) {
+			return;
+		}
 		const rect = canvas.getBoundingClientRect();
 		const relX = (event.clientX - rect.left) / canvas.offsetWidth;
 		const relY = (event.clientY - rect.top) / canvas.offsetHeight;
@@ -133,7 +135,7 @@
 
 <!-- the zoom is a mouse feature (the key is Shift or Caps Lock), there is nothing to do on focus -->
 <!-- svelte-ignore a11y_mouse_events_have_key_events -->
-<div class="observable" {title}>
+<div class="observable thumb-box" {title} style="width: {width}px; height: {height}px;">
 	{#if !drawn}<img src="newspaper_placeholder2.png" alt="" />{/if}
-	<canvas class="thumb-canvas" {@attach draw} {onmousemove} {onmouseout}></canvas>
+	<canvas class="thumb-canvas" {@attach el => { canvas = el; }} {onmousemove} {onmouseout}></canvas>
 </div>
