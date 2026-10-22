@@ -2,9 +2,7 @@
 	import { getApp } from './recognizer.svelte';
 	import FormRow from './ui/FormRow.svelte';
 	import Button from './ui/Button.svelte';
-	import Icon from './ui/Icon.svelte';
 	import MetadataField from './MetadataField.svelte';
-	import HiddenPopover from './HiddenPopover.svelte';
 	import type { BlockNode, TypeOption } from '../types';
 
 	interface Props {
@@ -15,33 +13,21 @@
 	}
 
 	/**
-	 * The fields of a block: type, date, number and the visible metadata fields, then its page range and the additional data it keeps.
+	 * The fields of a block: type, date, number and the visible metadata fields (page range and additional data: see BlockFooter).
 	 * `main` is set for a block of level 0: only it may become "without block", be repeated by a pattern or be continued; the others
-	 * show a colour dot (`color`) instead of an icon and no page range.
+	 * show a colour dot (`color`) instead of an icon.
 	 */
 	let { node, typeOptions, main = false, color = null }: Props = $props();
 
 	const app = getApp();
-	const { t, fmt } = app;
+	const { t } = app;
 	const uid = $props.id();
 
 	const start = $derived(node.start);
 	const info = $derived(app.catalog[start.type ?? '']);
 	const flags = $derived(app.flagsFor(node));
 	const fields = $derived(app.fieldsOf(node));
-	const elementId = $derived(app.blockElementId(node));
-	const structures = $derived(start.hidden?.structures ?? []);
-	const metadata = $derived(start.hidden?.metadata ?? []);
-	const hiddenCount = $derived(structures.length + metadata.length);
-	const hiddenOpen = $derived(app.openHidden === elementId);
 	const canContinue = $derived(main && app.isGeneratable(node));
-	const pageFirst = $derived(main ? node.first + 1 : 0);
-	const pageLast = $derived(node.last + 1);
-
-	const hiddenText = $derived([
-		structures.length > 0 && fmt('plugin_newspaperRecognizer_hidden_structureCount', structures.length),
-		metadata.length > 0 && fmt('plugin_newspaperRecognizer_hidden_metadataCount', metadata.length),
-	].filter(Boolean).join(', '));
 
 	// shown values that follow the generated value, per type and field, to notice when a change of date or number updates them
 	let shownGenerated: Record<string, string> = {};
@@ -121,20 +107,4 @@
 	{#each fields as field (field.key)}
 		<MetadataField {node} {field} id="{uid}-field-{field.key}" />
 	{/each}
-
-	{#if pageFirst || hiddenCount > 0}
-		<div class="d-flex justify-content-between align-items-center gap-3 small border-top pt-2 position-relative">
-			<span class="text-muted">{pageFirst ? app.pagesSummary(pageFirst, pageLast) : ''}</span>
-			{#if hiddenCount > 0}
-				<button type="button" class="btn btn-link btn-sm p-0 d-flex align-items-center gap-1 text-decoration-none"
-					onclick={() => app.toggleHidden(elementId)} aria-expanded={hiddenOpen ? 'true' : 'false'}>
-					<Icon name="info-circle" />
-					<span>{hiddenText}</span>
-				</button>
-			{/if}
-			{#if hiddenOpen}
-				<HiddenPopover summary={start.hidden} onclose={() => app.toggleHidden(elementId)} onremove={() => app.askRemoveHidden(node)} />
-			{/if}
-		</div>
-	{/if}
 </div>

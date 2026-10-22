@@ -4,6 +4,7 @@
 	import PageCell from './PageCell.svelte';
 	import LabelInput from './LabelInput.svelte';
 	import BlockFields from './BlockFields.svelte';
+	import BlockFooter from './BlockFooter.svelte';
 	import Button from './ui/Button.svelte';
 	import Icon from './ui/Icon.svelte';
 	import type { Row } from '../types';
@@ -13,7 +14,7 @@
 	}
 
 	/**
-	 * A level-0 block as three cells of the grid: its first page with the label, its fields (and those of its child blocks) and the thumbnails
+	 * A level-0 block as three cells of the grid: its first page with the label, its fields (and those of its child blocks, then its page range) and the thumbnails
 	 * of its other pages with the hints for typing and for the pagination rules.
 	 */
 	let { row }: Props = $props();
@@ -38,6 +39,19 @@
 <div class="issue-controls d-flex flex-column gap-3 px-3 pb-3" style="min-height: {app.thumbHeight}px;">
 	<BlockFields {node} main typeOptions={app.typeOptions(app.volumeType)} />
 
+	{#if node.children.length > 0}
+		<div class="block-tree">
+			{#each node.children as child, childIndex (child.first)}
+				<div class="block-tree__item d-flex flex-column gap-2" id={app.blockElementId(child)}>
+					<BlockFields node={child} typeOptions={app.typeOptions(node.start.type)} color={app.childColor(childIndex + 1)} />
+					<BlockFooter node={child} />
+				</div>
+			{/each}
+		</div>
+	{/if}
+
+	<BlockFooter {node} main />
+
 	{#if app.settings.enabled}
 		<div class="newspaper-foot">
 			<Button data-block-pagination={node.first} icon="list-numbers" onclick={() => app.openRulesDialog(node.first)}>
@@ -54,16 +68,6 @@
 				aria-label={t('plugin_newspaperRecognizer_pagination_offer_dismiss')} onclick={() => app.dismissOffer(node.first)}>
 				<Icon name="x" />
 			</Button>
-		</div>
-	{/if}
-
-	{#if node.children.length > 0}
-		<div class="block-tree">
-			{#each node.children as child, childIndex (child.first)}
-				<div class="block-tree__item" id={app.blockElementId(child)}>
-					<BlockFields node={child} typeOptions={app.typeOptions(node.start.type)} color={app.childColor(childIndex + 1)} />
-				</div>
-			{/each}
 		</div>
 	{/if}
 </div>
