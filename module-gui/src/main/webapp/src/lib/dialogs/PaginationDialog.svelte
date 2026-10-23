@@ -430,7 +430,7 @@
 								<div class="d-flex flex-wrap gap-2 align-items-center">
 									{#if addable.length > 0}
 										<div bind:this={menu} class="position-relative" role="presentation" onkeydown={onmenukeydown} onfocusout={onmenufocusout}>
-											<Button size="sm" icon="plus" class="dropdown-toggle" data-rule-add aria-haspopup="true" aria-expanded={menuOpen ? 'true' : 'false'}
+											<Button size="sm" icon="plus" class="dropdown-toggle" data-rule-add aria-expanded={menuOpen ? 'true' : 'false'}
 												onclick={() => (menuOpen = !menuOpen)}>{t(R + 'add')}</Button>
 											{#if menuOpen}
 												<ul {@attach (element: HTMLElement) => element.querySelector<HTMLElement>('button.dropdown-item')?.focus()}
