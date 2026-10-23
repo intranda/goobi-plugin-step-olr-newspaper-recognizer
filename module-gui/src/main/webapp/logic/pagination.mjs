@@ -168,8 +168,8 @@ function movedPages(before, after, settings) {
  * rule value and the pages after it count on as long as their old labels formed a sequence; the first page after a run gets the continuation
  * of its stream. Pages without counting rule value (–) all get that value. Parts without moved pages stay as they are, so when counting
  * through the volume the count stops at the end of the changed blocks. Offers: typed blocks of the moved pages and, unless only types
- * changed, the block before the first moved page, where the rules would change a labelled page; when counting through the volume instead
- * the volumeOffers from offerFrom, the first block with a rule after the first moved page.
+ * changed, the block before the first moved page, where the rules would change a labelled page; when counting through the volume those
+ * before offerFrom, the first block with a rule after the first moved page, followed by the volumeOffers from there.
  */
 export function structureChanged(before, after, settings) {
   if (settings.automatic === false) {
@@ -212,12 +212,6 @@ export function structureChanged(before, after, settings) {
   }
   const changed = out.map((page, i) => i).filter(i => out[i].label !== old[i]);
   const movedIndexes = flags.map((flag, i) => i).filter(i => flags[i].moved);
-  if (settings.countThroughVolume) {
-    const volume = result.list.find(stream => stream.key === 'volume');
-    const later = movedIndexes.length && volume ? volume.parts.find(part => part.block > movedIndexes[0]) : undefined;
-    const offerFrom = later ? later.block : null;
-    return { pages: out, changed, offers: offerFrom === null ? [] : volumeOffers(out, settings, offerFrom), offerFrom };
-  }
   const blocks = new Set();
   if (movedIndexes.length) {
     const owner = new Array(out.length);
@@ -231,7 +225,13 @@ export function structureChanged(before, after, settings) {
   const offers = [...blocks].sort((a, b) => a - b)
     .map(first => ({ first, pages: blockOffer(out, settings, first) }))
     .filter(offer => offer.pages.length);
-  return { pages: out, changed, offers, offerFrom: null };
+  const volume = settings.countThroughVolume && result.list.find(stream => stream.key === 'volume');
+  const later = movedIndexes.length && volume ? volume.parts.find(part => part.block > movedIndexes[0]) : undefined;
+  if (!later) {
+    return { pages: out, changed, offers, offerFrom: null };
+  }
+  const offerFrom = later.block;
+  return { pages: out, changed, offers: [...offers.filter(offer => offer.first < offerFrom), ...volumeOffers(out, settings, offerFrom)], offerFrom };
 }
 
 /** The volume count from the block starting on page from to the end: every block from there on with the rules applied. */
@@ -256,22 +256,16 @@ export function volumeOffers(pages, settings, from) {
 }
 
 /**
- * New page list with the offered pages relabelled. In block mode (from null) each offer in page order as its block paginated on the list so
- * far; when counting through the volume the labels of the volume count from page from, so one offer can be accepted before earlier ones.
+ * New page list with the offered pages relabelled, offer by offer in page order on the list so far: an offer before page from (all of
+ * them when from is null) as its block paginated, an offer from page from on with the volume count from there, so one offer can be
+ * accepted before earlier ones and all at once equals one by one.
  */
 export function applyOffers(pages, settings, offers, from) {
-  const sorted = [...offers].sort((a, b) => a.first - b.first);
-  if (from === null) {
-    return sorted.reduce((out, offer) => {
-      const fresh = paginateBlock(out, settings, offer.first);
-      offer.pages.forEach(i => { out[i].label = fresh[i].label; });
-      return out;
-    }, clonePages(pages));
-  }
-  const target = countFrom(pages, settings, from);
-  const out = clonePages(pages);
-  sorted.forEach(offer => offer.pages.forEach(i => { out[i].label = target[i].label; }));
-  return out;
+  return [...offers].sort((a, b) => a.first - b.first).reduce((out, offer) => {
+    const fresh = from === null || offer.first < from ? paginateBlock(out, settings, offer.first) : countFrom(out, settings, from);
+    offer.pages.forEach(i => { out[i].label = fresh[i].label; });
+    return out;
+  }, clonePages(pages));
 }
 
 export function initLabels(pages) {

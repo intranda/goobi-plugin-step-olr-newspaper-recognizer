@@ -440,3 +440,26 @@ test('extra: simulateRules scope offers equals applyOffers', () => {
   const scope = { kind: 'offers', first: null, offers: r.offers, from: r.offerFrom };
   assert.equal(labels(simulateRules(r.pages, s, scope)), labels(applyOffers(r.pages, s, r.offers, r.offerFrom)));
 });
+
+// Ruling option 2: in volume mode the changed blocks keep today's offers, the volume offers follow.
+
+test('volume mode: a changed block with a broken old sequence keeps its offer, all at once equals one by one including it', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
+  const before = lab([I(M), p(), p(), p(), p(), p(), I(M), p()], '1 2 3 4 9 10 7 8');
+  const after = lab([I(M), p(), I(M), p(), p(), p(), I(M), p()], '1 2 3 4 9 10 7 8');
+  const r = structureChanged(before, after, s);
+  assert.deepEqual(each(r.pages), ['1', '2', '3', '4', '9', '10', '7', '8']); // derived
+  assert.equal(r.offerFrom, 6); // derived
+  assert.deepEqual(offerShape(r.offers), [{ first: 2, pages: [4, 5] }, { first: 6, pages: [6, 7] }]); // derived
+  const all = applyOffers(r.pages, s, r.offers, r.offerFrom);
+  const oneByOne = r.offers.reduce((list, o) => applyOffers(list, s, [o], r.offerFrom), r.pages);
+  assert.deepEqual(each(all), ['1', '2', '3', '4', '5', '6', '7', '8']); // derived
+  assert.deepEqual(each(oneByOne), each(all));
+});
+
+test('block mode: a page inserted into a block paginates that block only', () => {
+  const before = lab([I(M), p(), p(), I(M), p()], '1 2 3 1 2');
+  const r = structureChanged(before, insertPage(before, 2), settings());
+  assert.deepEqual(each(r.pages), ['1', '2', '3', '4', '1', '2']); // derived
+  assert.deepEqual(r.offers, []); // derived
+});
