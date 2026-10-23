@@ -66,6 +66,7 @@ export interface PaginationRule { beginsWith: string[]; continueInParent?: boole
 export interface PaginationSettings {
 	enabled: boolean;
 	automatic: boolean;
+	countThroughVolume: boolean;
 	withoutBlock: string[];
 	rules: Record<string, PaginationRule>;
 }

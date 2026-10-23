@@ -47,6 +47,16 @@ public class PaginationConfigurationTest {
     }
 
     @Test
+    public void parse_countThroughVolume_defaultFalse() throws Exception {
+        assertFalse(parse("<pagination/>").countThroughVolume());
+    }
+
+    @Test
+    public void parse_countThroughVolume_true() throws Exception {
+        assertTrue(parse("<pagination countThroughVolume=\"true\"/>").countThroughVolume());
+    }
+
+    @Test
     public void parse_rules_splitBeginsWithOnWhitespace() throws Exception {
         PaginationConfiguration config = parse("""
                 <pagination>

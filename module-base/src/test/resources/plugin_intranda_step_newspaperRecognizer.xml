@@ -5,8 +5,9 @@
     <preventDuplicates>true</preventDuplicates>
 
     <!-- page labels (pagination) -->
-    <!-- enabled: false hides all labels and never changes an existing label. automatic: default of the "automatic pagination" setting. -->
-    <pagination enabled="true" automatic="true">
+    <!-- enabled: false hides all labels and never changes an existing label. automatic: default of the "automatic pagination" setting.
+         countThroughVolume: default of the dialog choice "count through the whole volume" instead of restarting in every block. -->
+    <pagination enabled="true" automatic="true" countThroughVolume="false">
         <!-- values pages outside any block begin with, separated by blanks (– = uncounted, [1] = in brackets) -->
         <withoutBlock beginsWith="–" />
         <!-- numbering per structure type: beginsWith = 1, i, I, – or a bracketed form like [1]; several values are separated by blanks.

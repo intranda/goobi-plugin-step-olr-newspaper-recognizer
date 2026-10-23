@@ -28,7 +28,7 @@ public final class TestDocuments {
             "PartNumber");
 
     /** Pagination switched off, the meaning of the fixtures from before the page labels. */
-    public static final PaginationConfiguration PAGINATION_DISABLED = new PaginationConfiguration(false, true, List.of("–"), Map.of());
+    public static final PaginationConfiguration PAGINATION_DISABLED = new PaginationConfiguration(false, true, false, List.of("–"), Map.of());
 
     private static Prefs strict;
     private static Prefs permissive;
@@ -172,7 +172,7 @@ public final class TestDocuments {
                 : ds.getAllMetadata().stream().map(m -> m.getType().getName() + "=" + m.getValue()).toList();
     }
     public static PluginConfiguration config(boolean preventDuplicates, boolean paginationEnabled) {
-        return new PluginConfiguration(true, false, preventDuplicates, new PaginationConfiguration(paginationEnabled, true, List.of("–"), Map.of()), FIELDS,
+        return new PluginConfiguration(true, false, preventDuplicates, new PaginationConfiguration(paginationEnabled, true, false, List.of("–"), Map.of()), FIELDS,
                 List.of(), Map.of("MorningIssue", List.of(FieldDefinition.of("TitleDocMain", "Morgenausgabe {partNo}", true, false))), List.of());
     }
 

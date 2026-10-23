@@ -58,6 +58,14 @@ Every page shows its pagination label under its thumbnail; it can be edited ther
 
 Saving updates the METS file in place: new blocks are added, removed blocks are deleted, changed blocks keep everything the plugin does not manage.
 
+### Counting through the whole volume
+
+By default every top-level block begins its numbering anew. With the choice "Counting" = "count through the whole volume" in the rules dialog (default set by `countThroughVolume="true"` on `pagination`), all top-level blocks that have a rule share one counting stream in page order: `… 7 8 | 9 10 …`. Child blocks keep their own numbering. Pages without block keep their own stream; the volume count skips them and carries on after them, and so do top-level blocks without a rule.
+
+A non-counting first value such as `–` in `beginsWith = "– 1"` applies in every block (`… 7 8 | – 9 10 …`); a counting start value applies only in the first block, later blocks continue from the last counting label before them. If top-level types have different rules (for example one with `1`, another with `i`), the counting value of a later block's rule is not used: the block continues the stream.
+
+With automatic pagination, a structure change paginates only up to the end of the changed block. Later blocks whose labels the volume count would change are offered in a hint, which applies all offers at once.
+
 ## Configuration
 
 Plugin configuration is done in the file `plugin_intranda_step_newspaperRecognizer.xml` as shown here:
@@ -71,7 +79,7 @@ Parameter               | Explanation
 `loadAllImages`         | Whether all images are loaded when the plugin starts.
 `showDeletePageButton`  | Whether images can be deleted permanently within the plugin.
 `preventDuplicates`     | If `true`, saving is blocked while two blocks with the same parent have the same type, date and number.
-`pagination`            | Pagination of the pages. `enabled` (default `true`): if `false`, the plugin shows no page labels and never changes an existing pagination. `automatic` (default `true`): default for paginating blocks by the rules whenever their structure changes; it can be switched in the rules dialog. Without the element all defaults apply.
+`pagination`            | Pagination of the pages. `enabled` (default `true`): if `false`, the plugin shows no page labels and never changes an existing pagination. `automatic` (default `true`): default for paginating blocks by the rules whenever their structure changes; it can be switched in the rules dialog. `countThroughVolume` (default `false`): default of the dialog choice "Counting" (restart in every block / count through the whole volume), see "Counting through the whole volume". Without the element all defaults apply.
 `withoutBlock`          | In `pagination`: `beginsWith` is the first label of pages outside any block (default `–`, unnumbered).
 `rule`                  | In `pagination`: rule for the ruleset type `docstruct`. `beginsWith`: the first label of a block of this type, one or more values separated by spaces, for example `1`, `i`, `I`, `[1]` (fictitious), `–` (unnumbered) or `– 1`. `continueInParent` (default `false`): child blocks of this type in the same parent continue each other's numbering. A type without rule: types the ruleset allows only on the top level begin with `1`; types allowed as a child keep the numbering of their parent. Unknown types, duplicate rules and an empty `beginsWith` are configuration errors. The former `createNewPagination`, `type` and `useFakePagination` are no longer supported and are reported as configuration errors.
 `defaults`              | The fields of every type whose ruleset allows the field's metadata, on every level (child blocks included).

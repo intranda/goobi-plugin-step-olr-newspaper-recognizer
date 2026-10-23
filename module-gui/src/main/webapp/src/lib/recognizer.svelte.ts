@@ -122,6 +122,7 @@ export class Recognizer {
 		this.settings = {
 			enabled: !!(pagination && pagination.enabled),
 			automatic: !pagination || pagination.automatic !== false,
+			countThroughVolume: !!(pagination && pagination.countThroughVolume),
 			withoutBlock: pagination && pagination.withoutBlock && pagination.withoutBlock.length ? pagination.withoutBlock : ['–'],
 			rules: (pagination && pagination.rules) || {},
 		}

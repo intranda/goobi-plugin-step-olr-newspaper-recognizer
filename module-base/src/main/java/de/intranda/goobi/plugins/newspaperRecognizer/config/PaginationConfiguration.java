@@ -17,17 +17,19 @@ import de.intranda.goobi.plugins.newspaperRecognizer.ruleset.RulesetTypes;
  *
  * @param enabled whether page labels are shown and edited at all
  * @param automatic the default of the dialog setting for automatic pagination
+ * @param countThroughVolume the default of the dialog choice to count through the whole volume instead of restarting in every block
  * @param withoutBlock the values pages outside any block begin with
  * @param rules the numbering rules per structure type, as configured
  */
-public record PaginationConfiguration(boolean enabled, boolean automatic, List<String> withoutBlock, Map<String, PaginationRule> rules) {
+public record PaginationConfiguration(boolean enabled, boolean automatic, boolean countThroughVolume, List<String> withoutBlock,
+        Map<String, PaginationRule> rules) {
 
     private static final List<String> DEFAULT_WITHOUT_BLOCK = List.of("–");
     private static final List<String> DEFAULT_BEGINS_WITH = List.of("1");
     private static final List<String> REMOVED_ELEMENTS = List.of("createNewPagination", "type", "useFakePagination");
 
     public static PaginationConfiguration defaults() {
-        return new PaginationConfiguration(true, true, DEFAULT_WITHOUT_BLOCK, Map.of());
+        return new PaginationConfiguration(true, true, false, DEFAULT_WITHOUT_BLOCK, Map.of());
     }
 
     public static PaginationConfiguration parse(HierarchicalConfiguration config, List<String> errors) {
@@ -61,7 +63,7 @@ public record PaginationConfiguration(boolean enabled, boolean automatic, List<S
             }
         }
         return new PaginationConfiguration(config.getBoolean("pagination[@enabled]", true), config.getBoolean("pagination[@automatic]", true),
-                withoutBlock, Collections.unmodifiableMap(rules));
+                config.getBoolean("pagination[@countThroughVolume]", false), withoutBlock, Collections.unmodifiableMap(rules));
     }
 
     private static List<String> split(String value) {

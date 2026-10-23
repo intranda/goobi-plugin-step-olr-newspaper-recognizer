@@ -57,6 +57,14 @@ Jede Seite zeigt ihre Seitenbezeichnung unter der Vorschau; sie kann dort bearbe
 
 Beim Speichern wird die METS-Datei angepasst: neue Blöcke werden ergänzt, entfernte gelöscht, geänderte behalten alles, was das Plugin nicht verwaltet.
 
+### Durch den ganzen Band zählen
+
+Standardmäßig beginnt jeder Block der obersten Ebene seine Zählung neu. Mit der Auswahl „Zählung“ = „durch den ganzen Band zählen“ im Regeldialog (Vorgabe über `countThroughVolume="true"` an `pagination`) teilen sich alle Blöcke der obersten Ebene, für deren Typ eine Regel gilt, einen gemeinsamen Zählstrom in Seitenreihenfolge: `… 7 8 | 9 10 …`. Unterblöcke behalten ihre eigene Zählung. Seiten ohne Block behalten ihren eigenen Strom; die Bandzählung überspringt sie und setzt danach fort, ebenso Blöcke der obersten Ebene ohne Regel.
+
+Ein nicht zählender erster Wert wie `–` bei `beginsWith = "– 1"` gilt in jedem Block (`… 7 8 | – 9 10 …`); ein zählender Startwert gilt nur im ersten Block, spätere Blöcke zählen ab dem letzten zählenden Wert davor weiter. Haben Typen der obersten Ebene unterschiedliche Regeln (zum Beispiel einer `1`, ein anderer `i`), wird der zählende Wert der Regel eines späteren Blocks nicht verwendet: der Block setzt den Strom fort.
+
+Bei automatischer Paginierung paginiert eine Strukturänderung nur bis zum Ende des geänderten Blocks. Spätere Blöcke, deren Bezeichnungen die Bandzählung ändern würde, werden in einem Hinweis angeboten, der alle Angebote auf einmal übernimmt.
+
 ## Konfiguration
 Die Konfiguration des Plugins erfolgt in der Datei `plugin_intranda_step_newspaperRecognizer.xml` wie hier aufgezeigt:
 
@@ -69,7 +77,7 @@ Parameter               | Erläuterung
 `loadAllImages`         | Ob beim Start des Plugins alle Bilder geladen werden.
 `showDeletePageButton`  | Ob Bilder im Plugin dauerhaft gelöscht werden können.
 `preventDuplicates`     | Bei `true` ist das Speichern gesperrt, solange zwei Blöcke mit demselben Elternelement denselben Typ, dasselbe Datum und dieselbe Nummer haben.
-`pagination`            | Paginierung der Seiten. `enabled` (Standard `true`): bei `false` zeigt das Plugin keine Seitenbezeichnungen und ändert eine vorhandene Paginierung nie. `automatic` (Standard `true`): Vorgabe, ob Blöcke bei jeder Strukturänderung nach den Regeln paginiert werden; im Regeldialog umschaltbar. Ohne das Element gelten alle Standardwerte.
+`pagination`            | Paginierung der Seiten. `enabled` (Standard `true`): bei `false` zeigt das Plugin keine Seitenbezeichnungen und ändert eine vorhandene Paginierung nie. `automatic` (Standard `true`): Vorgabe, ob Blöcke bei jeder Strukturänderung nach den Regeln paginiert werden; im Regeldialog umschaltbar. `countThroughVolume` (Standard `false`): Vorgabe der Dialogauswahl „Zählung“ (in jedem Block neu beginnen / durch den ganzen Band zählen), siehe „Durch den ganzen Band zählen“. Ohne das Element gelten alle Standardwerte.
 `withoutBlock`          | In `pagination`: `beginsWith` ist die erste Bezeichnung der Seiten außerhalb von Blöcken (Standard `–`, unpaginiert).
 `rule`                  | In `pagination`: Regel für den Regelsatztyp `docstruct`. `beginsWith`: erste Bezeichnung eines Blocks dieses Typs, ein oder mehrere durch Leerzeichen getrennte Werte, zum Beispiel `1`, `i`, `I`, `[1]` (fiktiv), `–` (unpaginiert) oder `– 1`. `continueInParent` (Standard `false`): Unterblöcke dieses Typs im selben Elternblock zählen einander fort. Ein Typ ohne Regel: Typen, die der Regelsatz nur auf oberster Ebene erlaubt, beginnen mit `1`; Typen, die als Unterblock erlaubt sind, behalten die Zählung ihres Elternblocks. Unbekannte Typen, doppelte Regeln und ein leeres `beginsWith` sind Konfigurationsfehler. Die früheren `createNewPagination`, `type` und `useFakePagination` werden nicht mehr unterstützt und als Konfigurationsfehler gemeldet.
 `defaults`              | Die Felder aller Typen, deren Regelsatz das Metadatum des Feldes erlaubt, auf jeder Ebene (auch in Unterblöcken).

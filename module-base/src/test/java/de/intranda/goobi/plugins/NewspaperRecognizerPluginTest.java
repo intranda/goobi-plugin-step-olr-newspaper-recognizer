@@ -174,7 +174,7 @@ public class NewspaperRecognizerPluginTest {
     @Test
     public void paginationJson_containsSettingsAndResolvedRules() {
         PluginConfiguration base = TestDocuments.config(true);
-        PaginationConfiguration pagination = new PaginationConfiguration(true, false, List.of("\u2013"),
+        PaginationConfiguration pagination = new PaginationConfiguration(true, false, false, List.of("\u2013"),
                 Map.of("NewspaperSupplement", new PaginationRule(List.of("i"), false)));
         plugin.setConfiguration(new PluginConfiguration(base.loadAllImages(), base.showDeletePageButton(), base.preventDuplicates(), pagination,
                 base.fields(), base.defaults(), base.types(), base.parseErrors()));
