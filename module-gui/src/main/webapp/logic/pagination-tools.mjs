@@ -73,3 +73,20 @@ export function simulateRules(pages, settings, scope) {
   }
   return paginateParts(pages, settings, inScope(scope));
 }
+
+/**
+ * Whether two pagination settings say the same: per type the values its pages begin with and whether a child continues in its parent (a
+ * rule without values is no rule), the values of the pages without block, automatic and counting through the volume. The order of keys
+ * does not matter.
+ */
+export function sameSettings(a, b) {
+  const rules = settings => Object.fromEntries(Object.entries(settings.rules || {})
+    .filter(([, rule]) => rule && (rule.beginsWith || []).length > 0)
+    .map(([type, rule]) => [type, [JSON.stringify(rule.beginsWith), !!rule.continueInParent]]));
+  const ra = rules(a);
+  const rb = rules(b);
+  const sameRules = Object.keys(ra).length === Object.keys(rb).length
+    && Object.keys(ra).every(type => type in rb && ra[type][0] === rb[type][0] && ra[type][1] === rb[type][1]);
+  return sameRules && JSON.stringify(a.withoutBlock || []) === JSON.stringify(b.withoutBlock || [])
+    && (a.automatic !== false) === (b.automatic !== false) && !!a.countThroughVolume === !!b.countThroughVolume;
+}

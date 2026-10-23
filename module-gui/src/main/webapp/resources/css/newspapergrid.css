@@ -540,7 +540,7 @@ goobi-plugin-step-newspaper-recognizer {
 	max-width: var(--thumb-size, 80px);
 }
 
-/* the label fields of the pages a jump leads to light up briefly (no focus) */
+/* the label fields of the pages a jump leads to light up briefly (no focus); so do a pagination rule that was added or restored */
 @keyframes newspaper-flash {
 	from {
 		border-color: #2b9a5a;
@@ -548,12 +548,16 @@ goobi-plugin-step-newspaper-recognizer {
 	}
 }
 
-.newspaper-flash > .form-control {
+.newspaper-flash > .form-control,
+.newspaper-flash > .form-select,
+tr[data-rule-row].is-new .form-select {
 	animation: newspaper-flash 1.5s ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.newspaper-flash > .form-control {
+	.newspaper-flash > .form-control,
+	.newspaper-flash > .form-select,
+	tr[data-rule-row].is-new .form-select {
 		animation: none;
 	}
 }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules } from '../pagination-tools.mjs';
+import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules, sameSettings } from '../pagination-tools.mjs';
 import { pages, start, settings, labels } from './fixtures.mjs';
 
 const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });
@@ -52,4 +52,18 @@ test('simulateRules block scope only paginates the block at first', () => { // d
   const list = pages(I('MorningIssue', '9'), p('9'), I('MorningIssue', '9'), p('9'));
   assert.equal(labels(simulateRules(list, settings(), { kind: 'block', first: 2 })), '9 9 1 2');
   assert.equal(labels(simulateRules(list, settings(), { kind: 'fromBlock', first: 2 })), '9 9 1 2');
+});
+
+test('sameSettings compares the rules by meaning, not by the order of their keys', () => {
+  const a = settings({ MorningIssue: { beginsWith: ['–', '1'], continueInParent: false }, Supplement: { beginsWith: ['i'], continueInParent: true } });
+  const b = { withoutBlock: ['–'], rules: { Supplement: { continueInParent: true, beginsWith: ['i'] }, MorningIssue: { beginsWith: ['–', '1'] } }, automatic: true, enabled: true };
+  assert.ok(sameSettings(a, b));
+  assert.ok(sameSettings(a, { ...b, countThroughVolume: false }), 'countThroughVolume missing is false');
+  assert.ok(sameSettings(a, { ...b, rules: { ...b.rules, EveningIssue: { beginsWith: [] } } }), 'a rule without values is no rule');
+  assert.ok(!sameSettings(a, { ...b, rules: { ...b.rules, MorningIssue: { beginsWith: ['1'] } } }), 'beginsWith');
+  assert.ok(!sameSettings(a, { ...b, rules: { ...b.rules, Supplement: { beginsWith: ['i'] } } }), 'continueInParent');
+  assert.ok(!sameSettings(a, { ...b, rules: { MorningIssue: b.rules.MorningIssue } }), 'a removed rule');
+  assert.ok(!sameSettings(a, { ...b, withoutBlock: [] }), 'withoutBlock');
+  assert.ok(!sameSettings(a, { ...b, automatic: false }), 'automatic');
+  assert.ok(!sameSettings(a, { ...b, countThroughVolume: true }), 'countThroughVolume');
 });

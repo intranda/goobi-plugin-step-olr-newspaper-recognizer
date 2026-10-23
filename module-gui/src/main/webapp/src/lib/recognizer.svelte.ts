@@ -5,7 +5,7 @@ import {
 	canMerge, makeLoose, shiftIndex,
 } from '../../logic/blocks.mjs'
 import { initLabels, structureChanged, streams, volumeOffers, applyOffers } from '../../logic/pagination.mjs'
-import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules } from '../../logic/pagination-tools.mjs'
+import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules, sameSettings } from '../../logic/pagination-tools.mjs'
 import { previewLabel, ownNumberingAll } from '../../logic/typing.mjs'
 import { parseLabel, isCounting } from '../../logic/labels.mjs'
 import { applyTypePattern } from '../../logic/generation.mjs'
@@ -745,7 +745,7 @@ export class Recognizer {
 	applyRules(settings: PaginationSettings, scope: RulesScope) {
 		this.dialog = null
 		if (scope.kind === 'offers') {
-			if (JSON.stringify(settings) !== JSON.stringify(this.settings)) {
+			if (!sameSettings(settings, this.settings)) {
 				this.settings = settings
 			}
 			const applied = new Set((scope.offers ?? []).map(offer => offer.first))
