@@ -261,21 +261,24 @@ function offersAgainst(pages, settings, from, target) {
 }
 
 /**
- * New page list with the offered pages relabelled, offer by offer in page order on the list so far. In block mode (from null) each
- * offer as its block paginated; when counting through the volume with the volume count from page from and the pages its block offers
- * now, after the offers before it. So one offer can be accepted before earlier ones, and all at once equals one by one with the
- * offers recomputed in between.
+ * New page list with the offered pages relabelled. In block mode (from null) offer by offer in page order, each as its block paginated;
+ * when counting through the volume with the volume count from page from and the pages its block offers now. So one offer can be
+ * accepted before earlier ones, and all at once equals one by one with the offers recomputed in between.
  */
 export function applyOffers(pages, settings, offers, from) {
-  return [...offers].sort((a, b) => a.first - b.first).reduce((out, offer) => {
-    if (from === null) {
-      const fresh = paginateBlock(out, settings, offer.first);
-      offer.pages.forEach(i => { out[i].label = fresh[i].label; });
-      return out;
-    }
+  if (from !== null) {
+    // the volume count repaints every block from page from on and reads only labels before it, which no offer touches, so it is the
+    // same before and after each offer, and so are the pages every later offer would change
+    const out = clonePages(pages);
     const target = countFrom(out, settings, from);
-    const now = offersAgainst(out, settings, from, target).find(o => o.first === offer.first);
-    (now?.pages ?? []).forEach(i => { out[i].label = target[i].label; });
+    const blocks = new Set(offers.map(offer => offer.first));
+    offersAgainst(out, settings, from, target).filter(offer => blocks.has(offer.first))
+      .forEach(offer => offer.pages.forEach(i => { out[i].label = target[i].label; }));
+    return out;
+  }
+  return [...offers].sort((a, b) => a.first - b.first).reduce((out, offer) => {
+    const fresh = paginateBlock(out, settings, offer.first);
+    offer.pages.forEach(i => { out[i].label = fresh[i].label; });
     return out;
   }, clonePages(pages));
 }

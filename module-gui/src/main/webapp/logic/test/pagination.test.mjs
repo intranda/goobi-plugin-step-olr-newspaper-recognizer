@@ -499,3 +499,39 @@ test('volume mode: splitting a block of a per-block volume offers every block fr
   }, r.pages);
   assert.deepEqual(each(oneByOne), each(all));
 });
+
+// Final review: in volume mode applyOffers counts once; accepting a subset of the offers at once must equal accepting them one by one.
+
+test('volume mode: accepting some offers at once equals one by one in page order on varied volumes', () => {
+  let seed = 7;
+  const rnd = n => { seed = (seed * 48271) % 2147483647; return seed % n; };
+  const types = [M, 'EveningIssue', null, 'TableOfContents'];
+  for (let t = 0; t < 400; t++) {
+    const specs = [];
+    const blocks = 2 + rnd(6);
+    for (let b = 0; b < blocks; b++) {
+      const length = 1 + rnd(4);
+      const type = types[rnd(4)];
+      const loose = rnd(8) === 0;
+      for (let k = 0; k < length; k++) {
+        const label = rnd(5) === 0 ? '' : rnd(6) === 0 ? '–' : String(1 + rnd(20));
+        if (loose) {
+          specs.push(p(label, 0));
+        } else if (k === 0) {
+          specs.push(I(type, label));
+        } else {
+          specs.push(rnd(6) === 0 ? C('NewspaperSupplement', label) : p(label, specs.at(-1).depth === 2 && rnd(2) ? 2 : 1));
+        }
+      }
+    }
+    const list = pages(...specs);
+    const s = {
+      ...settings({ [M]: { beginsWith: rnd(2) ? ['1'] : ['–', '1'] }, EveningIssue: { beginsWith: ['i'] }, NewspaperSupplement: { beginsWith: ['i'] } }),
+      countThroughVolume: true,
+    };
+    const from = rnd(list.length);
+    const offers = volumeOffers(list, s, from).filter(() => rnd(3) > 0);
+    const oneByOne = offers.reduce((out, offer) => applyOffers(out, s, [offer], from), list);
+    assert.equal(labels(applyOffers(list, s, offers, from)), labels(oneByOne), `case ${t}`);
+  }
+});
