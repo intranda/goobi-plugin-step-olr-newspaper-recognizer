@@ -48,7 +48,7 @@ Two tools fill many blocks at once:
 - **Repeat type sequence …** (in the type field) sets the types of a block and all following blocks on the same level in a repeating pattern, for example morning issue, evening issue. Date and number are kept where the new type has these fields.
 - **Continue date and no. …** (depending on the type also "Continue date …" or "Continue no. …"; one button to the right of the date and number fields) fills in dates and numbers from a block onwards. Only the selected types are included. A new day starts either as soon as an included type repeats, or with every included block (option "new date for every issue"). Numbers count per day (morning 1, evening 1, morning 2 …) or per issue (morning 1, evening 2, morning 3 …); with "new date for every issue" both are the same, so the setting is locked (unless an included type has a number but no date). The publication days (chosen one by one or with the quick choices daily, Mon–Sat, Mon–Fri) and a biweekly rhythm control the dates. The preview lists the following blocks by publication day; a changed value is highlighted with the old one small and struck through above it. Blocks that are not included are greyed out, with an icon that names the reason. "Hide unchanged" hides blocks whose values stay the same; only blocks that change are applied. Types are never changed.
 
-![Continue from here](screen5_en.png)
+![Continue date and no.](screen5_en.png)
 
 Structures and metadata that the plugin does not manage – for example articles below a supplement or a note added in the metadata editor – are kept. A badge next to the block shows how many there are; a click lists them. If a change would affect them (removing the block, changing its type or its pages), the plugin asks what to do with them. Saving never drops them silently.
 
@@ -68,7 +68,7 @@ By default every top-level block begins its numbering anew. With the choice "Cou
 
 A non-counting first value such as `–` in `beginsWith = "– 1"` applies in every block (`… 7 8 | – 9 10 …`); a counting start value applies only in the first block, later blocks continue from the last counting label before them. If top-level types have different rules (for example one with `1`, another with `i`), the counting value of a later block's rule is not used: the block continues the stream.
 
-With automatic pagination, a structure change paginates only up to the end of the changed block. Later blocks whose labels the volume count would change are offered in a hint, which applies all offers at once.
+With automatic pagination, a structure change paginates only up to the end of the changed block, and a typed label continues the count only up to the end of its block. Every later block whose labels the volume count would change gets its own offer; from two offers on the banner with "Renumber all by the rules" appears. The offers are recalculated after every change: here an offer does not disappear as soon as its block changes, but once the block fits the volume count.
 
 ## Configuration
 

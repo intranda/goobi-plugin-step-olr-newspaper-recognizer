@@ -47,7 +47,7 @@ Zwei Werkzeuge füllen viele Blöcke auf einmal:
 - **Typfolge wiederholen …** (im Typ-Feld) setzt die Typen eines Blocks und aller folgenden Blöcke derselben Ebene nach einem sich wiederholenden Muster, zum Beispiel Morgenausgabe, Abendausgabe. Datum und Nummer bleiben erhalten, wo der neue Typ diese Felder hat.
 - **Datum und Nr. fortsetzen …** (je nach Typ auch „Datum fortsetzen …“ oder „Nr. fortsetzen …“; ein Button rechts neben den Feldern Datum und Nummer) füllt Datum und Nummer ab einem Block. Berücksichtigt werden nur die gewählten Typen. Ein neuer Tag beginnt entweder, sobald sich ein berücksichtigter Typ wiederholt, oder mit jedem berücksichtigten Block (Option „neues Datum für jede Ausgabe“). Die Nummer zählt pro Tag (Morgen 1, Abend 1, Morgen 2 …) oder pro Ausgabe (Morgen 1, Abend 2, Morgen 3 …); bei „neues Datum für jede Ausgabe“ ist beides gleich, die Einstellung ist dann gesperrt (außer ein berücksichtigter Typ hat eine Nummer, aber kein Datum). Die Erscheinungstage (einzeln wählbar oder per Schnellwahl täglich, Mo–Sa, Mo–Fr) und ein zweiwöchentlicher Rhythmus steuern das Datum. Die Vorschau listet die folgenden Blöcke nach Erscheinungstag; ein geänderter Wert steht hervorgehoben, der bisherige klein und durchgestrichen darüber. Nicht berücksichtigte Blöcke sind grau, ein Symbol nennt den Grund. „Unveränderte ausblenden“ blendet Blöcke aus, deren Werte gleich bleiben; übernommen werden nur Blöcke, die sich ändern. Typen werden nie geändert.
 
-![Ab hier fortsetzen](screen5_de.png)
+![Datum und Nr. fortsetzen](screen5_de.png)
 
 Strukturen und Metadaten, die das Plugin nicht verwaltet – zum Beispiel Artikel unterhalb einer Beilage oder eine im Metadateneditor ergänzte Notiz – bleiben erhalten. Ein Hinweis neben dem Block zeigt ihre Anzahl; ein Klick listet sie auf. Würde eine Änderung sie betreffen (Block entfernen, Typ oder Seiten ändern), fragt das Plugin, was mit ihnen geschehen soll. Beim Speichern gehen sie nie unbemerkt verloren.
 
@@ -67,7 +67,7 @@ Standardmäßig beginnt jeder Block der obersten Ebene seine Zählung neu. Mit d
 
 Ein nicht zählender erster Wert wie `–` bei `beginsWith = "– 1"` gilt in jedem Block (`… 7 8 | – 9 10 …`); ein zählender Startwert gilt nur im ersten Block, spätere Blöcke zählen ab dem letzten zählenden Wert davor weiter. Haben Typen der obersten Ebene unterschiedliche Regeln (zum Beispiel einer `1`, ein anderer `i`), wird der zählende Wert der Regel eines späteren Blocks nicht verwendet: der Block setzt den Strom fort.
 
-Bei automatischer Paginierung paginiert eine Strukturänderung nur bis zum Ende des geänderten Blocks. Spätere Blöcke, deren Bezeichnungen die Bandzählung ändern würde, werden in einem Hinweis angeboten, der alle Angebote auf einmal übernimmt.
+Bei automatischer Paginierung paginiert eine Strukturänderung nur bis zum Ende des geänderten Blocks, ebenso setzt eine eingegebene Bezeichnung die Zählung nur bis zum Ende ihres Blocks fort. Jeder spätere Block, dessen Bezeichnungen die Bandzählung ändern würde, erhält sein eigenes Angebot; ab zwei Angeboten erscheint der Hinweis mit „Alle neu nach Regeln“. Die Angebote werden nach jeder Änderung neu berechnet: Ein Angebot verschwindet hier nicht schon, wenn sich sein Block ändert, sondern sobald der Block zur Bandzählung passt.
 
 ## Konfiguration
 Die Konfiguration des Plugins erfolgt in der Datei `plugin_intranda_step_newspaperRecognizer.xml` wie hier aufgezeigt:
