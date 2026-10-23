@@ -169,8 +169,9 @@ function movedPages(before, after, settings) {
  * rule value and the pages after it count on as long as their old labels formed a sequence; the first page after a run gets the continuation
  * of its stream. Pages without counting rule value (–) all get that value. Parts without moved pages stay as they are, so when counting
  * through the volume the count stops at the end of the changed blocks. Offers: typed blocks of the moved pages and, unless only types
- * changed, the block before the first moved page, where the rules would change a labelled page; when counting through the volume those
- * before offerFrom, the first block with a rule after the first moved page, followed by the volumeOffers from there.
+ * changed, the block before the first moved page, where the rules would change a labelled page. When counting through the volume
+ * offerFrom is the first of these blocks, else the first block with a rule after the first moved page, and the offers are the
+ * volumeOffers from there, so every block from the first that no longer fits is offered against one consistent count.
  */
 export function structureChanged(before, after, settings) {
   if (settings.automatic === false) {
@@ -226,14 +227,14 @@ export function structureChanged(before, after, settings) {
   const offers = [...blocks].sort((a, b) => a - b)
     .map(first => ({ first, pages: blockOffer(out, settings, first) }))
     .filter(offer => offer.pages.length);
-  // only level-0 blocks with a rule join the volume stream, so every part of it has a rule
-  const volume = settings.countThroughVolume && result.list.find(stream => stream.key === 'volume');
-  const later = movedIndexes.length && volume ? volume.parts.find(part => part.block > movedIndexes[0]) : undefined;
-  if (!later) {
+  if (!settings.countThroughVolume) {
     return { pages: out, changed, offers, offerFrom: null };
   }
-  const offerFrom = later.block;
-  return { pages: out, changed, offers: [...offers.filter(offer => offer.first < offerFrom), ...volumeOffers(out, settings, offerFrom)], offerFrom };
+  // only level-0 blocks with a rule join the volume stream, so every part of it has a rule
+  const volume = result.list.find(stream => stream.key === 'volume');
+  const later = movedIndexes.length && volume ? volume.parts.find(part => part.block > movedIndexes[0]) : undefined;
+  const offerFrom = offers.length ? offers[0].first : later?.block ?? null;
+  return { pages: out, changed, offers: offerFrom === null ? [] : volumeOffers(out, settings, offerFrom), offerFrom };
 }
 
 /** The volume count from the block starting on page from to the end: every block from there on with the rules applied. */
@@ -260,14 +261,14 @@ function offersAgainst(pages, settings, from, target) {
 }
 
 /**
- * New page list with the offered pages relabelled, offer by offer in page order on the list so far: an offer before page from (all of
- * them when from is null) as its block paginated, an offer from page from on with the volume count from there and with the pages its
- * block offers now, after the offers before it. So one offer can be accepted before earlier ones, and all at once equals one by one
- * with the offers recomputed in between.
+ * New page list with the offered pages relabelled, offer by offer in page order on the list so far. In block mode (from null) each
+ * offer as its block paginated; when counting through the volume with the volume count from page from and the pages its block offers
+ * now, after the offers before it. So one offer can be accepted before earlier ones, and all at once equals one by one with the
+ * offers recomputed in between.
  */
 export function applyOffers(pages, settings, offers, from) {
   return [...offers].sort((a, b) => a.first - b.first).reduce((out, offer) => {
-    if (from === null || offer.first < from) {
+    if (from === null) {
       const fresh = paginateBlock(out, settings, offer.first);
       offer.pages.forEach(i => { out[i].label = fresh[i].label; });
       return out;

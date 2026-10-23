@@ -443,14 +443,14 @@ test('extra: simulateRules scope offers equals applyOffers', () => {
 
 // Ruling option 2: in volume mode the changed blocks keep today's offers, the volume offers follow.
 
-test('volume mode: a changed block with a broken old sequence keeps its offer, all at once equals one by one including it', () => {
+test('volume mode: a changed block with a broken old sequence is offered against the volume count, a later block that fits is not', () => {
   const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
   const before = lab([I(M), p(), p(), p(), p(), p(), I(M), p()], '1 2 3 4 9 10 7 8');
   const after = lab([I(M), p(), I(M), p(), p(), p(), I(M), p()], '1 2 3 4 9 10 7 8');
   const r = structureChanged(before, after, s);
   assert.deepEqual(each(r.pages), ['1', '2', '3', '4', '9', '10', '7', '8']); // derived
-  assert.equal(r.offerFrom, 6); // derived
-  assert.deepEqual(offerShape(r.offers), [{ first: 2, pages: [4, 5] }, { first: 6, pages: [6, 7] }]); // derived
+  assert.equal(r.offerFrom, 2); // derived
+  assert.deepEqual(offerShape(r.offers), [{ first: 2, pages: [4, 5] }]); // derived
   const all = applyOffers(r.pages, s, r.offers, r.offerFrom);
   const oneByOne = r.offers.reduce((list, o) => applyOffers(list, s, [o], r.offerFrom), r.pages);
   assert.deepEqual(each(all), ['1', '2', '3', '4', '5', '6', '7', '8']); // derived
@@ -471,11 +471,31 @@ test('volume mode: accepting all offers equals accepting one by one with the off
   const before = lab([I(M), p(), p(), p(), p(), p(), I(M), p()], '1 2 3 4 9 10 11 8');
   const after = lab([I(M), p(), I(M), p(), p(), p(), I(M), p()], '1 2 3 4 9 10 11 8');
   const r = structureChanged(before, after, s);
-  assert.deepEqual(offerShape(r.offers), [{ first: 2, pages: [4, 5] }, { first: 6, pages: [7] }]);
-  assert.equal(r.offerFrom, 6);
+  assert.deepEqual(offerShape(r.offers), [{ first: 2, pages: [4, 5] }, { first: 6, pages: [6] }]);
+  assert.equal(r.offerFrom, 2);
   const all = applyOffers(r.pages, s, r.offers, r.offerFrom);
   const first = applyOffers(r.pages, s, [r.offers[0]], r.offerFrom);
   const recomputed = applyOffers(first, s, volumeOffers(first, s, r.offerFrom), r.offerFrom);
   assert.deepEqual(each(recomputed), ['1', '2', '3', '4', '5', '6', '7', '8']);
   assert.deepEqual(each(all), each(recomputed));
+});
+
+// Follow-up R10: when counting through the volume the offers start at the first block that no longer fits.
+
+test('volume mode: splitting a block of a per-block volume offers every block from the first that no longer fits', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
+  const block = () => [I(M), p(), p(), p()];
+  const before = lab([...block(), ...block(), ...block()], '1 2 3 4 1 2 3 4 1 2 3 4');
+  const after = lab([...block(), I(M), p(), I(M), p(), ...block()], '1 2 3 4 1 2 3 4 1 2 3 4');
+  const r = structureChanged(before, after, s);
+  assert.deepEqual(each(r.pages), ['1', '2', '3', '4', '1', '2', '3', '4', '1', '2', '3', '4']); // derived
+  assert.equal(r.offerFrom, 4); // derived
+  assert.deepEqual(offerShape(r.offers), [{ first: 4, pages: [4, 5] }, { first: 6, pages: [6, 7] }, { first: 8, pages: [8, 9, 10, 11] }]); // derived
+  const all = applyOffers(r.pages, s, r.offers, r.offerFrom);
+  assert.deepEqual(each(all), ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']);
+  const oneByOne = r.offers.reduce(list => {
+    const open = volumeOffers(list, s, r.offerFrom);
+    return open.length ? applyOffers(list, s, [open[0]], r.offerFrom) : list;
+  }, r.pages);
+  assert.deepEqual(each(oneByOne), each(all));
 });
