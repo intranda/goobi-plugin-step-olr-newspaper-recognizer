@@ -81,6 +81,42 @@
 	}
 }
 
+.block-dates {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 0.5rem;
+}
+
+/* the continue button spans the date and number rows (--rows of them); below 576px it is a normal button below the rows */
+.block-dates__continue {
+	grid-column: 2;
+	grid-row: 1 / span var(--rows, 1);
+	align-self: stretch;
+	white-space: normal;
+	max-width: 11rem;
+}
+
+@media screen and (max-width: 575.98px) {
+	.block-dates {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.block-dates__continue {
+		grid-column: 1;
+		grid-row: auto;
+		justify-self: start;
+		max-width: 100%;
+	}
+	/* the type drop-down keeps its room: the pattern tool shows its icon only (the text stays for screen readers) */
+	.block-type__pattern > span {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+	}
+}
+
 .newspaper-thumbnail {
 	max-width: 200px;
 }
@@ -522,7 +558,6 @@ progress {
 
 /* hint line and offer of a block under its thumbnails */
 .newspaper-hint,
-.newspaper-foot,
 .newspaper-alert {
 	grid-column: 1 / -1;
 	font-size: 0.875rem;

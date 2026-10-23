@@ -4,6 +4,7 @@
 	import Button from './ui/Button.svelte';
 	import MetadataField from './MetadataField.svelte';
 	import { DebouncedEdits } from './debounce';
+	import { ruleText } from './ruleText';
 	import type { BlockNode, TypeOption } from '../types';
 
 	interface Props {
@@ -14,7 +15,7 @@
 	}
 
 	/**
-	 * The fields of a block: type, date, number and the visible metadata fields (page range and additional data: see BlockFooter).
+	 * The fields of a block: type, date, number, (for a block of level 0) the pagination rule and the visible metadata fields (page range and additional data: see BlockFooter).
 	 * `main` is set for a block of level 0: only it may become "without block", be repeated by a pattern or be continued; the others
 	 * show a colour dot (`color`) instead of an icon.
 	 */
@@ -29,18 +30,14 @@
 	const flags = $derived(app.flagsFor(node));
 	const fields = $derived(app.fieldsOf(node));
 	const canContinue = $derived(main && app.isGeneratable(node));
+	const continueText = $derived(t('plugin_newspaperRecognizer_continue_button_' + (info?.dated && info.numbered ? 'both' : info?.dated ? 'date' : 'number')));
+	const rule = $derived(ruleText(app.settings.rules[start.type ?? '']?.beginsWith, t));
 
 	// date and number are applied when the typing pauses (or the field is left), not with every key; the page counts as changed at once,
 	// so that saving is possible while the typing is still pending (leaving the field for the button applies it first)
 	const edits = new DebouncedEdits(() => (app.dataDirty = true));
 	$effect(() => () => edits.cancelAll());
 </script>
-
-{#snippet continueButton()}
-	<Button class="text-nowrap" icon="calendar-plus" data-continue title={t('plugin_newspaperRecognizer_continueFromHere')} onclick={() => app.openDialog('continue', node)}>
-		{t('plugin_newspaperRecognizer_continue_short')}
-	</Button>
-{/snippet}
 
 <div class="d-flex flex-column gap-2">
 	<!-- type, hidden data and tools share one input group, so they line up with the field -->
@@ -57,42 +54,62 @@
 				{/if}
 			</select>
 			{#if main}
-				<Button class="text-nowrap" icon="repeat" title={t('plugin_newspaperRecognizer_typePattern_title')} onclick={() => app.openDialog('pattern', node)}>
+				<Button class="text-nowrap block-type__pattern" icon="repeat" title={t('plugin_newspaperRecognizer_typePattern_title')} onclick={() => app.openDialog('pattern', node)}>
 					{t('plugin_newspaperRecognizer_typePattern_short')}
 				</Button>
 			{/if}
 		{/snippet}
 	</FormRow>
 
-	{#if info?.dated}
-		<FormRow id="{uid}-date" label={t('plugin_newspaperRecognizer_date') + (info.dateRequired ? ' *' : '')} icon="calendar"
-			errors={[
-				flags.invalidDate && `${t('plugin_newspaperRecognizer_wrongDateFormat')} ${app.dateFormatPattern}`,
-				flags.missingDate && t('plugin_newspaperRecognizer_validation_missingRequired'),
-				flags.duplicate && t('plugin_newspaperRecognizer_validation_duplicate'),
-			]}>
-			{#snippet children(aria)}
-				<input type="text" class="form-control" id="{uid}-date" value={start.dateInput} placeholder={app.dateFormatPattern}
-					{...edits.field('date', value => app.changeDate(node, value))} {...aria} />
-				{#if canContinue}{@render continueButton()}{/if}
-			{/snippet}
-		</FormRow>
+	<!-- date and number sit in one grid, so the continue button can span the rows it fills -->
+	{#if info?.dated || info?.numbered}
+		<div class="block-dates" style="--rows: {(info?.dated ? 1 : 0) + (info?.numbered ? 1 : 0)};">
+			{#if info?.dated}
+				<FormRow id="{uid}-date" label={t('plugin_newspaperRecognizer_date') + (info.dateRequired ? ' *' : '')} icon="calendar"
+					errors={[
+						flags.invalidDate && `${t('plugin_newspaperRecognizer_wrongDateFormat')} ${app.dateFormatPattern}`,
+						flags.missingDate && t('plugin_newspaperRecognizer_validation_missingRequired'),
+						flags.duplicate && t('plugin_newspaperRecognizer_validation_duplicate'),
+					]}>
+					{#snippet children(aria)}
+						<input type="text" class="form-control" id="{uid}-date" value={start.dateInput} placeholder={app.dateFormatPattern}
+							{...edits.field('date', value => app.changeDate(node, value))} {...aria} />
+					{/snippet}
+				</FormRow>
+			{/if}
+
+			{#if info?.numbered}
+				<FormRow id="{uid}-number" label={t('plugin_newspaperRecognizer_nro') + (info.numberRequired ? ' *' : '')} icon="hash"
+					errors={[flags.missingNumber && t('plugin_newspaperRecognizer_validation_missingRequired')]}>
+					{#snippet children(aria)}
+						{#if info.partNumbered}
+							<input type="text" class="form-control" value={start.prefix || ''} aria-label={t('prefix')} placeholder={t('prefix')}
+								{...edits.field('prefix', value => app.changeField(node, 'prefix', value))} {...aria} />
+						{/if}
+						<input type="text" class="form-control" id="{uid}-number" value={start.number || ''} {...edits.field('number', value => app.changeField(node, 'number', value))} {...aria} />
+						{#if info.partNumbered}
+							<input type="text" class="form-control" value={start.suffix || ''} aria-label={t('suffix')} placeholder={t('suffix')}
+								{...edits.field('suffix', value => app.changeField(node, 'suffix', value))} {...aria} />
+						{/if}
+					{/snippet}
+				</FormRow>
+			{/if}
+
+			{#if canContinue}
+				<Button class="block-dates__continue" icon="calendar-plus" data-continue title={t('plugin_newspaperRecognizer_continueFromHere')} onclick={() => app.openDialog('continue', node)}>
+					{continueText}
+				</Button>
+			{/if}
+		</div>
 	{/if}
 
-	{#if info?.numbered}
-		<FormRow id="{uid}-number" label={t('plugin_newspaperRecognizer_nro') + (info.numberRequired ? ' *' : '')} icon="hash"
-			errors={[flags.missingNumber && t('plugin_newspaperRecognizer_validation_missingRequired')]}>
-			{#snippet children(aria)}
-				{#if info.partNumbered}
-					<input type="text" class="form-control" value={start.prefix || ''} aria-label={t('prefix')} placeholder={t('prefix')}
-						{...edits.field('prefix', value => app.changeField(node, 'prefix', value))} {...aria} />
-				{/if}
-				<input type="text" class="form-control" id="{uid}-number" value={start.number || ''} {...edits.field('number', value => app.changeField(node, 'number', value))} {...aria} />
-				{#if info.partNumbered}
-					<input type="text" class="form-control" value={start.suffix || ''} aria-label={t('suffix')} placeholder={t('suffix')}
-						{...edits.field('suffix', value => app.changeField(node, 'suffix', value))} {...aria} />
-				{/if}
-				{#if canContinue && !info.dated}{@render continueButton()}{/if}
+	{#if main && app.settings.enabled}
+		<FormRow id="{uid}-pagination" label={t('plugin_newspaperRecognizer_pagination_rules_title')} icon="list-numbers">
+			{#snippet children()}
+				<input type="text" class="form-control" id="{uid}-pagination" value={rule} title={rule} readonly />
+				<Button class="text-nowrap" data-block-pagination={node.first} onclick={() => app.openRulesDialog(node.first)}>
+					{t('plugin_newspaperRecognizer_pagination_rules_open')}
+				</Button>
 			{/snippet}
 		</FormRow>
 	{/if}

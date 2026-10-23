@@ -11,6 +11,7 @@
 	import PageRef from '../ui/PageRef.svelte';
 	import Toggle from '../ui/Toggle.svelte';
 	import DisclosureButton from '../ui/DisclosureButton.svelte';
+	import { PRESET_KEYS, ruleText as ruleTextOf } from '../ruleText';
 	import type { FreshOffer, Page, PaginationSettings, RulesScope, StreamPart } from '../../types';
 
 	interface Props {
@@ -42,8 +43,8 @@
 	const R = P + 'pagination_rules_';
 
 	// the rules offered besides "custom", with the key of their text
-	const PRESET_KEYS: Record<string, string> = { '1': 'arabic', 'i': 'roman', 'I': 'romanUpper', '[1]': 'fictitious', '– 1': 'firstNone', '–': 'none' };
 	const PRESETS = Object.keys(PRESET_KEYS);
+	const ruleText = (beginsWith: string[] | undefined) => ruleTextOf(beginsWith, t);
 	const LOOSE = '__loose__';
 	const fromBlock = $derived(first !== null && first !== undefined);
 	const scopeKinds: RulesScope['kind'][] = $derived(['none', ...(offers.length > 0 ? ['offers' as const] : []), ...(fromBlock ? ['block' as const, 'fromBlock' as const] : []), 'volume']);
@@ -231,15 +232,6 @@
 	const scope: RulesScope = $derived(scopeKind === 'offers' ? { kind: 'offers', offers, from: offerFrom, first: null } : { kind: scopeKind, first });
 	const scopeText = (kind: RulesScope['kind']) => (kind !== 'offers' ? t(R + 'scope_' + kind)
 		: offers.length === 1 ? t(R + 'scope_offersOne') : fmt(R + 'scope_offers', offers.length));
-
-	// how a rule reads in the configured hint: the name of its preset or the text itself
-	function ruleText(beginsWith: string[] | undefined) {
-		if (!beginsWith || beginsWith.length === 0) {
-			return t(R + 'ruleNone');
-		}
-		const text = beginsWith.join(' ');
-		return text in PRESET_KEYS ? t(R + 'preset_' + PRESET_KEYS[text]) : text;
-	}
 
 	/* the pages the scope covers, one group per block in page order, with their labels now and after the rules */
 	const preview = $derived.by(() => {

@@ -54,13 +54,6 @@
 
 	<BlockFooter {node} main />
 
-	{#if app.settings.enabled}
-		<div class="newspaper-foot">
-			<Button data-block-pagination={node.first} icon="list-numbers" onclick={() => app.openRulesDialog(node.first)}>
-				{t('plugin_newspaperRecognizer_pagination_rules_title')}
-			</Button>
-		</div>
-	{/if}
 	{#if offer}
 		<div data-offer class="alert alert-info newspaper-alert d-flex flex-wrap align-items-center gap-2 mb-0">
 			<Icon name="list-numbers" />
