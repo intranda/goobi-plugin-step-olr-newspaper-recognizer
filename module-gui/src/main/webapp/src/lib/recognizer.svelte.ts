@@ -89,6 +89,7 @@ export class Recognizer {
 	pointerDown = false
 	operations: Operation[] = []
 	hiddenCursor = -1
+	offerCursor = -1
 	lastJumped = -1 // index of the first page of the run the last jump led to
 	problemCursor: Record<string, number> = {}
 	// the element of the app, set by App.svelte before anything uses it
@@ -98,6 +99,8 @@ export class Recognizer {
 	missingRunList = $derived(missingRuns(this.pages))
 	changedCount = $derived(changedSinceOpening(this.pages).length)
 	showMissingBanner = $derived(this.settings.enabled && !this.missingDeclined && this.missingRunList.length > 0)
+	showOffersBanner = $derived(this.settings.enabled && this.offers.length >= 2)
+	offersPageCount = $derived(this.offers.reduce((sum, offer) => sum + offer.pages.length, 0))
 	showChangedBanner = $derived(this.settings.enabled && this.changedCount > 0)
 	// the notice about structures of the volume is part of the additional data notice
 	otherNotices = $derived(this.notices.filter(n => n.key !== PREFIX + 'notice_volumeHidden'))
@@ -520,6 +523,16 @@ export class Recognizer {
 		for (let i = first; i <= last; i++) {
 			field(i)?.classList.add('newspaper-flash')
 		}
+	}
+
+	/** scrolls to the next block that shows an offer, after the one of the last jump; from the last one back to the first */
+	jumpToNextOffer() {
+		const elements = [...this.root.querySelectorAll('[data-offer]')] as HTMLElement[]
+		if (elements.length === 0) {
+			return
+		}
+		this.offerCursor = (this.offerCursor + 1) % elements.length
+		elements[this.offerCursor].scrollIntoView({ behavior: 'smooth', block: 'center' })
 	}
 
 	/** scrolls smoothly so that the row of the block starts just below the sticky help line */

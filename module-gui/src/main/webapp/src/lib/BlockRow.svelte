@@ -62,11 +62,11 @@
 		</div>
 	{/if}
 	{#if offer}
-		<div data-offer class="newspaper-offer">
+		<div data-offer class="alert alert-info newspaper-alert d-flex flex-wrap align-items-center gap-2 mb-0">
 			<Icon name="list-numbers" />
 			<span>{app.offerText(row)}</span>
-			<Button variant="action" size="sm" data-offer-accept onclick={() => app.acceptOffer(node.first)}>{app.offerButton(row)}</Button>
-			<Button size="sm" class="p-0 px-1" data-offer-dismiss title={t('plugin_newspaperRecognizer_pagination_offer_dismiss')}
+			<Button variant="primary" size="sm" class="text-nowrap" data-offer-accept onclick={() => app.acceptOffer(node.first)}>{app.offerButton(row)}</Button>
+			<Button size="sm" class="p-0 px-1 ms-auto" data-offer-dismiss title={t('plugin_newspaperRecognizer_pagination_offer_dismiss')}
 				aria-label={t('plugin_newspaperRecognizer_pagination_offer_dismiss')} onclick={() => app.dismissOffer(node.first)}>
 				<Icon name="x" />
 			</Button>

@@ -510,7 +510,7 @@ progress {
 /* hint line and offer of a block under its thumbnails */
 .newspaper-hint,
 .newspaper-foot,
-.newspaper-offer {
+.newspaper-alert {
 	grid-column: 1 / -1;
 	font-size: 0.875rem;
 }
@@ -519,8 +519,7 @@ progress {
 	display: none;
 }
 
-.newspaper-hint,
-.newspaper-offer {
+.newspaper-hint {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;

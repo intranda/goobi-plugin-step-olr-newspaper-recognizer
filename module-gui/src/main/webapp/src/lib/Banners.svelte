@@ -31,6 +31,18 @@
 	</Alert>
 {/if}
 
+{#if app.showOffersBanner}
+	<Alert data-banner-offers class="d-flex flex-wrap align-items-center gap-3 mb-0">
+		<span>{fmt(P + 'pagination_offers_text', app.offers.length, app.offersPageCount)}</span>
+		<Button variant="primary" size="sm" class="text-nowrap" data-offers-apply onclick={() => app.acceptAllOffers()}>
+			{fmt(P + 'pagination_offers_apply', app.offersPageCount)}
+		</Button>
+		<Button size="sm" class="text-nowrap" data-offers-review onclick={() => app.openRulesDialog(null, 'offers')}>{t(P + 'pagination_offers_review')}</Button>
+		<Button size="sm" class="text-nowrap" data-offers-jump onclick={() => app.jumpToNextOffer()}>{t(P + 'pagination_offers_jump')}</Button>
+		<Button size="sm" class="text-nowrap" data-offers-hide onclick={() => app.dismissAllOffers()}>{t(P + 'pagination_offers_hide')}</Button>
+	</Alert>
+{/if}
+
 {#if app.showChangedBanner}
 	<Alert data-banner-changed class="d-flex flex-wrap align-items-center gap-3 mb-0">
 		<span>{app.changedText()}</span>
