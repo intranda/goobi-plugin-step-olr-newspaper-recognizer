@@ -152,26 +152,38 @@
 		selectOf(key)?.focus();
 	}
 
+	// the button that was clicked goes away: the focus moves to what takes its place, so that it stays in the dialog
+	async function focusAfter(selector: string) {
+		await tick();
+		body?.querySelector<HTMLElement>(selector)?.focus();
+	}
+
 	function removeRule(key: string) {
 		if (isConfigured(key)) {
 			setRow(key, { removed: true });
+			focusAfter(`[data-rule-row="${key}"] [data-rule-restore]`);
 			return;
 		}
 		setRow(key, ruleRow([]));
 		session = session.filter(entry => entry !== key);
 		added = added.filter(entry => entry !== key);
+		focusAfter('[data-rule-add]');
 	}
 
 	function restoreRule(key: string) {
 		setRow(key, configuredRow(key));
 		flash(key);
+		focusAfter(`[data-rule-row="${key}"] [data-rule-preset]`);
 	}
 
 	// the configuration group only; the session rules, the counting and the automatic setting stay
 	function resetConfigured() {
-		for (const entry of configuredRows.filter(differs)) {
-			restoreRule(entry.key);
+		const restored = configuredRows.filter(differs);
+		for (const entry of restored) {
+			setRow(entry.key, configuredRow(entry.key));
+			flash(entry.key);
 		}
+		focusAfter(`[data-rule-row="${restored[0]?.key}"] [data-rule-preset]`);
 	}
 
 	/* the menu of the types without rule; closes on Escape (not the dialog), on a choice or when the focus leaves it */
@@ -180,6 +192,9 @@
 	const menuItems = () => [...(menu?.querySelectorAll<HTMLElement>('button.dropdown-item') ?? [])];
 
 	function onmenukeydown(e: KeyboardEvent) {
+		if (!menuOpen) {
+			return;
+		}
 		if (e.key === 'Escape') {
 			e.stopPropagation();
 			menuOpen = false;
@@ -372,7 +387,7 @@
 												onclick={() => (menuOpen = !menuOpen)}>{t(R + 'add')}</Button>
 											{#if menuOpen}
 												<ul {@attach (element: HTMLElement) => element.querySelector<HTMLElement>('button.dropdown-item')?.focus()}
-													class="dropdown-menu show" data-rule-add-menu aria-label={t(R + 'addSelect')} style="position: absolute; left: 0; top: 100%;">
+													class="dropdown-menu show" tabindex="-1" data-rule-add-menu aria-label={t(R + 'addSelect')} style="position: absolute; left: 0; top: 100%;">
 													{#each addGroups as group (group.header)}
 														<li><h6 class="dropdown-header">{group.header}</h6></li>
 														{#each group.entries as entry (entry.key)}
