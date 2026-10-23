@@ -84,17 +84,23 @@ test('labelRange: none, one, roman and up to four labels', () => { // derived
 test('previewGroups: one group per block with before/after and changed count', () => {
   const child = (label, starts = []) => ({ label, depth: 2, starts });
   const loose = label => ({ label, depth: 0 });
+  // the supplement lies in the middle of the morning issue: the issue is one group over its own pages, the supplement follows it
   const list = pages(I('MorningIssue', '9'), p('10'), child('i', [start('NewspaperSupplement')]), child('ii'), p('11'),
     I('EveningIssue', '1'), p('2'), loose('x'), loose('y'));
   const simulated = ['1', '2', 'i', 'ii', '3', '1', '2', '–', '–'].map(label => ({ label }));
   const groups = previewGroups(list, simulated, [0, 1, 2, 3, 4, 5, 6, 7, 8]);
-  assert.deepEqual(groups.map(({ first, level, child: position, type, pages: of, before, after, changed }) => ({ first, level, child: position, type, pages: of, before, after, changed })), [
-    { first: 0, level: 0, child: 0, type: 'MorningIssue', pages: [0, 1], before: ['9', '10'], after: ['1', '2'], changed: 2 },
-    { first: 2, level: 1, child: 1, type: 'NewspaperSupplement', pages: [2, 3], before: ['i', 'ii'], after: ['i', 'ii'], changed: 0 },
-    { first: 4, level: 0, child: 0, type: 'MorningIssue', pages: [4], before: ['11'], after: ['3'], changed: 1 },
-    { first: 5, level: 0, child: 0, type: 'EveningIssue', pages: [5, 6], before: ['1', '2'], after: ['1', '2'], changed: 0 },
-    { first: 7, level: -1, child: 0, type: null, pages: [7, 8], before: ['x', 'y'], after: ['–', '–'], changed: 2 },
+  assert.deepEqual(groups, [
+    { first: 0, level: 0, child: 0, type: 'MorningIssue', root: 0, pages: [0, 1, 4], before: ['9', '10', '11'], after: ['1', '2', '3'], changed: 3 },
+    { first: 2, level: 1, child: 1, type: 'NewspaperSupplement', root: 0, pages: [2, 3], before: ['i', 'ii'], after: ['i', 'ii'], changed: 0 },
+    { first: 5, level: 0, child: 0, type: 'EveningIssue', root: 5, pages: [5, 6], before: ['1', '2'], after: ['1', '2'], changed: 0 },
+    { first: 7, level: -1, child: 0, type: null, root: 7, pages: [7, 8], before: ['x', 'y'], after: ['–', '–'], changed: 2 },
   ]);
+});
+
+test('previewGroups: a child block starting on the first page of its parent still follows it', () => { // derived
+  const list = pages({ label: '1', depth: 2, starts: [start('MorningIssue'), start('NewspaperSupplement')] }, p('2'));
+  const groups = previewGroups(list, list, [0, 1]);
+  assert.deepEqual(groups.map(group => [group.type, group.pages.join()]), [['MorningIssue', '1'], ['NewspaperSupplement', '0']]);
 });
 
 test('previewGroups: only the pages in indexes; a gap splits a loose run', () => { // derived

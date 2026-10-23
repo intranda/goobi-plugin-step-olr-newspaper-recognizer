@@ -106,34 +106,45 @@ export function labelRange(labels) {
 }
 
 /**
- * The rows of the pagination preview: the pages in indexes grouped by their deepest block in page order, so a child block is a group of
- * its own and splits its parent (child is its position in the parent, 0 on level 0). Pages without block form runs of level -1, which a
- * page outside indexes ends. before and after are the labels in pages and in simulated, changed the number of pages they differ on.
+ * The rows of the pagination preview: one group per block over the pages in indexes it owns itself (its deepest block), a block before its
+ * child blocks (child is the position in the parent, 0 on level 0) and the blocks of a level-0 block before the next one; root is the first
+ * page of that level-0 block. Pages without block form runs of level -1, which a page outside indexes ends (root is the run's first page).
+ * before and after are the labels in pages and in simulated, changed the number of pages they differ on.
  */
 export function previewGroups(pages, simulated, indexes) {
   const owners = new Array(pages.length).fill(null);
-  for (const node of flatten(buildTree(pages).roots)) {
-    for (let i = node.first; i <= node.last; i++) {
-      owners[i] = node;
+  const order = new Map();
+  for (const root of buildTree(pages).roots) {
+    for (const node of flatten([root])) {
+      order.set(node, { root: root.first, rank: order.size });
+      for (let i = node.first; i <= node.last; i++) {
+        owners[i] = node;
+      }
     }
   }
   const groups = [];
-  let previous = null;
+  const byNode = new Map();
+  let run = null;
   for (const i of indexes) {
     const node = owners[i];
-    const last = groups[groups.length - 1];
-    if (!last || node !== last.node || (!node && previous !== i - 1)) {
-      groups.push({ node, first: i, level: node ? node.level : -1, child: node && node.parent ? node.parent.children.indexOf(node) + 1 : 0,
-        type: node ? node.start.type ?? null : null, pages: [], before: [], after: [], changed: 0 });
+    let group = node ? byNode.get(node) : run && run.pages[run.pages.length - 1] === i - 1 ? run : null;
+    if (!group) {
+      group = { first: i, level: node ? node.level : -1, child: node && node.parent ? node.parent.children.indexOf(node) + 1 : 0,
+        type: node ? node.start.type ?? null : null, root: node ? order.get(node).root : i, rank: node ? order.get(node).rank : -1,
+        pages: [], before: [], after: [], changed: 0 };
+      groups.push(group);
+      if (node) {
+        byNode.set(node, group);
+      } else {
+        run = group;
+      }
     }
-    const group = groups[groups.length - 1];
     const before = pages[i].label ?? '';
     const after = simulated[i].label ?? '';
     group.pages.push(i);
     group.before.push(before);
     group.after.push(after);
     group.changed += before === after ? 0 : 1;
-    previous = i;
   }
-  return groups.map(({ node, ...group }) => group);
+  return groups.sort((a, b) => a.root - b.root || a.rank - b.rank).map(({ rank, ...group }) => group);
 }

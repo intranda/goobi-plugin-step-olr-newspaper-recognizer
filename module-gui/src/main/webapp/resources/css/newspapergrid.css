@@ -614,7 +614,7 @@ tr[data-rule-row].is-new .form-select {
 }
 
 details.newspaper-details > summary {
-	display: inline-flex;
+	display: flex;
 	align-items: center;
 	gap: 0.25rem;
 	list-style: none;

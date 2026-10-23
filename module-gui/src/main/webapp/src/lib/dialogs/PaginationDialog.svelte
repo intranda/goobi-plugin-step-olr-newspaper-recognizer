@@ -252,24 +252,37 @@
 	type Group = (typeof preview.groups)[number];
 
 	/*
-	 * the rows of the preview: with "hide unchanged" a run of two or more blocks without change is one row that opens to them (a single one
-	 * stays a row of its own); all rows start closed
+	 * the rows of the preview: with "hide unchanged" a run of level-0 blocks without change (with their child blocks, all unchanged) is one row
+	 * that opens to them; all rows start closed
 	 */
 	let hideUnchanged = $state(true);
 	let open: Set<string> = $state(new Set());
 	const id = $props.id();
 	const groupKey = (group: Group) => 'g' + group.first;
+	type Row = { fold: false, group: Group } | { fold: true, key: string, groups: Group[] };
 	const rowsView = $derived.by(() => {
-		const runs: Group[][] = [];
+		const roots: Group[][] = [];
 		for (const group of preview.groups) {
-			const last = runs[runs.length - 1];
-			if (hideUnchanged && group.changed === 0 && last && last[0].changed === 0) {
+			const last = roots[roots.length - 1];
+			if (last && last[0].root === group.root) {
 				last.push(group);
 			} else {
-				runs.push([group]);
+				roots.push([group]);
 			}
 		}
-		return runs.map(run => (run.length > 1 ? { fold: true as const, key: 'f' + run[0].first, groups: run } : { fold: false as const, group: run[0] }));
+		const unchanged = (root: Group[]) => root.every(group => group.changed === 0);
+		const runs: { fold: boolean, groups: Group[] }[] = [];
+		for (const root of roots) {
+			const last = runs[runs.length - 1];
+			const fold = hideUnchanged && unchanged(root);
+			if (fold && last?.fold) {
+				last.groups.push(...root);
+			} else {
+				runs.push({ fold, groups: [...root] });
+			}
+		}
+		return runs.flatMap((run): Row[] => (run.fold ? [{ fold: true, key: 'f' + run.groups[0].first, groups: run.groups }]
+			: run.groups.map(group => ({ fold: false, group }))));
 	});
 	// the block rows that can be seen: those not folded and those of an open fold
 	const visibleKeys = $derived(rowsView.flatMap(row => (!row.fold ? [groupKey(row.group)] : open.has(row.key) ? row.groups.map(groupKey) : [])));
@@ -289,7 +302,7 @@
 	const shown = (label: string) => label || t(P + 'pagination_label_placeholder');
 	const rangeText = (labels: string[]) => (labels.every(label => label === '') ? shown('') : labelRange(labels.map(shown)));
 	const changedText = (n: number) => (n === 1 ? t(R + 'changedOne') : fmt(R + 'changed', n));
-	const foldText = (groups: Group[]) => fmt(P + 'preview_unchanged', groups.length);
+	const foldText = (groups: Group[]) => (groups.length === 1 ? t(P + 'preview_unchangedOne') : fmt(P + 'preview_unchanged', groups.length));
 
 	const countText = $derived(scopeKind === 'none' ? ''
 		: preview.changed === 0 ? '· ' + t(R + 'unchanged')
@@ -354,7 +367,7 @@
 {#snippet groupRows(group: Group)}
 	{@const key = groupKey(group)}
 	{@const name = groupName(group)}
-	<tr id="{id}-row-{key}" data-preview-group={group.first + 1} data-preview-pages={group.pages.map(i => i + 1).join()} data-preview-changed={group.changed}
+	<tr id="{id}-row-{key}" data-preview-group={group.first + 1} data-preview-pages={group.pages.map((i: number) => i + 1).join()} data-preview-changed={group.changed}
 		class={group.child > 0 ? 'preview-start--child' : 'preview-start'}>
 		<td><DisclosureButton expanded={open.has(key)} controls="{id}-{key}" label={fmt(P + 'preview_showPages', name)} onclick={() => toggle(key)} /></td>
 		<td><PageRef number={group.first + 1} thumb={pages[group.first].image?.thumbnailUrl || null} /></td>
