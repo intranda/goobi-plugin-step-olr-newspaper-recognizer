@@ -104,7 +104,7 @@ export interface PendingChange { pages: Page[]; conflicts: Conflict[]; options: 
 
 export type DialogState =
 	| { kind: 'pattern' | 'continue'; ref: BlockRef; typeOptions: TypeOption[] }
-	| { kind: 'rules'; first: number | null; types: string[] };
+	| { kind: 'rules'; first: number | null; types: string[]; scope?: 'offers' };
 export interface Confirmation { title: string; text: string; button: string; action: () => void; icon?: string }
 
 /** The options of the page, see plugin_newspaperRecognizer.xhtml */

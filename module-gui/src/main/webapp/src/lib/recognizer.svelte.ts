@@ -4,7 +4,7 @@ import {
 	removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest, clonePages, siblingsFrom, syncDateInputs,
 	canMerge, makeLoose,
 } from '../../logic/blocks.mjs'
-import { initLabels, structureChanged, paginateBlock } from '../../logic/pagination.mjs'
+import { initLabels, structureChanged, streams, volumeOffers, applyOffers } from '../../logic/pagination.mjs'
 import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules } from '../../logic/pagination-tools.mjs'
 import { previewLabel, ownNumberingAll } from '../../logic/typing.mjs'
 import { parseLabel, isCounting } from '../../logic/labels.mjs'
@@ -60,6 +60,8 @@ export class Recognizer {
 	notices: Notice[] = $state.raw([])
 	volumeHidden: Hidden = $state.raw({ structures: [], metadata: [] })
 	offers: Offer[] = $state.raw([]) // {first, pages, signature}: blocks that offer "Neu nach Regeln"
+	offerFrom: number | null = $state(null) // counting through the volume: first page of the first block whose offers follow the volume count
+	dismissedOffers: Map<number, string | null> = $state.raw(new Map()) // first page of a dismissed block → its signature at dismissal
 	preview: LabelPreview | null = $state.raw(null) // {index, text, mode, result}: the label being typed
 	settings: PaginationSettings = $state.raw(({} as PaginationSettings))
 
@@ -170,7 +172,7 @@ export class Recognizer {
 		initFieldStates(pages, this.catalog)
 		initLabels(pages)
 		this.pages = pages
-		this.offers = []
+		this.clearOffers()
 		this.preview = null
 		this.refresh()
 	}
@@ -332,15 +334,17 @@ export class Recognizer {
 	commit(newPages: Page[], options: ChangeOptions = {}) {
 		let pages = newPages
 		let offers: FreshOffer[] = []
+		let offerFrom: number | null = null
 		if (this.settings.enabled && options.paginate !== false) {
 			const result = structureChanged(this.pages, newPages, this.settings)
 			pages = result.pages
 			offers = result.offers
+			offerFrom = result.offerFrom
 		}
 		this.pages = pages
 		this.dataDirty = true
 		this.refresh()
-		this.offers = this.keepOffers(offers)
+		this.updateOffers(offers, offerFrom)
 	}
 
 	resolveConflicts(choices: Record<string, string>) {
@@ -365,6 +369,41 @@ export class Recognizer {
 	}
 
 	// ---- offers of "Neu nach Regeln"
+
+	clearOffers() {
+		this.offers = []
+		this.offerFrom = null
+		this.dismissedOffers = new Map()
+	}
+
+	/**
+	 * The open offers after a change: fresh ones of a structure change and the earlier ones whose block is as it was (keepOffers). When
+	 * counting through the volume, the blocks from offerFrom on (the earlier one of the old and the fresh offerFrom) offer the volume count
+	 * instead, except the dismissed ones whose block is as it was at dismissal; offerFrom ends when no block from there differs.
+	 */
+	updateOffers(fresh: FreshOffer[], freshFrom: number | null) {
+		const old = this.offerFrom
+		const from = freshFrom === null ? old : old === null ? freshFrom : Math.min(old, freshFrom)
+		if (!this.settings.countThroughVolume || from === null) {
+			this.offerFrom = null
+			this.dismissedOffers = new Map()
+			this.offers = this.keepOffers(fresh)
+			return
+		}
+		const earlier = this.keepOffers(fresh.filter(offer => offer.first < from)).filter(offer => offer.first < from)
+		const volume = volumeOffers(this.pages, this.settings, from)
+		if (volume.length === 0) {
+			this.offerFrom = null
+			this.dismissedOffers = new Map()
+			this.offers = earlier
+			return
+		}
+		const dismissed = new Map([...this.dismissedOffers].filter(([first, signature]) => signature === this.offerSignature(first)))
+		this.offerFrom = from
+		this.dismissedOffers = dismissed
+		const open = volume.filter(offer => !dismissed.has(offer.first)).map(offer => ({ ...offer, signature: this.offerSignature(offer.first) }))
+		this.offers = [...earlier, ...open]
+	}
 
 	/** an offer belongs to its block as it is: another structure change or label in the block makes it disappear */
 	offerSignature(first: number) {
@@ -399,19 +438,32 @@ export class Recognizer {
 		return this.fmt(count === 1 ? PREFIX + 'pagination_offerAcceptOne' : PREFIX + 'pagination_offerAccept', count)
 	}
 
+	/** the offered labels of that block; when counting through the volume the cumulative ones, also with earlier offers still open */
 	acceptOffer(first: number) {
 		const offer = this.offers.find(o => o.first === first)
 		if (!offer) {
 			return
 		}
-		const fresh = paginateBlock(this.pages, this.settings, first)
-		const pages = clonePages(this.pages)
-		offer.pages.forEach(i => { pages[i].label = fresh[i].label })
-		this.commit(pages, { paginate: false })
+		this.commit(applyOffers(this.pages, this.settings, [offer], this.offerFrom), { paginate: false })
 	}
 
+	/** every open offer in one change, the same labels as accepting them one by one in page order */
+	acceptAllOffers() {
+		if (this.offers.length === 0) {
+			return
+		}
+		this.commit(applyOffers(this.pages, this.settings, this.offers, this.offerFrom), { paginate: false })
+	}
+
+	/** the offer stays hidden until its block changes */
 	dismissOffer(first: number) {
+		this.dismissedOffers = new Map(this.dismissedOffers).set(first, this.offerSignature(first))
 		this.offers = this.offers.filter(offer => offer.first !== first)
+	}
+
+	dismissAllOffers() {
+		this.dismissedOffers = new Map([...this.dismissedOffers, ...this.offers.map(offer => [offer.first, this.offerSignature(offer.first)] as const)])
+		this.offers = []
 	}
 
 	// ---- banners
@@ -437,7 +489,7 @@ export class Recognizer {
 
 	/* all labels from the METS as last loaded, all offers gone */
 	restoreLabels() {
-		this.applyChange(restoreFromMets(this.pages), { paginate: false, afterCommit: () => { this.offers = [] } })
+		this.applyChange(restoreFromMets(this.pages), { paginate: false, afterCommit: () => this.clearOffers() })
 	}
 
 	hideHelp() {
@@ -662,23 +714,40 @@ export class Recognizer {
 		this.dialog = { kind, ref: refOf(node), typeOptions: this.typeOptions(node.parent ? node.parent.start.type : this.volumeType) }
 	}
 
-	/** the rules dialog; first is the first page of the block it was opened from, null from the actions menu */
-	openRulesDialog(first: number | null) {
-		this.dialog = { kind: 'rules', first, types: this.ruleTypes() }
+	/** the rules dialog; first is the first page of the block it was opened from, null from the actions menu; scope 'offers' preselects the open offers */
+	openRulesDialog(first: number | null, scope?: 'offers') {
+		this.dialog = { kind: 'rules', first, types: this.ruleTypes(), scope }
 	}
 
 	closeDialog() {
 		this.dialog = null
 	}
 
-	/** the rules of the dialog replace the settings of this session; the scope decides which labels they overwrite, open offers are void */
+	/**
+	 * The rules of the dialog replace the settings of this session; the scope decides which labels they overwrite. Scope offers relabels only
+	 * the offered pages, keeps the settings when the rules were not edited and the other offers open. Any other scope voids the open offers;
+	 * when counting through the volume, scope block turns the following blocks that no longer fit into offers.
+	 */
 	applyRules(settings: PaginationSettings, scope: RulesScope) {
 		this.dialog = null
-		this.settings = settings
-		this.offers = []
+		if (scope.kind === 'offers') {
+			if (JSON.stringify(settings) !== JSON.stringify(this.settings)) {
+				this.settings = settings
+			}
+			const applied = new Set((scope.offers ?? []).map(offer => offer.first))
+			this.offers = this.offers.filter(offer => !applied.has(offer.first))
+		} else {
+			this.settings = settings
+			this.clearOffers()
+			if (scope.kind === 'block' && settings.countThroughVolume) {
+				const volume = streams(this.pages, settings).list.find((stream: { key: string }) => stream.key === 'volume')
+				this.offerFrom = volume?.parts.find((part: { block: number }) => part.block > (scope.first as number))?.block ?? null
+			}
+		}
 		const pages = scope.kind === 'none' ? this.pages : simulateRules(this.pages, settings, scope)
 		if (this.sameState(this.pages, pages)) {
 			this.refresh()
+			this.updateOffers([], null)
 			return
 		}
 		this.applyChange(pages, { paginate: false })
