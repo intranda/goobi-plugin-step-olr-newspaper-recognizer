@@ -106,7 +106,8 @@
 	{#if main && app.settings.enabled}
 		<FormRow id="{uid}-pagination" label={t('plugin_newspaperRecognizer_pagination_rules_title')} icon="list-numbers">
 			{#snippet children()}
-				<input type="text" class="form-control" id="{uid}-pagination" value={rule} title={rule} readonly />
+				<!-- shows the rule only: no tab stop per block, the button next to it is the way to change it -->
+				<input type="text" class="form-control" id="{uid}-pagination" value={rule} title={rule} readonly tabindex="-1" />
 				<Button class="text-nowrap" data-block-pagination={node.first} onclick={() => app.openRulesDialog(node.first)}>
 					{t('plugin_newspaperRecognizer_pagination_rules_open')}
 				</Button>
