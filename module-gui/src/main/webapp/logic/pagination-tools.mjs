@@ -1,7 +1,7 @@
 // Volume-wide pagination tools, pure functions on the page list; behaviour as in the pagination v2 design (Missing pagination, Changed since opening, Rules dialog).
 import { clonePages } from './blocks.mjs';
 import { isCounting, nextLabel } from './labels.mjs';
-import { streams, valueIn } from './pagination.mjs';
+import { streams, valueIn, paginateParts, applyOffers } from './pagination.mjs';
 
 const isMissing = page => (page.label ?? '') === '';
 
@@ -47,32 +47,28 @@ export function restoreFromMets(pages) {
   return clonePages(pages).map(page => ({ ...page, label: page.metsLabel }));
 }
 
-/** Whether a part of a stream is covered by the scope: none, block (the block starting on page scope.first), fromBlock (that block and all after it), volume. */
+/**
+ * Whether a part of a stream is covered by the scope: none, block (the block starting on page scope.first), fromBlock (that block and all
+ * after it), volume, offers (the blocks of scope.offers).
+ */
 export function inScope(scope) {
   return {
     none: () => false,
     block: (stream, part) => part.block === scope.first,
     fromBlock: (stream, part) => part.block >= scope.first,
     volume: () => true,
+    offers: (stream, part) => scope.offers.some(offer => offer.first === part.block),
   }[scope.kind];
 }
 
 /**
  * New page list with the rules applied in the scope: none, block (the block starting on page first), fromBlock (that block and all after it),
- * volume (everything including pages without block). Streams without a rule (untyped blocks) keep their labels.
+ * volume (everything including pages without block), offers (only the offered pages, as applyOffers). Streams without a rule (untyped blocks)
+ * keep their labels.
  */
 export function simulateRules(pages, settings, scope) {
-  const out = clonePages(pages);
-  const covered = inScope(scope);
-  for (const stream of streams(out, settings).list) {
-    for (const part of stream.parts) {
-      if (!part.rule || !covered(stream, part)) {
-        continue;
-      }
-      for (const i of part.pages) {
-        out[i].label = valueIn(out, stream, i);
-      }
-    }
+  if (scope.kind === 'offers') {
+    return applyOffers(pages, settings, scope.offers, scope.from ?? null);
   }
-  return out;
+  return paginateParts(pages, settings, inScope(scope));
 }

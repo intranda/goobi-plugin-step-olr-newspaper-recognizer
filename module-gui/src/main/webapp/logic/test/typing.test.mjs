@@ -90,3 +90,15 @@ test('extra: a page that stops the run is not marked as stop when the run ends a
   assert.equal(result.stop, null); // derived
   assert.equal(result.end, 2); // derived
 });
+
+test('volume mode: typing in block 2 changes nothing in block 3', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
+  const list = pages(I('MorningIssue', '1'), p('2'), I('MorningIssue', '3'), p('4'), I('MorningIssue', '5'), p('6'));
+  for (const mode of ['follow', 'toEnd']) {
+    const result = previewLabel(list, s, 2, '7', mode);
+    assert.deepEqual(labels(result.pages).split(' '), ['1', '2', '7', '8', '5', '6']);
+    assert.deepEqual(result.run, [3]); // derived
+    assert.equal(result.stop, null); // derived
+    assert.equal(result.end, 3); // derived
+  }
+});

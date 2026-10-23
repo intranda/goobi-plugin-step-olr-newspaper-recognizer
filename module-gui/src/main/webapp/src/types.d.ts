@@ -71,7 +71,7 @@ export interface PaginationSettings {
 }
 /** the pages of one level-0 block (or loose run) in a pagination stream, with the rule of that block */
 export interface StreamPart { block: number; rule: string[] | null; pages: number[] }
-export interface RulesScope { kind: 'none' | 'block' | 'fromBlock' | 'volume'; first: number | null | undefined }
+export interface RulesScope { kind: 'none' | 'block' | 'fromBlock' | 'volume' | 'offers'; first: number | null | undefined; offers?: FreshOffer[]; from?: number | null }
 
 export interface Validation {
 	valid: boolean;

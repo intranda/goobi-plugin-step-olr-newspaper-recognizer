@@ -102,12 +102,12 @@ export function ruleValue(pages, settings, index) {
   return valueIn(pages, result.list.find(s => s.pages.includes(index)), index);
 }
 
-/** New page list, every page of the block starting on page first gets the rule value of its stream; streams without a rule keep their labels. */
-export function paginateBlock(pages, settings, first) {
+/** New page list, every page of the parts covered(stream, part) accepts gets the rule value of its stream; parts without a rule keep their labels. */
+export function paginateParts(pages, settings, covered) {
   const out = clonePages(pages);
   for (const stream of streams(out, settings).list) {
     for (const part of stream.parts) {
-      if (part.block !== first || !part.rule) {
+      if (!part.rule || !covered(stream, part)) {
         continue;
       }
       for (const i of part.pages) {
@@ -118,6 +118,9 @@ export function paginateBlock(pages, settings, first) {
   return out;
 }
 
+/** New page list, every page of the block starting on page first gets the rule value of its stream; streams without a rule keep their labels. */
+export const paginateBlock = (pages, settings, first) => paginateParts(pages, settings, (stream, part) => part.block === first);
+
 /** Indices of the labelled pages that paginateBlock would change in the block starting on page first. */
 export function blockOffer(pages, settings, first) {
   const paginated = paginateBlock(pages, settings, first);
@@ -126,52 +129,67 @@ export function blockOffer(pages, settings, first) {
 
 const sameRule = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-/** Per page: whether it changed stream (block, rule, or its predecessor in the stream is not in its stream any more), whether only the rule changed, and whether it really joined another block or rule. */
+/**
+ * Per page: whether it changed stream (block, rule, or its predecessor in the stream is not in its stream any more), whether only the rule changed,
+ * and whether it really joined another block or rule. Pages are matched by file name, so a page added in between leaves the others in place.
+ */
 function movedPages(before, after, settings) {
-  const streamsOf = list => {
+  const partsOf = list => {
     const byPage = new Array(list.length);
-    streams(list, settings).list.forEach(s => s.pages.forEach(i => { byPage[i] = s; }));
+    streams(list, settings).list.forEach(stream => stream.parts.forEach(part => part.pages.forEach(i => { byPage[i] = { stream, part }; })));
     return byPage;
   };
-  const was = streamsOf(before);
-  const now = streamsOf(after);
+  const was = partsOf(before);
+  const now = partsOf(after);
+  const id = (page, i) => page.filename ?? i;
+  const oldIndex = new Map(before.map((page, i) => [id(page, i), i]));
+  const newIndex = new Map(after.map((page, i) => [id(page, i), i]));
+  const toNew = i => (i < 0 ? i : newIndex.get(id(before[i], i)));
   return after.map((page, i) => {
-    const old = was[i];
-    if (!old) {
+    const j = oldIndex.get(id(page, i));
+    if (j === undefined) {
       return { moved: true, onlyRule: false, strong: true };
     }
-    const predecessor = old.pages[old.pages.indexOf(i) - 1];
-    const newPredecessor = now[i].pages[now[i].pages.indexOf(i) - 1];
-    const ruleChanged = !sameRule(old.rule, now[i].rule);
-    const blockChanged = old.block !== now[i].block;
+    const old = was[j];
+    const { stream, part } = now[i];
+    const predecessor = old.stream.pages[old.stream.pages.indexOf(j) - 1];
+    const newPredecessor = stream.pages[stream.pages.indexOf(i) - 1];
+    const ruleChanged = !sameRule(old.part.rule, part.rule);
+    const blockChanged = toNew(old.part.block) !== part.block;
     const otherChanged = blockChanged
-      || (predecessor === undefined ? newPredecessor !== undefined : !now[i].pages.includes(predecessor));
+      || (predecessor === undefined ? newPredecessor !== undefined : !stream.pages.includes(toNew(predecessor)));
     // strong: the page really joined another block or rule; weak: only its predecessor in the stream left
     return { moved: ruleChanged || otherChanged, onlyRule: ruleChanged && !otherChanged, strong: ruleChanged || blockChanged };
   });
 }
 
 /**
- * Paginates only what a structure change needs. In every stream the first page of a run of moved pages gets its rule value and
- * the pages after it count on as long as their old labels formed a sequence; the first page after a run gets the continuation
- * of its stream. Pages of a stream without counting rule value (–) all get that value. Offers: typed blocks of the moved pages
- * and, unless only types changed, the block before the first moved page, where the rules would change a labelled page.
+ * Paginates only what a structure change needs. In every part of a stream with moved pages the first page of a run of moved pages gets its
+ * rule value and the pages after it count on as long as their old labels formed a sequence; the first page after a run gets the continuation
+ * of its stream. Pages without counting rule value (–) all get that value. Parts without moved pages stay as they are, so when counting
+ * through the volume the count stops at the end of the changed blocks. Offers: typed blocks of the moved pages and, unless only types
+ * changed, the block before the first moved page, where the rules would change a labelled page; when counting through the volume instead
+ * the volumeOffers from offerFrom, the first block with a rule after the first moved page.
  */
 export function structureChanged(before, after, settings) {
   if (settings.automatic === false) {
-    return { pages: after, changed: [], offers: [] };
+    return { pages: after, changed: [], offers: [], offerFrom: null };
   }
   const out = clonePages(after);
   const old = out.map(page => page.label);
   const flags = movedPages(before, after, settings);
   const result = streams(out, settings);
   for (const stream of result.list) {
-    if (!stream.rule) {
-      continue;
-    }
+    const partAt = new Map(stream.parts.flatMap(part => part.pages.map(i => [i, part])));
+    const touched = new Set(stream.parts.filter(part => part.rule && part.pages.some(i => flags[i].moved)));
     let flowing = false;
     let previousOld = null;
     stream.pages.forEach((i, k) => {
+      const part = partAt.get(i);
+      if (!touched.has(part)) {
+        flowing = false;
+        return;
+      }
       const moved = flags[i].moved;
       const previousMoved = k > 0 && flags[stream.pages[k - 1]].moved;
       const previousStrong = k > 0 && flags[stream.pages[k - 1]].strong;
@@ -182,7 +200,7 @@ export function structureChanged(before, after, settings) {
       };
       if (moved ? !previousMoved : previousStrong) {
         set();
-      } else if (moved && (k < stream.rule.length || !isCounting(valueIn(out, stream, i)))) {
+      } else if (moved && (part.pages.indexOf(i) < part.rule.length || !isCounting(valueIn(out, stream, i)))) {
         set();
       } else if (flowing && follows(previousOld, old[i])) {
         out[i].label = valueIn(out, stream, i);
@@ -194,6 +212,12 @@ export function structureChanged(before, after, settings) {
   }
   const changed = out.map((page, i) => i).filter(i => out[i].label !== old[i]);
   const movedIndexes = flags.map((flag, i) => i).filter(i => flags[i].moved);
+  if (settings.countThroughVolume) {
+    const volume = result.list.find(stream => stream.key === 'volume');
+    const later = movedIndexes.length && volume ? volume.parts.find(part => part.block > movedIndexes[0]) : undefined;
+    const offerFrom = later ? later.block : null;
+    return { pages: out, changed, offers: offerFrom === null ? [] : volumeOffers(out, settings, offerFrom), offerFrom };
+  }
   const blocks = new Set();
   if (movedIndexes.length) {
     const owner = new Array(out.length);
@@ -207,7 +231,47 @@ export function structureChanged(before, after, settings) {
   const offers = [...blocks].sort((a, b) => a - b)
     .map(first => ({ first, pages: blockOffer(out, settings, first) }))
     .filter(offer => offer.pages.length);
-  return { pages: out, changed, offers };
+  return { pages: out, changed, offers, offerFrom: null };
+}
+
+/** The volume count from the block starting on page from to the end: every block from there on with the rules applied. */
+const countFrom = (pages, settings, from) => paginateParts(pages, settings, (stream, part) => part.block >= from);
+
+/**
+ * Offers when counting through the volume: one per block starting on or after page from whose labelled pages differ from the volume count
+ * from there, as if all earlier offers were accepted; pages are the labelled pages that would change.
+ */
+export function volumeOffers(pages, settings, from) {
+  const target = countFrom(pages, settings, from);
+  const byBlock = new Map();
+  for (const stream of streams(pages, settings).list) {
+    for (const part of stream.parts.filter(p => p.block >= from)) {
+      const differ = part.pages.filter(i => pages[i].label !== '' && target[i].label !== pages[i].label);
+      byBlock.set(part.block, [...(byBlock.get(part.block) ?? []), ...differ]);
+    }
+  }
+  return [...byBlock.entries()].sort((a, b) => a[0] - b[0])
+    .map(([first, list]) => ({ first, pages: list.sort((a, b) => a - b) }))
+    .filter(offer => offer.pages.length);
+}
+
+/**
+ * New page list with the offered pages relabelled. In block mode (from null) each offer in page order as its block paginated on the list so
+ * far; when counting through the volume the labels of the volume count from page from, so one offer can be accepted before earlier ones.
+ */
+export function applyOffers(pages, settings, offers, from) {
+  const sorted = [...offers].sort((a, b) => a.first - b.first);
+  if (from === null) {
+    return sorted.reduce((out, offer) => {
+      const fresh = paginateBlock(out, settings, offer.first);
+      offer.pages.forEach(i => { out[i].label = fresh[i].label; });
+      return out;
+    }, clonePages(pages));
+  }
+  const target = countFrom(pages, settings, from);
+  const out = clonePages(pages);
+  sorted.forEach(offer => offer.pages.forEach(i => { out[i].label = target[i].label; }));
+  return out;
 }
 
 export function initLabels(pages) {

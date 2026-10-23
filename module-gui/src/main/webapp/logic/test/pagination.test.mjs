@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { streams, ruleValue, paginateBlock, initLabels, structureChanged, blockOffer } from '../pagination.mjs';
+import { streams, ruleValue, paginateBlock, initLabels, structureChanged, blockOffer, volumeOffers, applyOffers } from '../pagination.mjs';
 import { simulateRules } from '../pagination-tools.mjs';
-import { pages, start, settings, labels, DEFAULT_RULES } from './fixtures.mjs';
+import { pages, start, settings, labels, DEFAULT_RULES, insertPage } from './fixtures.mjs';
 
 const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });
 const p = (label = '', depth = 1) => ({ label, depth });
@@ -335,4 +335,108 @@ test('volume mode: paginateBlock of a later block continues from the block befor
   const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
   const list = pages(I('MorningIssue', '1'), p('2'), I('MorningIssue', '9'), p('9'));
   assert.deepEqual(each(paginateBlock(list, s, 2)), ['1', '2', '3', '4']);
+});
+
+// Automatic pagination and offers in volume mode.
+
+const setup = () => {
+  // blocks of 2 pages labelled 1 2 | 3 4 | 5 6 | 7 8; a page inserted into block 2
+  const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
+  const before = pages(I('MorningIssue', '1'), p('2'), I('MorningIssue', '3'), p('4'), I('MorningIssue', '5'), p('6'), I('MorningIssue', '7'), p('8'));
+  const after = insertPage(before, 3);
+  const r = structureChanged(before, after, s);
+  return { s, before, after, r };
+};
+
+test('volume mode: a new page in block 2 paginates block 2 only, later blocks get cumulative offers', () => {
+  const { r } = setup();
+  assert.deepEqual(labels(r.pages).split(' ').slice(0, 5), ['1', '2', '3', '4', '5']);
+  assert.deepEqual(labels(r.pages).split(' ').slice(5), ['5', '6', '7', '8']); // untouched
+  assert.deepEqual(r.offers.map(o => o.first), [5, 7]);
+  assert.equal(r.offerFrom, 5);
+});
+
+test('applyOffers: accepting the later offer first gives its cumulative labels', () => {
+  const { s, r } = setup();
+  const later = applyOffers(r.pages, s, [r.offers[1]], r.offerFrom);
+  assert.deepEqual(labels(later).split(' ').slice(7), ['8', '9']);
+  assert.deepEqual(labels(later).split(' ').slice(5, 7), ['5', '6']);
+});
+
+test('applyOffers: all at once equals one by one in page order', () => {
+  const { s, r } = setup();
+  const all = applyOffers(r.pages, s, r.offers, r.offerFrom);
+  const oneByOne = r.offers.reduce((list, o) => applyOffers(list, s, [o], r.offerFrom), r.pages);
+  assert.deepEqual(labels(all), labels(oneByOne));
+  assert.deepEqual(labels(all).split(' '), ['1', '2', '3', '4', '5', '6', '7', '8', '9']);
+});
+
+test('applyOffers in block mode equals accepting each offer with paginateBlock', () => {
+  const list = lab([I(M), p(), p(), I(M), p(), p()], '1 5 6 1 7 8');
+  const offers = [{ first: 0, pages: [1, 2] }, { first: 3, pages: [4, 5] }];
+  const accept = (pagesNow, offer) => {
+    const fresh = paginateBlock(pagesNow, settings(), offer.first);
+    return pagesNow.map((page, i) => (offer.pages.includes(i) ? { ...page, label: fresh[i].label } : page));
+  };
+  const expected = offers.reduce(accept, list);
+  assert.equal(labels(applyOffers(list, settings(), offers, null)), labels(expected));
+  assert.equal(labels(expected), '1 2 3 1 2 3'); // derived
+  assert.equal(labels(list), '1 5 6 1 7 8', 'input unchanged'); // derived
+});
+
+test('volumeOffers: a block that already fits gets no offer', () => {
+  const { s, r } = setup();
+  const list = applyOffers(r.pages, s, [r.offers[0]], r.offerFrom);
+  assert.deepEqual(volumeOffers(list, s, r.offerFrom).map(o => o.first), [7]);
+});
+
+test('switching to volume mode with scope none changes no label', () => {
+  const list = pages(I('MorningIssue', '1'), p('2'), I('MorningIssue', '1'), p('2'));
+  const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
+  assert.equal(labels(simulateRules(list, s, { kind: 'none' })), labels(list));
+});
+
+// extras (not in the brief)
+
+test('extra: volume mode, a new block detects its pages as moved although the stream stays the same', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['–', '1'] } }), countThroughVolume: true };
+  const before = lab([I(M), p(), I(M), p(), p()], '– 1 – 2 3');
+  const after = lab([I(M), p(), I(M), p(), I(M)], '– 1 – 2 3');
+  assert.deepEqual(each(structureChanged(before, after, s).pages), ['–', '1', '–', '2', '–']); // derived
+});
+
+test('extra: volume mode, the beginsWith values of a new block are counted within that block', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['–', '1'] } }), countThroughVolume: true };
+  const before = lab([I(M), p(), p(), p(), p()], '– 1 2 3 4');
+  const after = lab([I(M), p(), p(), I(M), p()], '– 1 2 3 4');
+  assert.deepEqual(each(structureChanged(before, after, s).pages), ['–', '1', '2', '–', '3']); // derived
+});
+
+test('extra: block mode structureChanged has offerFrom null', () => {
+  const before = lab([I(M), p(), p(), p(), p(), p()], '1 2 3 4 9 10');
+  const after = lab([I(M), p(), I(M), p(), p(), p()], '1 2 3 4 9 10');
+  assert.equal(structureChanged(before, after, settings()).offerFrom, null); // derived
+});
+
+test('extra: volume mode, a change in the last block leaves offerFrom null and makes no volume offers', () => {
+  const { s, before } = setup();
+  const after = insertPage(before, 7);
+  const r = structureChanged(before, after, s);
+  assert.deepEqual(each(r.pages), ['1', '2', '3', '4', '5', '6', '7', '8', '9']); // derived
+  assert.equal(r.offerFrom, null); // derived
+  assert.deepEqual(r.offers, []); // derived
+});
+
+test('extra: volume mode, every later block that would change gets an offer, also behind a block that fits', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
+  const before = pages(I(M, '1'), p('2'), I(M, '3'), p('4'), I(M, '6'), p('7'), I(M, '7'), p('8'));
+  const r = structureChanged(before, insertPage(before, 1), s);
+  assert.deepEqual(each(r.pages).slice(0, 3), ['1', '2', '3']); // derived
+  assert.deepEqual(offerShape(r.offers), [{ first: 3, pages: [3, 4] }, { first: 7, pages: [7, 8] }]); // derived
+});
+
+test('extra: simulateRules scope offers equals applyOffers', () => {
+  const { s, r } = setup();
+  const scope = { kind: 'offers', first: null, offers: r.offers, from: r.offerFrom };
+  assert.equal(labels(simulateRules(r.pages, s, scope)), labels(applyOffers(r.pages, s, r.offers, r.offerFrom)));
 });

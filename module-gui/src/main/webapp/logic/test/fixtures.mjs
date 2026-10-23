@@ -46,3 +46,10 @@ export const settings = (rules = DEFAULT_RULES, extra = {}) => ({ enabled: true,
 
 /** Page labels on one line, empty labels as '·'. */
 export const labels = list => list.map(p => p.label || '·').join(' ');
+
+/** New page list with an unlabelled page inserted at index, at the depth of the page before it and with the next free file name. */
+export function insertPage(list, index) {
+  const filename = `${String(list.length + 1).padStart(4, '0')}.tif`;
+  const page = { filename, result: 0, label: '', depth: list[index - 1].depth, starts: [] };
+  return [...list.slice(0, index), page, ...list.slice(index)];
+}
