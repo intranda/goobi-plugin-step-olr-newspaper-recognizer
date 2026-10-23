@@ -11,7 +11,7 @@
 	import PreviewTable from '../ui/PreviewTable.svelte';
 	import PageRef from '../ui/PageRef.svelte';
 	import MoreRows from '../ui/MoreRows.svelte';
-	import type { BlockNode, Page, PaginationSettings, RulesScope } from '../../types';
+	import type { BlockNode, Page, PaginationSettings, RulesScope, StreamPart } from '../../types';
 
 	interface Props {
 		pages: Page[];
@@ -158,7 +158,9 @@
 
 	/* the pages the scope covers with their label now and after the rules, in page order */
 	const view = $derived.by(() => {
-		const indexes = streams(pages, draft).list.filter(inScope(scope)).flatMap(stream => stream.pages).sort((a, b) => a - b);
+		const covered = inScope(scope);
+		const indexes = streams(pages, draft).list
+			.flatMap(stream => stream.parts.filter((part: StreamPart) => covered(stream, part)).flatMap((part: StreamPart) => part.pages)).sort((a, b) => a - b);
 		const simulated = simulateRules(pages, draft, scope);
 		const all = indexes.map(i => ({ page: i + 1, ...blockCell(owners[i]), rule: ruleOf(owners[i]), start: owners[i]?.node.first === i, child: (owners[i]?.child ?? 0) > 0, thumb: pages[i].image?.thumbnailUrl || null, before: pages[i].label ?? '', after: simulated[i].label ?? '' }));
 		return { rows: all, changed: all.filter(row => row.before !== row.after).length };

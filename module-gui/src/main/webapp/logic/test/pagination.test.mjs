@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { streams, ruleValue, paginateBlock, initLabels, structureChanged, blockOffer } from '../pagination.mjs';
+import { simulateRules } from '../pagination-tools.mjs';
 import { pages, start, settings, labels, DEFAULT_RULES } from './fixtures.mjs';
 
 const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });
@@ -301,4 +302,37 @@ test('structureChanged: supplement extended keeps own numbering after the contin
   const result = structureChanged(before, after, settings());
   assert.equal(labels(result.pages), '1 2 3 i ii iii 4 9');
   assert.deepEqual(offerShape(result.offers), [{ first: 0, pages: [7] }]); // derived
+});
+
+// Counting through the whole volume.
+
+const paginateAll = (list, s) => simulateRules(list, s, { kind: 'volume' });
+const each = list => labels(list).split(' ');
+
+test('volume mode: title pages keep – per block, the count carries on', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['–', '1'] } }), countThroughVolume: true };
+  const list = pages(I('MorningIssue'), p(), p(), I('MorningIssue'), p(), p());
+  assert.deepEqual(each(paginateAll(list, s)), ['–', '1', '2', '–', '3', '4']);
+});
+
+test('volume mode: a counting start value applies only in the first block', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
+  assert.deepEqual(each(paginateAll(pages(I('MorningIssue'), p(), I('MorningIssue'), p()), s)), ['1', '2', '3', '4']);
+});
+
+test('volume mode: pages without block and rule-less blocks are skipped, the count continues after them', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true, withoutBlock: ['–'] };
+  const list = pages(I('MorningIssue'), p(), { label: 'x', depth: 0 }, I(null, 'u'), p('u2'), I('MorningIssue'), p());
+  assert.deepEqual(each(paginateAll(list, s)), ['1', '2', '–', 'u', 'u2', '3', '4']);
+});
+
+test('block mode is unchanged: every block starts again', () => {
+  const s = settings({ MorningIssue: { beginsWith: ['1'] } });
+  assert.deepEqual(each(paginateAll(pages(I('MorningIssue'), p(), I('MorningIssue'), p()), s)), ['1', '2', '1', '2']);
+});
+
+test('volume mode: paginateBlock of a later block continues from the block before', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
+  const list = pages(I('MorningIssue', '1'), p('2'), I('MorningIssue', '9'), p('9'));
+  assert.deepEqual(each(paginateBlock(list, s, 2)), ['1', '2', '3', '4']);
 });

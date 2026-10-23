@@ -47,12 +47,12 @@ export function restoreFromMets(pages) {
   return clonePages(pages).map(page => ({ ...page, label: page.metsLabel }));
 }
 
-/** Whether a stream is covered by the scope: none, block (the block starting on page scope.first), fromBlock (that block and all after it), volume. */
+/** Whether a part of a stream is covered by the scope: none, block (the block starting on page scope.first), fromBlock (that block and all after it), volume. */
 export function inScope(scope) {
   return {
     none: () => false,
-    block: stream => stream.block === scope.first,
-    fromBlock: stream => stream.block >= scope.first,
+    block: (stream, part) => part.block === scope.first,
+    fromBlock: (stream, part) => part.block >= scope.first,
     volume: () => true,
   }[scope.kind];
 }
@@ -65,11 +65,13 @@ export function simulateRules(pages, settings, scope) {
   const out = clonePages(pages);
   const covered = inScope(scope);
   for (const stream of streams(out, settings).list) {
-    if (!stream.rule || !covered(stream)) {
-      continue;
-    }
-    for (const i of stream.pages) {
-      out[i].label = valueIn(out, stream, i);
+    for (const part of stream.parts) {
+      if (!part.rule || !covered(stream, part)) {
+        continue;
+      }
+      for (const i of part.pages) {
+        out[i].label = valueIn(out, stream, i);
+      }
     }
   }
   return out;
