@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { catalog, start, pages } from './fixtures.mjs';
-import { applyTypePattern, continueFrom, followingTypeCounts, movePatternEntry, numberModeMatters } from '../generation.mjs';
+import { applyTypePattern, continueFrom, followingTypeCounts, groupByDay, movePatternEntry, numberModeMatters } from '../generation.mjs';
 
 const ALL_DAYS = [true, true, true, true, true, true, true];
 const options = (overrides = {}) => ({ include: ['MorningIssue', 'EveningIssue'], mode: 'perDay', weekdays: ALL_DAYS, biweekly: false, ...overrides });
 
-/** One level-0 block per type letter: M = morning, E = evening, X = extra edition, T = table of contents. */
+/** One level-0 block per type letter: M = morning, E = evening, X = extra edition, T = table of contents, U = untyped. */
 function sequence(letters) {
-  const types = { M: 'MorningIssue', E: 'EveningIssue', X: 'ExtraEdition', T: 'TableOfContents' };
+  const types = { M: 'MorningIssue', E: 'EveningIssue', X: 'ExtraEdition', T: 'TableOfContents', U: null };
   return pages(...[...letters].map((letter, i) => ({
     depth: 1,
     starts: [start(types[letter], i === 0 ? { date: '1890-03-01', number: '1', prefix: 'Nr. ', suffix: 'a' } : {})],
@@ -22,7 +22,8 @@ test('M E M E per day: 1, 1, 2, 2 on 01., 01., 02., 02.', () => {
   const result = continueFrom(sequence('MEME'), { page: 0, level: 0 }, options(), catalog);
   assert.deepEqual(numbers(result), ['1', '1', '2', '2']);
   assert.deepEqual(dates(result), ['1890-03-01', '1890-03-01', '1890-03-02', '1890-03-02']);
-  assert.deepEqual(result.preview.map(r => r.note), ['start', 'sameDay', 'newDay', 'sameDay']);
+  assert.deepEqual(result.preview.map(r => r.newDay), [false, true, false]);
+  assert.equal(result.start.type, 'MorningIssue');
   assert.equal(result.count, 3);
 });
 
@@ -42,7 +43,7 @@ test('M M E: a repeated morning issue starts a new day', () => {
 test('blocks of types that are not included stay untouched', () => {
   const result = continueFrom(sequence('MXEM'), { page: 0, level: 0 }, options(), catalog);
   assert.deepEqual(numbers(result), ['1', null, '1', '2']);
-  assert.equal(result.preview[1].note, 'notIncluded');
+  assert.equal(result.preview[0].reason, 'excluded');
 });
 
 test('an included type without date gets the current day number, or the next number per issue', () => {
@@ -82,6 +83,54 @@ test('continueFrom never changes types and leaves its input unchanged', () => {
   assert.equal(list[1].starts[0].number, null);
 });
 
+test('continueFrom reports the old and the new values of each following block, the start block apart', () => {
+  const list = sequence('MEME');
+  list[2].starts[0].date = '1890-03-05';
+  list[2].starts[0].number = '7';
+  const result = continueFrom(list, { page: 0, level: 0 }, options(), catalog);
+  assert.deepEqual(result.start, { type: 'MorningIssue', date: '1890-03-01', number: '1', prefix: 'Nr. ', suffix: 'a' });
+  assert.deepEqual(result.preview.map(r => r.ref.page), [1, 2, 3]);
+  assert.deepEqual(result.preview[1].before, { date: '1890-03-05', number: '7' });
+  assert.deepEqual(result.preview[1].after, { date: '1890-03-02', number: '2' });
+  assert.deepEqual(result.preview[0].before, { date: null, number: null });
+  assert.deepEqual(result.preview[0].after, { date: '1890-03-01', number: '1' });
+});
+
+test('continueFrom names why a block is not included', () => {
+  const result = continueFrom(sequence('MXUTE'), { page: 0, level: 0 }, options({ include: ['MorningIssue', 'EveningIssue', 'TableOfContents'] }), catalog);
+  assert.deepEqual(result.preview.map(r => r.reason), ['excluded', 'untyped', 'noFields', null]);
+  assert.deepEqual(result.preview.map(r => r.changed), [false, false, false, true]);
+  assert.deepEqual(result.preview[0].before, result.preview[0].after);
+  assert.equal(result.count, 1);
+});
+
+test('continueFrom counts only the blocks whose values change', () => {
+  const list = sequence('MEME');
+  Object.assign(list[1].starts[0], { date: '1890-03-01', number: '1', prefix: 'Nr. ', suffix: 'a' });
+  const result = continueFrom(list, { page: 0, level: 0 }, options(), catalog);
+  assert.deepEqual(result.preview.map(r => r.changed), [false, true, true]);
+  assert.equal(result.count, 2);
+});
+
+test('groupByDay starts a group at every new day; blocks before the first new day belong to the start day', () => {
+  const result = continueFrom(sequence('MXEME'), { page: 0, level: 0 }, options(), catalog);
+  const groups = groupByDay(result.preview, result.start);
+  assert.deepEqual(groups.map(g => [g.date, g.dayNumber, g.rows.map(r => r.ref.page)]), [
+    ['1890-03-01', '1', [1, 2]],
+    ['1890-03-02', '2', [3, 4]],
+  ]);
+});
+
+test('groupByDay with a number-only start puts all blocks in one group without date', () => {
+  // the start block carries a date, but its type has none
+  const result = continueFrom(sequence('XXX'), { page: 0, level: 0 }, options({ include: ['ExtraEdition'], mode: 'perIssue' }), catalog);
+  assert.equal(result.start.date, null);
+  const groups = groupByDay(result.preview, result.start);
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].date, null);
+  assert.deepEqual(groups[0].rows.map(r => r.after.number), ['2', '3']);
+});
+
 test('applyTypePattern loops over this and the following siblings and clears fields', () => {
   const list = sequence('MMMT');
   list[1].starts[0].date = '1890-03-02';
@@ -105,7 +154,7 @@ test('dateMode perIssue: every included dated block gets the next date', () => {
   const result = continueFrom(sequence('MEME'), { page: 0, level: 0 }, options({ dateMode: 'perIssue', mode: 'perIssue' }), catalog);
   assert.deepEqual(dates(result), ['1890-03-01', '1890-03-02', '1890-03-03', '1890-03-04']);
   assert.deepEqual(numbers(result), ['1', '2', '3', '4']);
-  assert.deepEqual(result.preview.map(r => r.note), ['start', 'newDay', 'newDay', 'newDay']);
+  assert.deepEqual(result.preview.map(r => r.newDay), [true, true, true]);
 });
 
 test('dateMode perIssue respects weekdays, and per-day numbers follow the new dates', () => {

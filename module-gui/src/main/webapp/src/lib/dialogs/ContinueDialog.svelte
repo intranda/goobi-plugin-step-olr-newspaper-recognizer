@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { getApp } from '../recognizer.svelte';
 	import { buildTree, siblingsFrom } from '../../../logic/blocks.mjs';
-	import { continueFrom, followingTypeCounts, numberModeMatters } from '../../../logic/generation.mjs';
-	import { fromIso, formatByPattern, WEEKDAY_PRESETS } from '../../../logic/dates.mjs';
+	import { continueFrom, followingTypeCounts, groupByDay, numberModeMatters } from '../../../logic/generation.mjs';
+	import { fromIso, formatByPattern, weekday, WEEKDAY_PRESETS } from '../../../logic/dates.mjs';
 	import Modal from '../ui/Modal.svelte';
 	import Button from '../ui/Button.svelte';
 	import Icon from '../ui/Icon.svelte';
@@ -23,7 +23,7 @@
 
 	/**
 	 * Continues the date and number of a block over the blocks that follow it: which types take part, how date and number count and
-	 * on which weekdays the paper appears. The preview shows what the blocks get.
+	 * on which weekdays the paper appears. The preview lists the following blocks by publication day with their old and new values.
 	 */
 	let { pages, startRef, typeOptions, oncancel, onapply }: Props = $props();
 
@@ -61,6 +61,7 @@
 	let dateMode = $state('perDay');
 	let weekdays = $state([true, true, true, true, true, true, true]);
 	let biweekly = $state(false);
+	let hideUnchanged = $state(false);
 
 	const matters = $derived(numberModeMatters({ dateMode, include }, catalog));
 	// the setting shown; the user's choice is kept while it has no effect
@@ -75,11 +76,56 @@
 		const date = fromIso(iso);
 		return date ? formatByPattern(date, dateFormatPattern) : '—';
 	};
+	// "Fr 01.03.1912": the short weekday in front of the date
+	const dayText = (iso: string) => {
+		const date = fromIso(iso);
+		return date ? t(DAYS.find(day => day.index === weekday(date))!.key).slice(0, 2) + ' ' + formatByPattern(date, dateFormatPattern) : iso;
+	};
+	const numberText = (number: string) => t(P + 'preview_number') + ' ' + number;
+	const reasonText = (reason: string) => t(P + 'continue_reason_' + reason);
+
+	// "ab Fr 01.03.1912, Nr. 61": only the parts the type of the start block has (continueFrom leaves the others out)
+	const startingPoint = $derived(result.start
+		? fmt(P + 'continue_startingPoint', [result.start.date && dayText(result.start.date), result.start.number && numberText(result.start.number)].filter(Boolean).join(', '))
+		: '');
+	const summary = $derived.by(() => {
+		const skipped = result.preview.filter(row => row.reason).length;
+		const same = result.preview.length - skipped - result.count;
+		return [
+			result.count > 0 && fmt(P + (result.count === 1 ? 'continue_changedOne' : 'continue_changedMany'), result.count),
+			same > 0 && fmt(P + (same === 1 ? 'continue_sameOne' : 'continue_sameMany'), same),
+			skipped > 0 && fmt(P + 'continue_skipped', skipped),
+		].filter(Boolean).join(', ');
+	});
+	// the days with the rows still shown, the first PREVIEW_ROWS of them; a day keeps its header while one of its rows is shown, and
+	// counts all its blocks, the hidden ones too
+	const days = $derived(result.start ? groupByDay(result.preview, result.start) : []);
+	const visibleCount = $derived(result.preview.filter(row => !hideUnchanged || row.changed).length);
+	const shownDays = $derived.by(() => {
+		let room = PREVIEW_ROWS;
+		return days.map(day => {
+			const rows = day.rows.filter(row => !hideUnchanged || row.changed).slice(0, room);
+			room -= rows.length;
+			return { ...day, blocks: day.rows.length, rows };
+		}).filter(day => day.rows.length > 0);
+	});
+	// a header needs a date or a day number to name; without dates and with a single day it would only repeat the starting point
+	const headers = $derived(days.some(day => day.date) || (numberMode === 'perDay' && days.length > 1));
 	const toggleInclude = (type: string | null) => (include = include.includes(type) ? include.filter(t => t !== type) : [...include, type]);
 	const toggleDay = (index: number) => (weekdays = weekdays.map((on, i) => (i === index ? !on : on)));
 </script>
 
-<Modal title={t(P + 'continue_title')} size="xl" onclose={oncancel}>
+<!-- an unchanged value plain; a changed one in the colour of changes with the old one struck through above it -->
+{#snippet value(before: string, after: string)}
+	{#if before === after}
+		{after}
+	{:else}
+		{#if before !== '—'}<span class="preview-old"><span class="visually-hidden">{t(P + 'preview_before')}: </span>{before}</span>{/if}
+		<span class="preview-changed">{after}</span>
+	{/if}
+{/snippet}
+
+<Modal title={t(P + 'continue_title')} size="xl" data-continue-dialog="true" onclose={oncancel}>
 	<!-- options and preview side by side, stacked on small screens -->
 	<div class="row g-4">
 		<div class="col-12 col-lg-5 d-flex flex-column gap-3">
@@ -146,33 +192,52 @@
 			</fieldset>
 		</div>
 
-		<div class="col-12 col-lg-7 continue-preview">
-			<h5 class="mb-2">{t(P + 'preview')}</h5>
+		<div class="col-12 col-lg-7 continue-preview" data-continue-preview>
+			<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+				<h5 class="mb-0 me-auto">
+					{t(P + 'preview')}
+					{#if summary}<span class="small text-muted fw-normal" data-continue-summary>· {summary}</span>{/if}
+				</h5>
+				{#if !result.error}
+					<Toggle class="btn-sm" data-preview-hide pressed={hideUnchanged} onclick={() => (hideUnchanged = !hideUnchanged)}>{t(P + 'preview_hideUnchanged')}</Toggle>
+				{/if}
+			</div>
 			{#if result.error}
 				<div class="alert alert-warning mb-0">{t(P + 'continue_error_' + result.error)}</div>
 			{:else}
+				<p class="mb-2" data-continue-start>{startingPoint}</p>
 				<PreviewTable columns={[
 					{ label: t(P + 'preview_block'), col: 'preview-col-block' },
 					{ label: t(P + 'preview_type') },
 					{ label: t(P + 'preview_date'), col: 'preview-col-date' },
 					{ label: t(P + 'preview_number'), col: 'preview-col-number' },
-					{ label: t(P + 'preview_note'), col: 'preview-col-note', th: 'preview-note' },
 				]}>
-					{#each result.preview.slice(0, PREVIEW_ROWS) as row (row.ref.page)}
-						<tr class={row.note === 'notIncluded' ? 'text-muted' : undefined}>
-							<td><PageRef number={row.ref.page + 1} thumb={thumb(row.ref.page)} /></td>
-							<td>
-								{typeLabel(row.type)}
-								<!-- on narrow screens the note column is hidden, the note follows the type -->
-								{#if row.note}<div class="preview-note-inline small text-muted">{t(P + 'continue_note_' + row.note)}</div>{/if}
-							</td>
-							<td>{formatDate(row.date)}</td>
-							<td>{row.number || '—'}</td>
-							<td class="preview-note">{row.note ? t(P + 'continue_note_' + row.note) : ''}</td>
-						</tr>
+					{#each shownDays as day (day.rows[0].ref.page)}
+						{#if headers}
+							<tr class="preview-day" data-continue-day>
+								<th colspan="4" scope="rowgroup">
+									<Icon name="calendar" class="me-1" />
+									{[day.date && dayText(day.date), numberMode === 'perDay' && day.dayNumber && numberText(day.dayNumber)].filter(Boolean).join(' · ')}
+									<span class="small text-muted fw-normal">· {day.blocks === 1 ? t(P + 'continue_dayBlocksOne') : fmt(P + 'continue_dayBlocks', day.blocks)}</span>
+								</th>
+							</tr>
+						{/if}
+						{#each day.rows as row (row.ref.page)}
+							<tr class={row.reason ? 'preview-skip' : undefined} data-continue-row={row.ref.page + 1} data-changed={row.changed}>
+								<td><PageRef number={row.ref.page + 1} thumb={thumb(row.ref.page)} /></td>
+								<td>
+									{#if row.reason}
+										<span title={reasonText(row.reason)}><Icon name="circle-minus" class="me-1" /><span class="visually-hidden">{reasonText(row.reason)}, </span></span>
+									{/if}
+									{typeLabel(row.type)}
+								</td>
+								<td>{@render value(formatDate(row.before.date), formatDate(row.after.date))}</td>
+								<td>{@render value(row.before.number || '—', row.after.number || '—')}</td>
+							</tr>
+						{/each}
 					{/each}
 				</PreviewTable>
-				<MoreRows count={result.preview.length - PREVIEW_ROWS} />
+				<MoreRows count={visibleCount - PREVIEW_ROWS} />
 			{/if}
 		</div>
 	</div>

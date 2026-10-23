@@ -37,7 +37,7 @@
 </script>
 
 {#snippet continueButton()}
-	<Button class="text-nowrap" icon="calendar-plus" title={t('plugin_newspaperRecognizer_continueFromHere')} onclick={() => app.openDialog('continue', node)}>
+	<Button class="text-nowrap" icon="calendar-plus" data-continue title={t('plugin_newspaperRecognizer_continueFromHere')} onclick={() => app.openDialog('continue', node)}>
 		{t('plugin_newspaperRecognizer_continue_short')}
 	</Button>
 {/snippet}

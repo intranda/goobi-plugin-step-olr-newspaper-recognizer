@@ -371,22 +371,40 @@ progress {
 .preview-col-page { width: 6rem; }
 .rules-custom { max-width: 7rem; }
 
-/* preview columns; on narrow screens without thumbnail and note column (the note follows the type) */
+/* preview columns; on narrow screens without thumbnail */
 .preview-col-block { width: 7rem; }
 .preview-col-date { width: 7.5rem; }
 .preview-col-number { width: 4rem; }
-.preview-col-note { width: 11rem; }
-.preview-note-inline { display: none; }
 
 @media (max-width: 575.98px) {
 	.preview-col-block { width: 3rem; }
 	.preview-col-date { width: 6rem; }
 	.preview-col-number { width: 3rem; }
-	.preview-col-note { width: 0; }
-	.preview-table .preview-thumb,
-	.preview-table .preview-note { display: none; }
-	.preview-note-inline { display: block; }
+	.preview-table .preview-thumb { display: none; }
 	.preview-table td:nth-child(2) { white-space: normal; }
+}
+
+/* continue preview: a changed value with the old one small and struck through above it */
+.preview-table .preview-old {
+	display: block;
+	font-size: 0.85em;
+	line-height: 1.1;
+	color: var(--bs-secondary-color);
+	text-decoration: line-through;
+}
+
+/* blocks the continuation leaves out: muted at the cells, since Bootstrap colours each cell and tr.text-muted does not reach them */
+.preview-table tr.preview-skip > td,
+.preview-table tr.preview-skip .icon-wrapper {
+	color: var(--bs-secondary-color);
+}
+
+/* the header row of a publication day */
+.preview-table tr.preview-day > th {
+	background: var(--clr-neutral-100, #f8f8f8);
+	font-weight: 600;
+	white-space: normal;
+	border-top: 2px solid var(--clr-neutral-400, #b8b8b8);
 }
 
 /* the continue preview has the most columns: compact whenever its pane is narrow, also beside the options */
@@ -398,10 +416,7 @@ progress {
 	.preview-col-block { width: 3rem; }
 	.preview-col-date { width: 6rem; }
 	.preview-col-number { width: 3rem; }
-	.preview-col-note { width: 0; }
-	.preview-table .preview-thumb,
-	.preview-table .preview-note { display: none; }
-	.preview-note-inline { display: block; }
+	.preview-table .preview-thumb { display: none; }
 	.preview-table td:nth-child(2) { white-space: normal; }
 }
 

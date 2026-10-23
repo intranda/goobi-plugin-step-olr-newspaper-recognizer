@@ -11,6 +11,16 @@ export function applyTypePattern(pages, startRef, pattern, catalog) {
   return out;
 }
 
+/**
+ * @typedef {{ ref: { page: number, level: number }, type: string | null, before: { date: string | null, number: string | null },
+ *   after: { date: string | null, number: string | null }, newDay: boolean, changed: boolean, reason: 'untyped' | 'excluded' | 'noFields' | null }} ContinueRow
+ */
+
+/**
+ * Continues date and number of the start block over its following siblings. The preview has one row per following block with its
+ * values before and after, whether it begins a new day, whether its values change and why it is left out (reason
+ * 'untyped' | 'excluded' | 'noFields', else null); `start` holds the values of the start block its type has, `count` the rows that change.
+ */
 export function continueFrom(pages, startRef, options, catalog) {
   const out = clonePages(pages);
   const [first, ...rest] = siblingsFrom(buildTree(out), startRef);
@@ -20,53 +30,79 @@ export function continueFrom(pages, startRef, options, catalog) {
   if (!startDate && startNumber === null) {
     return { pages, preview: [], count: 0, error: 'NO_DATE_OR_NUMBER' };
   }
+  const start = {
+    type: first.start.type,
+    date: startDate ? first.start.date : null,
+    number: startInfo.numbered ? first.start.number : null,
+    prefix: first.start.prefix,
+    suffix: first.start.suffix,
+  };
   const include = new Set(options.include);
   let date = startDate;
   let dayNumber = startNumber;
   let issueNumber = startNumber;
   let seen = new Set([first.start.type]);
-  let count = 0;
-  const row = (node, note) => ({ ref: refOf(node), type: node.start.type, date: node.start.date, number: node.start.number, note });
-  const preview = [row(first, 'start')];
+  /** @type {ContinueRow[]} */
+  const preview = [];
   for (const node of rest) {
-    const start = node.start;
-    const info = catalog[start.type] || {};
-    if (!start.type || !include.has(start.type) || !(info.dated || info.numbered)) {
-      preview.push(row(node, 'notIncluded'));
-      continue;
-    }
-    let note = '';
-    if (info.dated) {
-      // a new day starts when an included type repeats, or with every block in dateMode 'perIssue'
-      if (options.dateMode === 'perIssue' || seen.has(start.type)) {
-        seen = new Set([start.type]);
-        if (dayNumber !== null) {
-          dayNumber++;
+    const s = node.start;
+    const info = catalog[s.type] || {};
+    const before = { date: s.date, number: s.number };
+    const old = [s.date, s.number, s.prefix, s.suffix];
+    const reason = !s.type ? 'untyped' : !include.has(s.type) ? 'excluded' : !(info.dated || info.numbered) ? 'noFields' : null;
+    let newDay = false;
+    if (!reason) {
+      if (info.dated) {
+        // a new day starts when an included type repeats, or with every block in dateMode 'perIssue'
+        if (options.dateMode === 'perIssue' || seen.has(s.type)) {
+          seen = new Set([s.type]);
+          if (dayNumber !== null) {
+            dayNumber++;
+          }
+          if (date) {
+            date = nextDate(date, options);
+          }
+          newDay = true;
+        } else {
+          seen.add(s.type);
         }
         if (date) {
-          date = nextDate(date, options);
+          s.date = toIso(date);
+          s.dateRaw = null;
         }
-        note = 'newDay';
-      } else {
-        seen.add(start.type);
-        note = 'sameDay';
       }
-      if (date) {
-        start.date = toIso(date);
-        start.dateRaw = null;
-      }
-    }
-    if (startNumber !== null && info.numbered) {
-      start.number = String(options.mode === 'perDay' ? dayNumber : ++issueNumber);
-      if (info.partNumbered) {
-        start.prefix = first.start.prefix;
-        start.suffix = first.start.suffix;
+      if (startNumber !== null && info.numbered) {
+        s.number = String(options.mode === 'perDay' ? dayNumber : ++issueNumber);
+        if (info.partNumbered) {
+          s.prefix = first.start.prefix;
+          s.suffix = first.start.suffix;
+        }
       }
     }
-    count++;
-    preview.push(row(node, note));
+    const changed = [s.date, s.number, s.prefix, s.suffix].some((value, i) => value !== old[i]);
+    preview.push({ ref: refOf(node), type: s.type, before, after: { date: s.date, number: s.number }, newDay, changed, reason });
   }
-  return { pages: out, preview, count };
+  return { pages: out, preview, count: preview.filter(row => row.changed).length, start };
+}
+
+/**
+ * The preview rows of {@link continueFrom} by publication day: a new group at every row that begins a new day, the rows before the
+ * first one in the group of the start day. `date` is the day's date (null without dates), `dayNumber` its number when the start has a
+ * whole number (the number per day counts up with every new day).
+ * @param {ContinueRow[]} preview
+ * @returns {{ date: string | null, dayNumber: string | null, rows: ContinueRow[] }[]}
+ */
+export function groupByDay(preview, start) {
+  const startNumber = /^\d+$/.test((start.number || '').trim()) ? parseInt(start.number, 10) : null;
+  /** @type {{ date: string | null, dayNumber: string | null, rows: ContinueRow[] }[]} */
+  const groups = [{ date: start.date, dayNumber: start.number, rows: [] }];
+  for (const row of preview) {
+    if (row.newDay) {
+      groups.push({ date: row.after.date, dayNumber: startNumber === null ? null : String(startNumber + groups.length), rows: [] });
+    }
+    groups[groups.length - 1].rows.push(row);
+  }
+  return groups.filter(group => group.rows.length > 0);
 }
 
 /** A copy of the pattern with the entry at {@code from} moved to {@code to}; out of range moves change nothing. */
