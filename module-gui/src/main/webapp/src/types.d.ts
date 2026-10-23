@@ -99,8 +99,10 @@ export interface Notice { key: string; params?: string[] }
 export interface Operation { blockId: string; kind: string; action: string }
 
 export interface Conflict { kind: 'DELETED' | 'TYPE' | 'BOUNDARY' | 'EXPLICIT'; blockId: string; type: string | null; page: number; structures: HiddenStructure[]; metadata: HiddenMetadata[]; options: string[] }
-/** removed: index of a page removed by the change, so that offers can follow it */
-export interface ChangeOptions { bulk?: boolean; total?: number; paginate?: boolean; removed?: number; afterCommit?: () => void }
+/** removed: index of a page removed by the change, so that offers can follow it; offerFrom: without paginating, the first page of the block from which the volume offers follow */
+export interface ChangeOptions { bulk?: boolean; total?: number; paginate?: boolean; removed?: number; offerFrom?: number | null; afterCommit?: () => void }
+/** The stream of the blocks counted through the volume, see streams in logic/pagination.mjs */
+export interface VolumeStream { key: string; pages: number[]; parts: { block: number; pages: number[] }[] }
 export interface PendingChange { pages: Page[]; conflicts: Conflict[]; options: ChangeOptions }
 
 export type DialogState =

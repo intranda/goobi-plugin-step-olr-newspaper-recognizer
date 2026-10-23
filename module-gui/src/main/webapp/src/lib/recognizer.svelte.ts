@@ -14,7 +14,7 @@ import { positionColor } from '../../logic/colors.mjs'
 import { FacesBridge } from './faces-bridge.js'
 import { ThumbnailLoader } from './thumbnails.svelte'
 import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from '../../logic/hidden.mjs'
-import type { BlockFlags, Catalog, BlockNode, BlockRef, ChangeOptions, Confirmation, DialogState, FieldState, FreshOffer, Hidden, LabelMode, LabelPreview, Notice, Offer, Operation, Page, PaginationSettings, PendingChange, PluginProps, Problem, Row, RulesScope, Tree, TypeOption, Validation } from '../types';
+import type { BlockFlags, Catalog, BlockNode, BlockRef, ChangeOptions, Confirmation, DialogState, FieldState, FreshOffer, Hidden, LabelMode, LabelPreview, Notice, Offer, Operation, Page, PaginationSettings, PendingChange, PluginProps, Problem, Row, RulesScope, Tree, TypeOption, Validation, VolumeStream } from '../types';
 
 /** the problems that validation reports, with the key of their summary text */
 const PROBLEMS: [Problem, string][] = [
@@ -343,6 +343,8 @@ export class Recognizer {
 			pages = result.pages
 			offers = result.offers
 			offerFrom = result.offerFrom
+		} else if (options.offerFrom !== undefined) {
+			offerFrom = options.offerFrom
 		}
 		if (options.removed !== undefined) {
 			const removed = options.removed
@@ -605,7 +607,10 @@ export class Recognizer {
 		if (changes.length === 0) {
 			return
 		}
-		this.commit(result.pages, { paginate: false })
+		// counting through the volume the typing stops at the block end; the later blocks that no longer fit become offers
+		const volume = this.settings.countThroughVolume ? this.volumeStream(this.settings) : undefined
+		const offerFrom = volume?.pages.includes(index) ? this.volumeBlockAfter(volume, index) : null
+		this.commit(result.pages, { paginate: false, offerFrom })
 	}
 
 	/* the edit of a label field that lost its focus to a pointer press; runs before the handler of the click */
@@ -754,8 +759,7 @@ export class Recognizer {
 			this.settings = settings
 			this.clearOffers()
 			if (scope.kind === 'block' && settings.countThroughVolume) {
-				const volume = streams(this.pages, settings).list.find((stream: { key: string }) => stream.key === 'volume')
-				this.offerFrom = volume?.parts.find((part: { block: number }) => part.block > (scope.first as number))?.block ?? null
+				this.offerFrom = this.volumeBlockAfter(this.volumeStream(settings), scope.first as number)
 			}
 		}
 		const pages = scope.kind === 'none' ? this.pages : simulateRules(this.pages, settings, scope)
@@ -765,6 +769,16 @@ export class Recognizer {
 			return
 		}
 		this.applyChange(pages, { paginate: false })
+	}
+
+	/** the stream of the blocks counted through the volume with these settings */
+	volumeStream(settings: PaginationSettings): VolumeStream | undefined {
+		return streams(this.pages, settings).list.find((stream: { key: string }) => stream.key === 'volume')
+	}
+
+	/** first page of the first block of the volume stream after page index, null if none follows */
+	volumeBlockAfter(volume: VolumeStream | undefined, index: number) {
+		return volume?.parts.find(part => part.block > index)?.block ?? null
 	}
 
 	applyPattern(pattern: string[]) {
