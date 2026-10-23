@@ -432,10 +432,12 @@ progress {
 }
 
 /* the thumbnail is a button: no button look, the focus ring of the theme stays */
-.page-thumb {
+.page-thumb,
+.page-thumb:hover {
 	cursor: pointer;
 	line-height: 0;
 	background: transparent;
+	border-color: transparent;
 }
 
 /* the box of a thumbnail has its final size from the start; the image is fitted into it, so no image can change the layout */
