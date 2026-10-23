@@ -463,3 +463,19 @@ test('block mode: a page inserted into a block paginates that block only', () =>
   assert.deepEqual(each(r.pages), ['1', '2', '3', '4', '1', '2']); // derived
   assert.deepEqual(r.offers, []); // derived
 });
+
+// Fix round 1: a later offer takes its pages from the volume count after the earlier offers.
+
+test('volume mode: accepting all offers equals accepting one by one with the offers recomputed in between', () => {
+  const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
+  const before = lab([I(M), p(), p(), p(), p(), p(), I(M), p()], '1 2 3 4 9 10 11 8');
+  const after = lab([I(M), p(), I(M), p(), p(), p(), I(M), p()], '1 2 3 4 9 10 11 8');
+  const r = structureChanged(before, after, s);
+  assert.deepEqual(offerShape(r.offers), [{ first: 2, pages: [4, 5] }, { first: 6, pages: [7] }]);
+  assert.equal(r.offerFrom, 6);
+  const all = applyOffers(r.pages, s, r.offers, r.offerFrom);
+  const first = applyOffers(r.pages, s, [r.offers[0]], r.offerFrom);
+  const recomputed = applyOffers(first, s, volumeOffers(first, s, r.offerFrom), r.offerFrom);
+  assert.deepEqual(each(recomputed), ['1', '2', '3', '4', '5', '6', '7', '8']);
+  assert.deepEqual(each(all), each(recomputed));
+});

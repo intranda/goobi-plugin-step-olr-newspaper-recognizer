@@ -49,7 +49,8 @@ export function restoreFromMets(pages) {
 
 /**
  * Whether a part of a stream is covered by the scope: none, block (the block starting on page scope.first), fromBlock (that block and all
- * after it), volume, offers (the blocks of scope.offers).
+ * after it), volume, offers (the blocks of scope.offers). simulateRules applies scope offers with applyOffers; offers here is for the
+ * callers that list the pages a scope covers, such as the preview of the rules dialog.
  */
 export function inScope(scope) {
   return {

@@ -144,6 +144,7 @@ function movedPages(before, after, settings) {
   const id = (page, i) => page.filename ?? i;
   const oldIndex = new Map(before.map((page, i) => [id(page, i), i]));
   const newIndex = new Map(after.map((page, i) => [id(page, i), i]));
+  // file names are unique within a process, so they identify a page across the change
   const toNew = i => (i < 0 ? i : newIndex.get(id(before[i], i)));
   return after.map((page, i) => {
     const j = oldIndex.get(id(page, i));
@@ -225,6 +226,7 @@ export function structureChanged(before, after, settings) {
   const offers = [...blocks].sort((a, b) => a - b)
     .map(first => ({ first, pages: blockOffer(out, settings, first) }))
     .filter(offer => offer.pages.length);
+  // only level-0 blocks with a rule join the volume stream, so every part of it has a rule
   const volume = settings.countThroughVolume && result.list.find(stream => stream.key === 'volume');
   const later = movedIndexes.length && volume ? volume.parts.find(part => part.block > movedIndexes[0]) : undefined;
   if (!later) {
@@ -241,8 +243,10 @@ const countFrom = (pages, settings, from) => paginateParts(pages, settings, (str
  * Offers when counting through the volume: one per block starting on or after page from whose labelled pages differ from the volume count
  * from there, as if all earlier offers were accepted; pages are the labelled pages that would change.
  */
-export function volumeOffers(pages, settings, from) {
-  const target = countFrom(pages, settings, from);
+export const volumeOffers = (pages, settings, from) => offersAgainst(pages, settings, from, countFrom(pages, settings, from));
+
+/** The volumeOffers of pages against target, the volume count from page from. */
+function offersAgainst(pages, settings, from, target) {
   const byBlock = new Map();
   for (const stream of streams(pages, settings).list) {
     for (const part of stream.parts.filter(p => p.block >= from)) {
@@ -257,13 +261,20 @@ export function volumeOffers(pages, settings, from) {
 
 /**
  * New page list with the offered pages relabelled, offer by offer in page order on the list so far: an offer before page from (all of
- * them when from is null) as its block paginated, an offer from page from on with the volume count from there, so one offer can be
- * accepted before earlier ones and all at once equals one by one.
+ * them when from is null) as its block paginated, an offer from page from on with the volume count from there and with the pages its
+ * block offers now, after the offers before it. So one offer can be accepted before earlier ones, and all at once equals one by one
+ * with the offers recomputed in between.
  */
 export function applyOffers(pages, settings, offers, from) {
   return [...offers].sort((a, b) => a.first - b.first).reduce((out, offer) => {
-    const fresh = from === null || offer.first < from ? paginateBlock(out, settings, offer.first) : countFrom(out, settings, from);
-    offer.pages.forEach(i => { out[i].label = fresh[i].label; });
+    if (from === null || offer.first < from) {
+      const fresh = paginateBlock(out, settings, offer.first);
+      offer.pages.forEach(i => { out[i].label = fresh[i].label; });
+      return out;
+    }
+    const target = countFrom(out, settings, from);
+    const now = offersAgainst(out, settings, from, target).find(o => o.first === offer.first);
+    (now?.pages ?? []).forEach(i => { out[i].label = target[i].label; });
     return out;
   }, clonePages(pages));
 }
