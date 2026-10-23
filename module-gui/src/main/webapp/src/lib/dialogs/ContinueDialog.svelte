@@ -61,7 +61,7 @@
 	let dateMode = $state('perDay');
 	let weekdays = $state([true, true, true, true, true, true, true]);
 	let biweekly = $state(false);
-	let hideUnchanged = $state(false);
+	let hideUnchanged = $state(true);
 
 	const matters = $derived(numberModeMatters({ dateMode, include }, catalog));
 	// the setting shown; the user's choice is kept while it has no effect
