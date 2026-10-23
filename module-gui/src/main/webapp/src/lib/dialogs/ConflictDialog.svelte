@@ -4,6 +4,7 @@
 	import Modal from '../ui/Modal.svelte';
 	import Button from '../ui/Button.svelte';
 	import Check from '../ui/Check.svelte';
+	import Icon from '../ui/Icon.svelte';
 	import type { Conflict } from '../../types';
 
 	interface Props {
@@ -47,8 +48,11 @@
 		{#each groups as group (group.kind)}
 			<fieldset class="d-flex flex-column gap-2">
 				<legend class="fs-6 fw-bold mb-0">{t(P + group.kind)}</legend>
-				<details>
-					<summary>{t(P + 'affected')}: {group.conflicts.length}</summary>
+				<details class="newspaper-details">
+					<summary>
+						<Icon name="chevron-right" class="newspaper-details__closed" /><Icon name="chevron-down" class="newspaper-details__open" />
+						<span>{t(P + 'affected')}: {group.conflicts.length}</span>
+					</summary>
 					<ul class="mb-0">
 						{#each group.conflicts as conflict (conflict.blockId)}
 							<li>

@@ -1,6 +1,6 @@
 // Volume-wide pagination tools, pure functions on the page list; behaviour as in the pagination v2 design (Missing pagination, Changed since opening, Rules dialog).
-import { clonePages } from './blocks.mjs';
-import { isCounting, nextLabel } from './labels.mjs';
+import { buildTree, clonePages, flatten } from './blocks.mjs';
+import { follows, isCounting, nextLabel } from './labels.mjs';
 import { streams, valueIn, paginateParts, applyOffers } from './pagination.mjs';
 
 const isMissing = page => (page.label ?? '') === '';
@@ -89,4 +89,51 @@ export function sameSettings(a, b) {
     && Object.keys(ra).every(type => type in rb && ra[type][0] === rb[type][0] && ra[type][1] === rb[type][1]);
   return sameRules && JSON.stringify(a.withoutBlock || []) === JSON.stringify(b.withoutBlock || [])
     && (a.automatic !== false) === (b.automatic !== false) && !!a.countThroughVolume === !!b.countThroughVolume;
+}
+
+/**
+ * The labels of a preview row: '' for none, one label as is, first–last when each label follows the one before, else up to four labels
+ * one by one and more as first, second, …, last. It never shows a range that is not one.
+ */
+export function labelRange(labels) {
+  if (labels.length <= 1) {
+    return labels[0] ?? '';
+  }
+  if (labels.every((label, i) => i === 0 || follows(labels[i - 1], label))) {
+    return `${labels[0]}–${labels[labels.length - 1]}`;
+  }
+  return labels.length <= 4 ? labels.join(', ') : `${labels[0]}, ${labels[1]}, …, ${labels[labels.length - 1]}`;
+}
+
+/**
+ * The rows of the pagination preview: the pages in indexes grouped by their deepest block in page order, so a child block is a group of
+ * its own and splits its parent (child is its position in the parent, 0 on level 0). Pages without block form runs of level -1, which a
+ * page outside indexes ends. before and after are the labels in pages and in simulated, changed the number of pages they differ on.
+ */
+export function previewGroups(pages, simulated, indexes) {
+  const owners = new Array(pages.length).fill(null);
+  for (const node of flatten(buildTree(pages).roots)) {
+    for (let i = node.first; i <= node.last; i++) {
+      owners[i] = node;
+    }
+  }
+  const groups = [];
+  let previous = null;
+  for (const i of indexes) {
+    const node = owners[i];
+    const last = groups[groups.length - 1];
+    if (!last || node !== last.node || (!node && previous !== i - 1)) {
+      groups.push({ node, first: i, level: node ? node.level : -1, child: node && node.parent ? node.parent.children.indexOf(node) + 1 : 0,
+        type: node ? node.start.type ?? null : null, pages: [], before: [], after: [], changed: 0 });
+    }
+    const group = groups[groups.length - 1];
+    const before = pages[i].label ?? '';
+    const after = simulated[i].label ?? '';
+    group.pages.push(i);
+    group.before.push(before);
+    group.after.push(after);
+    group.changed += before === after ? 0 : 1;
+    previous = i;
+  }
+  return groups.map(({ node, ...group }) => group);
 }

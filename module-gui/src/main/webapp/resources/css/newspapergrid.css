@@ -369,8 +369,6 @@ progress {
 .preview-table td.preview-child { padding-left: 1.25rem; }
 
 .preview-col-page { width: 6rem; }
-.preview-col-name { width: 9rem; }
-.preview-col-rule { width: 9rem; }
 .rules-custom { max-width: 7rem; }
 
 /* preview columns; on narrow screens without thumbnail and note column (the note follows the type) */
@@ -607,4 +605,101 @@ tr[data-rule-row].is-new .form-select {
 .weekday-preset.is-active {
 	background-color: var(--clr-primary-400);
 	color: var(--clr-white, #fff);
+}
+
+/* the chevron that opens a preview row, and the native marker of <details> replaced by the same chevron (conflict dialog) */
+.newspaper-disclosure {
+	padding: 0 0.2rem;
+	line-height: 1;
+}
+
+details.newspaper-details > summary {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	list-style: none;
+	cursor: pointer;
+}
+
+details.newspaper-details > summary::-webkit-details-marker {
+	display: none;
+}
+
+details.newspaper-details > summary .newspaper-details__open,
+details.newspaper-details[open] > summary .newspaper-details__closed {
+	display: none;
+}
+
+details.newspaper-details[open] > summary .newspaper-details__open {
+	display: inline-flex;
+}
+
+/* pagination preview, one row per block: scrolls below a fixed header; ranges may wrap; an open row shows its pages as thumbnails */
+.preview-scroll {
+	container: pagination-preview / inline-size;
+	max-height: 32rem;
+	overflow-y: auto;
+	border: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+.preview-scroll .preview-table thead th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background: var(--bs-body-bg);
+	box-shadow: inset 0 -1px 0 var(--bs-border-color);
+}
+
+.preview-table--blocks td {
+	vertical-align: middle;
+}
+
+.preview-table--blocks td.preview-range {
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.preview-col-chev { width: 2.25rem; }
+.preview-col-range { width: 6.5rem; }
+.preview-col-count { width: 3rem; }
+
+.preview-table tr.preview-detail > td {
+	background: var(--clr-neutral-100, #f8f8f8);
+	white-space: normal;
+}
+
+.preview-cells {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	padding: 0.25rem 0 0.5rem;
+}
+
+.preview-cell {
+	width: 48px;
+	text-align: center;
+	font-size: 0.8rem;
+}
+
+.preview-cell__image {
+	width: 48px;
+	height: 64px;
+	border: 1px solid var(--clr-neutral-400, #ccc);
+}
+
+.preview-cell__old,
+.preview-cell__label {
+	display: block;
+	min-height: 1.2em;
+	line-height: 1.2;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+@container pagination-preview (max-width: 30rem) {
+	.preview-table--blocks .preview-col-page { width: 2.75rem; }
+	.preview-table--blocks .preview-col-range { width: 4.5rem; }
+	.preview-table--blocks .preview-thumb { display: none; }
+	.preview-table--blocks td:nth-child(3) { white-space: normal; }
 }

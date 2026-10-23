@@ -1,18 +1,17 @@
 <script lang="ts">
 	import { getApp } from '../recognizer.svelte';
-	import { buildTree, flatten } from '../../../logic/blocks.mjs';
 	import { streams } from '../../../logic/pagination.mjs';
-	import { inScope, simulateRules } from '../../../logic/pagination-tools.mjs';
+	import { inScope, labelRange, previewGroups, simulateRules } from '../../../logic/pagination-tools.mjs';
 	import { tick } from 'svelte';
 	import { positionColor } from '../../../logic/colors.mjs';
 	import Modal from '../ui/Modal.svelte';
 	import Button from '../ui/Button.svelte';
 	import Icon from '../ui/Icon.svelte';
 	import Check from '../ui/Check.svelte';
-	import PreviewTable from '../ui/PreviewTable.svelte';
 	import PageRef from '../ui/PageRef.svelte';
-	import MoreRows from '../ui/MoreRows.svelte';
-	import type { BlockNode, FreshOffer, Page, PaginationSettings, RulesScope, StreamPart } from '../../types';
+	import Toggle from '../ui/Toggle.svelte';
+	import DisclosureButton from '../ui/DisclosureButton.svelte';
+	import type { FreshOffer, Page, PaginationSettings, RulesScope, StreamPart } from '../../types';
 
 	interface Props {
 		pages: Page[];
@@ -33,7 +32,8 @@
 	 * The pagination rules of the session: how the labels of a type of block begin, whether they follow automatically, whether they count
 	 * through the volume and which labels the new rules overwrite. The rules are grouped by origin: those of the plugin configuration are
 	 * always listed and can be changed or removed for the session and restored; the rules created in the session follow, the other types
-	 * can be added from the menu. The preview shows the labels before and after, and the rule that applied, for the pages of that scope.
+	 * can be added from the menu. The preview shows the labels before and after for the pages of that scope, one row per block that opens to
+	 * its pages; blocks without change can be folded into one row.
 	 */
 	let { pages, settings, configured, types, first, offers, offerFrom, initialScope, oncancel, onapply }: Props = $props();
 
@@ -45,7 +45,6 @@
 	const PRESET_KEYS: Record<string, string> = { '1': 'arabic', 'i': 'roman', 'I': 'romanUpper', '[1]': 'fictitious', '– 1': 'firstNone', '–': 'none' };
 	const PRESETS = Object.keys(PRESET_KEYS);
 	const LOOSE = '__loose__';
-	const PREVIEW_ROWS = 20; // like the type pattern dialog; count and button still cover all pages of the scope
 	const fromBlock = $derived(first !== null && first !== undefined);
 	const scopeKinds: RulesScope['kind'][] = $derived(['none', ...(offers.length > 0 ? ['offers' as const] : []), ...(fromBlock ? ['block' as const, 'fromBlock' as const] : []), 'volume']);
 
@@ -233,33 +232,7 @@
 	const scopeText = (kind: RulesScope['kind']) => (kind !== 'offers' ? t(R + 'scope_' + kind)
 		: offers.length === 1 ? t(R + 'scope_offersOne') : fmt(R + 'scope_offers', offers.length));
 
-	/* per page its deepest block and, for a child, the number of the child block of the level-0 block */
-	function blockOwners() {
-		const owners = new Array(pages.length).fill(null);
-		for (const root of buildTree(pages).roots) {
-			for (const node of flatten([root])) {
-				const child = node.level === 0 ? 0 : root.children.findIndex(c => c.first <= node.first && node.first <= c.last) + 1;
-				for (let i = node.first; i <= node.last; i++) {
-					owners[i] = { node, child, rootType: root.start.type ?? '' };
-				}
-			}
-		}
-		return owners;
-	}
-
-	type Owner = { node: BlockNode, child: number, rootType: string } | null;
-
-	function blockCell(owner: Owner) {
-		if (!owner) {
-			return { block: t(P + 'pagination_withoutBlock'), dot: null };
-		}
-		const label = typeLabel(owner.node.start.type);
-		return owner.child > 0 ? { block: `${label} ${owner.child}`, dot: positionColor(owner.child - 1) } : { block: label, dot: null };
-	}
-
-	const owners = $derived(blockOwners());
-
-	// how a rule reads in the table: the name of its preset or the text itself
+	// how a rule reads in the configured hint: the name of its preset or the text itself
 	function ruleText(beginsWith: string[] | undefined) {
 		if (!beginsWith || beginsWith.length === 0) {
 			return t(R + 'ruleNone');
@@ -268,31 +241,61 @@
 		return text in PRESET_KEYS ? t(R + 'preset_' + PRESET_KEYS[text]) : text;
 	}
 
-	/* the rule that labels the pages of a block: a child that continues in its parent follows the rule of the parent */
-	function ruleOf(owner: Owner) {
-		if (!owner) {
-			return ruleText(draft.withoutBlock);
-		}
-		const own = (draft.rules || {})[owner.node.start.type ?? ''];
-		const rule = owner.child > 0 && own && own.continueInParent ? (draft.rules || {})[owner.rootType] : own;
-		return ruleText(rule && rule.beginsWith);
-	}
-
-	/* the pages the scope covers with their label now and after the rules, in page order */
-	const view = $derived.by(() => {
+	/* the pages the scope covers, one group per block in page order, with their labels now and after the rules */
+	const preview = $derived.by(() => {
 		const covered = inScope(scope);
 		const indexes = streams(pages, draft).list
 			.flatMap(stream => stream.parts.filter((part: StreamPart) => covered(stream, part)).flatMap((part: StreamPart) => part.pages)).sort((a, b) => a - b);
-		const simulated = simulateRules(pages, draft, scope);
-		const all = indexes.map(i => ({ page: i + 1, ...blockCell(owners[i]), rule: ruleOf(owners[i]), start: owners[i]?.node.first === i, child: (owners[i]?.child ?? 0) > 0, thumb: pages[i].image?.thumbnailUrl || null, before: pages[i].label ?? '', after: simulated[i].label ?? '' }));
-		return { rows: all, changed: all.filter(row => row.before !== row.after).length };
+		const groups = previewGroups(pages, simulateRules(pages, draft, scope), indexes);
+		return { groups, changed: groups.reduce((sum, group) => sum + group.changed, 0) };
 	});
+	type Group = (typeof preview.groups)[number];
+
+	/*
+	 * the rows of the preview: with "hide unchanged" a run of two or more blocks without change is one row that opens to them (a single one
+	 * stays a row of its own); all rows start closed
+	 */
+	let hideUnchanged = $state(true);
+	let open: Set<string> = $state(new Set());
+	const id = $props.id();
+	const groupKey = (group: Group) => 'g' + group.first;
+	const rowsView = $derived.by(() => {
+		const runs: Group[][] = [];
+		for (const group of preview.groups) {
+			const last = runs[runs.length - 1];
+			if (hideUnchanged && group.changed === 0 && last && last[0].changed === 0) {
+				last.push(group);
+			} else {
+				runs.push([group]);
+			}
+		}
+		return runs.map(run => (run.length > 1 ? { fold: true as const, key: 'f' + run[0].first, groups: run } : { fold: false as const, group: run[0] }));
+	});
+	// the block rows that can be seen: those not folded and those of an open fold
+	const visibleKeys = $derived(rowsView.flatMap(row => (!row.fold ? [groupKey(row.group)] : open.has(row.key) ? row.groups.map(groupKey) : [])));
+	const allOpen = $derived(visibleKeys.length > 0 && visibleKeys.every(key => open.has(key)));
+	const toggle = (key: string) => {
+		const next = new Set(open);
+		if (!next.delete(key)) {
+			next.add(key);
+		}
+		open = next;
+	};
+	const toggleAll = () => (open = allOpen ? new Set([...open].filter(key => !visibleKeys.includes(key))) : new Set([...open, ...visibleKeys]));
+
+	const groupName = (group: Group) => (group.level < 0 ? t(P + 'pagination_withoutBlock')
+		: group.child > 0 ? `${typeLabel(group.type)} ${group.child}` : typeLabel(group.type));
+	// a page without label reads as in the label fields of the grid
+	const shown = (label: string) => label || t(P + 'pagination_label_placeholder');
+	const rangeText = (labels: string[]) => (labels.every(label => label === '') ? shown('') : labelRange(labels.map(shown)));
+	const changedText = (n: number) => (n === 1 ? t(R + 'changedOne') : fmt(R + 'changed', n));
+	const foldText = (groups: Group[]) => fmt(P + 'preview_unchanged', groups.length);
 
 	const countText = $derived(scopeKind === 'none' ? ''
-		: view.changed === 0 ? '· ' + t(R + 'unchanged')
-			: '· ' + fmt(R + (view.changed === 1 ? 'changedOne' : 'changed'), view.changed));
-	const applyText = $derived(scopeKind === 'none' || view.changed === 0 ? t(R + 'apply')
-		: fmt(R + (view.changed === 1 ? 'applyOverwriteOne' : 'applyOverwrite'), view.changed));
+		: preview.changed === 0 ? '· ' + t(R + 'unchanged')
+			: '· ' + fmt(R + (preview.changed === 1 ? 'changedOne' : 'changed'), preview.changed));
+	const applyText = $derived(scopeKind === 'none' || preview.changed === 0 ? t(R + 'apply')
+		: fmt(R + (preview.changed === 1 ? 'applyOverwriteOne' : 'applyOverwrite'), preview.changed));
 
 	// a type that is not listed keeps the labels of its blocks (or the parent's stream)
 	function presetsOf() {
@@ -346,6 +349,45 @@
 			{/if}
 		</td>
 	</tr>
+{/snippet}
+
+{#snippet groupRows(group: Group)}
+	{@const key = groupKey(group)}
+	{@const name = groupName(group)}
+	<tr id="{id}-row-{key}" data-preview-group={group.first + 1} data-preview-pages={group.pages.map(i => i + 1).join()} data-preview-changed={group.changed}
+		class={group.child > 0 ? 'preview-start--child' : 'preview-start'}>
+		<td><DisclosureButton expanded={open.has(key)} controls="{id}-{key}" label={fmt(P + 'preview_showPages', name)} onclick={() => toggle(key)} /></td>
+		<td><PageRef number={group.first + 1} thumb={pages[group.first].image?.thumbnailUrl || null} /></td>
+		<td data-preview-block class={[group.level > 0 && 'preview-child', group.changed > 0 ? 'fw-bold' : 'text-muted']} title={name}>
+			{#if group.child > 0}<span data-preview-dot class="position-dot" style="background: {positionColor(group.child - 1)};" aria-hidden="true"></span>{/if}{name}
+		</td>
+		<td data-preview-before class="preview-range text-muted">
+			{#if group.changed > 0}<s>{rangeText(group.before)}</s>{:else}{rangeText(group.before)}{/if}
+		</td>
+		<td data-preview-new class={['preview-range', group.changed > 0 ? 'preview-changed' : 'text-muted']}>{rangeText(group.after)}</td>
+		<td class="text-end">
+			{#if group.changed > 0}<span class="badge badge-intranda-orange" data-preview-badge title={changedText(group.changed)}>{group.changed}<span class="visually-hidden"> {changedText(group.changed)}</span></span>{/if}
+		</td>
+	</tr>
+	{#if open.has(key)}
+		<tr class="preview-detail" id="{id}-{key}" data-preview-detail={group.first + 1}>
+			<td></td>
+			<td colspan="5">
+				<div class="preview-cells">
+					{#each group.pages as page, k (page)}
+						{@const changed = group.before[k] !== group.after[k]}
+						<div class="preview-cell" data-preview-cell={page + 1}>
+							<div class="thumb-box preview-cell__image">
+								<img src={pages[page].image?.thumbnailUrl || 'newspaper_placeholder2.png'} alt="{t(P + 'preview_block')} {page + 1}" loading="lazy" />
+							</div>
+							<s class="preview-cell__old small text-muted" data-preview-old>{changed ? shown(group.before[k]) : ''}</s>
+							<div class={['preview-cell__label', changed ? 'preview-changed' : 'text-muted']} data-preview-label>{shown(group.after[k])}</div>
+						</div>
+					{/each}
+				</div>
+			</td>
+		</tr>
+	{/if}
 {/snippet}
 
 <Modal title={t(R + 'title')} size="xl" data-pagination-dialog="true" onclose={oncancel}>
@@ -440,27 +482,42 @@
 					<span>{t(R + 'noneHint')}</span>
 				</p>
 			{:else}
-				<PreviewTable columns={[
-					{ label: t(P + 'preview_block'), col: 'preview-col-page' },
-					{ label: t(R + 'block'), col: 'preview-col-name' },
-					{ label: t(R + 'rule'), col: 'preview-col-rule' },
-					{ label: t(P + 'preview_before') },
-					{ label: t(P + 'preview_after') },
-				]}>
-					{#each view.rows.slice(0, PREVIEW_ROWS) as row (row.page)}
-						<tr data-preview-row={row.page} data-preview-start={row.start || undefined}
-							class={row.start ? (row.child ? 'preview-start preview-start--child' : 'preview-start') : undefined}>
-							<td><PageRef number={row.page} thumb={row.thumb} /></td>
-							<td data-preview-block class={[row.child && 'preview-child', row.start ? 'fw-bold' : 'text-muted']}>
-								{#if row.dot}<span data-preview-dot class="position-dot" style="background: {row.dot};" aria-hidden="true"></span>{/if}{row.block}
-							</td>
-							<td data-preview-rule class="text-muted">{row.rule}</td>
-							<td data-preview-before class="text-muted">{row.before}</td>
-							<td data-preview-new class={row.before !== row.after ? 'preview-changed' : undefined}>{row.after}</td>
-						</tr>
-					{/each}
-				</PreviewTable>
-				<MoreRows count={view.rows.length - PREVIEW_ROWS} class="small text-muted mt-2 mb-0" />
+				<div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+					<Toggle class="btn-sm" data-preview-hide pressed={hideUnchanged} onclick={() => (hideUnchanged = !hideUnchanged)}>{t(P + 'preview_hideUnchanged')}</Toggle>
+					<Button size="sm" icon={allOpen ? 'chevrons-up' : 'chevrons-down'} data-preview-all disabled={visibleKeys.length === 0} onclick={toggleAll}>
+						{t(P + (allOpen ? 'preview_collapseAll' : 'preview_expandAll'))}
+					</Button>
+				</div>
+				<div class="preview-scroll">
+					<table class="table table-sm mb-0 preview-table preview-table--blocks">
+						<colgroup><col class="preview-col-chev" /><col class="preview-col-page" /><col /><col class="preview-col-range" /><col class="preview-col-range" /><col class="preview-col-count" /></colgroup>
+						<thead>
+							<tr>
+								<th scope="col"><span class="visually-hidden">{t(P + 'preview_expand')}</span></th>
+								<th scope="col">{t(P + 'preview_block')}</th>
+								<th scope="col">{t(R + 'block')}</th>
+								<th scope="col">{t(P + 'preview_before')}</th>
+								<th scope="col">{t(P + 'preview_after')}</th>
+								<th scope="col"><span class="visually-hidden">{t(P + 'preview_changes')}</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each rowsView as row (row.fold ? row.key : groupKey(row.group))}
+								{#if row.fold}
+									<tr class="preview-start preview-fold" data-preview-fold={row.groups.length}>
+										<td><DisclosureButton expanded={open.has(row.key)} controls={row.groups.map(group => `${id}-row-${groupKey(group)}`).join(' ')} label={t(P + 'preview_showUnchanged')} onclick={() => toggle(row.key)} /></td>
+										<td colspan="5" class="small text-muted">{foldText(row.groups)}</td>
+									</tr>
+									{#if open.has(row.key)}
+										{#each row.groups as group (groupKey(group))}{@render groupRows(group)}{/each}
+									{/if}
+								{:else}
+									{@render groupRows(row.group)}
+								{/if}
+							{/each}
+						</tbody>
+					</table>
+				</div>
 			{/if}
 		</div>
 	</div>
