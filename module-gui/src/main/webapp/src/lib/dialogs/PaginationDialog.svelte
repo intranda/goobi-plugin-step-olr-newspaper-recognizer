@@ -459,12 +459,14 @@
 				</table>
 				<Check id="rules-automatic" data-automatic checked={automatic} onchange={e => (automatic = e.currentTarget.checked)}>{t(R + 'automatic')}</Check>
 			</fieldset>
-			<fieldset data-counting-group>
+			<fieldset data-counting-group aria-describedby={scopeKind === 'offers' ? 'rules-counting-locked' : undefined}>
 				<legend class="fs-6 fw-bold">{t(R + 'counting')}</legend>
 				<Check type="radio" name="rules-counting" id="rules-counting-block" data-counting="block" checked={!countThroughVolume} disabled={scopeKind === 'offers'}
 					onchange={() => (countChoice = false)}>{t(R + 'counting_block')}</Check>
 				<Check type="radio" name="rules-counting" id="rules-counting-volume" data-counting="volume" checked={countThroughVolume} disabled={scopeKind === 'offers'}
 					onchange={() => (countChoice = true)}>{t(R + 'counting_volume')}</Check>
+				<!-- ruling R13: applying the offers is a confirm action, not a change of the counting -->
+				{#if scopeKind === 'offers'}<div class="form-text" id="rules-counting-locked" data-counting-locked>{t(R + 'counting_locked')}</div>{/if}
 			</fieldset>
 			<fieldset>
 				<legend class="fs-6 fw-bold">{t(R + 'overwrite')}</legend>
