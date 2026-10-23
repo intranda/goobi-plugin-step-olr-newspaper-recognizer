@@ -2,7 +2,7 @@ import { createContext } from 'svelte'
 import {
 	buildTree, flatten, refOf, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
 	removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest, clonePages, siblingsFrom, syncDateInputs,
-	canMerge, makeLoose,
+	canMerge, makeLoose, shiftIndex,
 } from '../../logic/blocks.mjs'
 import { initLabels, structureChanged, streams, volumeOffers, applyOffers } from '../../logic/pagination.mjs'
 import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules } from '../../logic/pagination-tools.mjs'
@@ -341,6 +341,11 @@ export class Recognizer {
 			offers = result.offers
 			offerFrom = result.offerFrom
 		}
+		if (options.removed !== undefined) {
+			const removed = options.removed
+			this.offerFrom = this.offerFrom === null ? null : shiftIndex(this.offerFrom, removed)
+			this.dismissedOffers = new Map([...this.dismissedOffers].map(([first, signature]) => [shiftIndex(first, removed), signature]))
+		}
 		this.pages = pages
 		this.dataDirty = true
 		this.refresh()
@@ -377,41 +382,37 @@ export class Recognizer {
 	}
 
 	/**
-	 * The open offers after a change: fresh ones of a structure change and the earlier ones whose block is as it was (keepOffers). When
-	 * counting through the volume, the blocks from offerFrom on (the earlier one of the old and the fresh offerFrom) offer the volume count
-	 * instead, except the dismissed ones whose block is as it was at dismissal; offerFrom ends when no block from there differs.
+	 * The open offers after a change. Per block: fresh ones of a structure change and the earlier ones whose block is as it was (keepOffers).
+	 * When counting through the volume: every block from offerFrom on (the earlier one of the old and the fresh offerFrom) that differs from the
+	 * volume count, except the dismissed ones whose block is as it was at dismissal; offerFrom ends when no block from there differs.
 	 */
 	updateOffers(fresh: FreshOffer[], freshFrom: number | null) {
-		const old = this.offerFrom
-		const from = freshFrom === null ? old : old === null ? freshFrom : Math.min(old, freshFrom)
-		if (!this.settings.countThroughVolume || from === null) {
+		if (!this.settings.countThroughVolume) {
 			this.offerFrom = null
 			this.dismissedOffers = new Map()
 			this.offers = this.keepOffers(fresh)
 			return
 		}
-		const earlier = this.keepOffers(fresh.filter(offer => offer.first < from)).filter(offer => offer.first < from)
-		const volume = volumeOffers(this.pages, this.settings, from)
+		const old = this.offerFrom
+		const from = freshFrom === null ? old : old === null ? freshFrom : Math.min(old, freshFrom)
+		const volume = from === null ? [] : volumeOffers(this.pages, this.settings, from)
 		if (volume.length === 0) {
-			this.offerFrom = null
-			this.dismissedOffers = new Map()
-			this.offers = earlier
+			this.clearOffers()
 			return
 		}
 		const dismissed = new Map([...this.dismissedOffers].filter(([first, signature]) => signature === this.offerSignature(first)))
 		this.offerFrom = from
 		this.dismissedOffers = dismissed
-		const open = volume.filter(offer => !dismissed.has(offer.first)).map(offer => ({ ...offer, signature: this.offerSignature(offer.first) }))
-		this.offers = [...earlier, ...open]
+		this.offers = volume.filter(offer => !dismissed.has(offer.first)).map(offer => ({ ...offer, signature: this.offerSignature(offer.first) }))
 	}
 
-	/** an offer belongs to its block as it is: another structure change or label in the block makes it disappear */
+	/** an offer belongs to its block as it is: another structure change or label in the block makes it disappear; a page removed before it does not */
 	offerSignature(first: number) {
 		const node = this.tree.roots.find(root => root.first === first)
 		if (!node) {
 			return null
 		}
-		return JSON.stringify([node.last, node.start.type, this.pages.slice(node.first, node.last + 1).map(page => [page.label, page.depth])])
+		return JSON.stringify([node.last - node.first, node.start.type, this.pages.slice(node.first, node.last + 1).map(page => [page.label, page.depth])])
 	}
 
 	keepOffers(fresh: FreshOffer[]) {
@@ -824,6 +825,7 @@ export class Recognizer {
 		this.applyChange(removePage(this.pages, index), {
 			bulk: false,
 			paginate: false, // deleting an image changes no other label
+			removed: index,
 			afterCommit: () => {
 				const structures = [...this.volumeHidden.structures]
 				shiftStructures(structures, index)

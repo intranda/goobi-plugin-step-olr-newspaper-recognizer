@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { catalog, VOLUME, start, pages, shape } from './fixtures.mjs';
 import {
   buildTree, flatten, validatePages, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
-  removeAllBlocks, resetToAnalysis, removePage, toSaveRequest, siblingsFrom, canMerge, makeLoose, clonePages,
+  removeAllBlocks, resetToAnalysis, removePage, toSaveRequest, siblingsFrom, canMerge, makeLoose, clonePages, shiftIndex,
 } from '../blocks.mjs';
 
 const issueWithSupplement = () => pages(
@@ -206,6 +206,14 @@ test('removePage moves block starts to the next page and shifts hidden structure
   const after = removePage(list, 0);
   assert.equal(shape(after), '1/1 2/1 2/0 1/0 1/1');
   assert.deepEqual(after[0].starts[0].hidden.structures.map(s => [s.firstPage, s.lastPage]), [[0, 2], [-1, -1]]);
+});
+
+test('shiftIndex: a block start after the removed page moves up one, one on or before it stays', () => {
+  const list = pages({ depth: 1, starts: [start('MorningIssue')] }, { depth: 1 }, { depth: 1, starts: [start('MorningIssue')] }, { depth: 1 });
+  const after = removePage(list, 1);
+  // the second block started on page 2 and starts on page 1 now; the first, and a start on the removed page itself (taken over by the next page), stay
+  assert.equal(after[shiftIndex(2, 1)].starts.length, 1);
+  assert.deepEqual([shiftIndex(0, 1), shiftIndex(1, 1), shiftIndex(2, 1)], [0, 1, 1]);
 });
 
 test('toSaveRequest sends only the transfer fields', () => {

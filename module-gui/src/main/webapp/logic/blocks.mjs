@@ -303,6 +303,9 @@ export function resetToAnalysis(pages) {
   }));
 }
 
+/** The page index i after the page at {@code index} was removed (removePage): a block start on the removed page passes to the next page, so it stays. */
+export const shiftIndex = (i, index) => (i > index ? i - 1 : i);
+
 /** Hidden structure ranges after the page at {@code index} was removed. Structures left without pages get -1. */
 export function shiftStructures(structures, index) {
   for (const structure of structures) {

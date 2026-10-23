@@ -99,7 +99,8 @@ export interface Notice { key: string; params?: string[] }
 export interface Operation { blockId: string; kind: string; action: string }
 
 export interface Conflict { kind: 'DELETED' | 'TYPE' | 'BOUNDARY' | 'EXPLICIT'; blockId: string; type: string | null; page: number; structures: HiddenStructure[]; metadata: HiddenMetadata[]; options: string[] }
-export interface ChangeOptions { bulk?: boolean; total?: number; paginate?: boolean; afterCommit?: () => void }
+/** removed: index of a page removed by the change, so that offers can follow it */
+export interface ChangeOptions { bulk?: boolean; total?: number; paginate?: boolean; removed?: number; afterCommit?: () => void }
 export interface PendingChange { pages: Page[]; conflicts: Conflict[]; options: ChangeOptions }
 
 export type DialogState =
