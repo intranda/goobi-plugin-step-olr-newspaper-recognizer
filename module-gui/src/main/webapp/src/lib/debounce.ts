@@ -7,15 +7,23 @@ import type { HTMLInputAttributes } from 'svelte/elements';
  */
 export class DebouncedEdits {
 	private pending = new Map<string, { timer: ReturnType<typeof setTimeout>, apply: () => void }>();
+	private readonly onedit: () => void;
+	private readonly delay: number;
 
-	constructor(private readonly onedit: () => void, private readonly delay = 700) {}
+	// plain fields, no parameter properties: node's type stripping (the unit tests) cannot run those
+	constructor(onedit: () => void, delay = 700) {
+		this.onedit = onedit;
+		this.delay = delay;
+	}
 
 	/** the handlers of one field, to spread on its input: `apply` gets the current value */
 	field(key: string, apply: (value: string) => void): Pick<HTMLInputAttributes, 'oninput' | 'onblur' | 'onkeydown'> {
 		return {
 			oninput: e => {
+				// read now: once the event is dispatched, its currentTarget is gone
+				const value = e.currentTarget.value;
 				this.onedit();
-				this.schedule(key, () => apply(e.currentTarget.value));
+				this.schedule(key, () => apply(value));
 			},
 			onblur: () => this.flush(key),
 			onkeydown: e => e.key === 'Enter' && this.flush(key),
