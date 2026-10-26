@@ -95,8 +95,6 @@
 								{#if row.loose}<LooseRow {row} />{:else}<BlockRow {row} />{/if}
 							{/each}
 						</div>
-						<!-- room below the last block, so that it too can scroll to just below the help line -->
-						<div data-bottom-spacer style="height: 100vh;"></div>
 					</div>
 				</div>
 			</div>
