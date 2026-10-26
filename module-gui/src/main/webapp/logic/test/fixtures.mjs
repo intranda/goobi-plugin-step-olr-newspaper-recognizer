@@ -53,3 +53,9 @@ export function insertPage(list, index) {
   const page = { filename, result: 0, label: '', depth: list[index - 1].depth, starts: [] };
   return [...list.slice(0, index), page, ...list.slice(index)];
 }
+
+const generated = (key, pattern) => ({ key, label: key, display: 'input', required: false, pattern, skipIfEmpty: false, items: [] });
+
+/** The catalog with visible fields: MorningIssue has a generated TitleDocMain ('{label} {partNo}') and a plain Note. */
+export const fieldCatalog = Object.fromEntries(Object.entries(catalog).map(([name, info]) => [name, { ...info, generatorLabel: info.label, fields: [] }]));
+fieldCatalog.MorningIssue.fields = [generated('TitleDocMain', '{label} {partNo}'), generated('Note', null)];
