@@ -44,7 +44,7 @@
 	{#if node.children.length > 0}
 		<div class="block-tree">
 			{#each node.children as child, childIndex (child.first)}
-				<div class="block-tree__item d-flex flex-column gap-2" id={app.blockElementId(child)} role="group"
+				<div class={['block-tree__item d-flex flex-column gap-2', app.unsaved.blocks.has(`${child.first}:${child.level}`) && 'block-unsaved']} id={app.blockElementId(child)} role="group"
 					aria-label={fmt('plugin_newspaperRecognizer_block_childGroup', child.first + 1)}>
 					<BlockFields node={child} typeOptions={app.typeOptions(node.start.type)} color={app.childColor(childIndex + 1)} />
 					<BlockFooter node={child} />

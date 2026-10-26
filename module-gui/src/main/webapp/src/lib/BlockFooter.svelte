@@ -43,7 +43,7 @@
 	<div class="d-flex justify-content-between align-items-center gap-3 small border-top pt-2 position-relative">
 		<span class="d-flex flex-wrap column-gap-3">
 			<span class="text-muted">{pageFirst ? app.pagesSummary(pageFirst, pageLast) : ''}</span>
-			{#if unsavedText}<span data-unsaved-footer class="unsaved-text">{unsavedText}</span>{/if}
+			{#if unsavedText}<span data-unsaved-footer class="unsaved-text"><Icon name="pencil" />{unsavedText}</span>{/if}
 		</span>
 		{#if hiddenCount > 0}
 			<button type="button" class="btn btn-link btn-sm p-0 d-flex align-items-center gap-1 text-decoration-none"
