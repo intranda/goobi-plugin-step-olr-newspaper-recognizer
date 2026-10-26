@@ -33,9 +33,9 @@
 	const continueText = $derived(t('plugin_newspaperRecognizer_continue_button_' + (info?.dated && info.numbered ? 'both' : info?.dated ? 'date' : 'number')));
 	const rule = $derived(ruleText(app.settings.rules[start.type ?? '']?.beginsWith, t));
 
-	// date and number are applied when the typing pauses (or the field is left), not with every key; the page counts as changed at once,
-	// so that saving is possible while the typing is still pending (leaving the field for the button applies it first)
-	const edits = new DebouncedEdits(() => (app.dataDirty = true));
+	// date and number are applied when the typing pauses (or the field is left); leaving the field for a button applies it first, so
+	// the comparison with the saved state sees it before it is saved
+	const edits = new DebouncedEdits(() => {});
 	$effect(() => () => edits.cancelAll());
 </script>
 

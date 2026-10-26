@@ -10,11 +10,12 @@ import { previewLabel, ownNumberingAll } from '../../logic/typing.mjs'
 import { parseLabel, isCounting } from '../../logic/labels.mjs'
 import { applyTypePattern } from '../../logic/generation.mjs'
 import { fieldStates, initFieldStates, keepFieldValue, resetFieldValue, setFieldValue } from '../../logic/fields.mjs'
+import { savedState, unsavedChanges } from '../../logic/unsaved.mjs'
 import { positionColor } from '../../logic/colors.mjs'
 import { FacesBridge } from './faces-bridge.js'
 import { ThumbnailLoader } from './thumbnails.svelte'
 import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from '../../logic/hidden.mjs'
-import type { BlockFlags, Catalog, BlockNode, BlockRef, ChangeOptions, Confirmation, DialogState, FieldState, FreshOffer, Hidden, LabelMode, LabelPreview, Notice, Offer, Operation, Page, PaginationSettings, PendingChange, PluginProps, Problem, Row, RulesScope, Tree, TypeOption, Validation, VolumeStream } from '../types';
+import type { Baseline, Unsaved, BlockFlags, Catalog, BlockNode, BlockRef, ChangeOptions, Confirmation, DialogState, FieldState, FreshOffer, Hidden, LabelMode, LabelPreview, Notice, Offer, Operation, Page, PaginationSettings, PendingChange, PluginProps, Problem, Row, RulesScope, Tree, TypeOption, Validation, VolumeStream } from '../types';
 
 /** the problems that validation reports, with the key of their summary text */
 const PROBLEMS: [Problem, string][] = [
@@ -73,7 +74,6 @@ export class Recognizer {
 	ownFlags: (string | null)[] = $state.raw([]) // per page the follow value of own numbering, else null
 
 	// session
-	dataDirty = $state(false) // true after any change, cleared only when the backend confirms a write
 	saveInFlight = $state(false) // true while a save request is on its way; blocks everything that would abort it
 	ajaxBusy = $state(false)
 	helpHidden = $state(false)
@@ -87,7 +87,7 @@ export class Recognizer {
 	// plain fields
 	pendingExit = false // set by saveAndExit, acted upon once the backend confirms the write
 	pointerDown = false
-	operations: Operation[] = []
+	operations: Operation[] = $state.raw([])
 	hiddenCursor = -1
 	offerCursor = -1
 	lastJumped = -1 // index of the first page of the run the last jump led to
@@ -105,8 +105,12 @@ export class Recognizer {
 	// the notice about structures of the volume is part of the additional data notice
 	otherNotices = $derived(this.notices.filter(n => n.key !== PREFIX + 'notice_volumeHidden'))
 	hasOpenEdit = $derived(!!this.preview && this.preview.result.pages.some((page, i) => page.label !== this.pages[i].label))
+	// what differs from the last loaded or saved state: the baseline is taken in loadData, so a save that was not written leaves it unsaved
+	baseline: Baseline = $state.raw({ blocks: new Map(), volumeStructures: 0 })
+	unsaved: Unsaved = $derived.by(() => unsavedChanges(this.baseline, this.pages, this.catalog, this.operations, this.volumeHidden))
+	hasUnsaved = $derived(this.unsaved.any || this.hasOpenEdit)
 	canSave = $derived.by(() =>
-		!this.saveInFlight && (this.dataDirty || this.hasOpenEdit) && this.configErrors.length === 0 && this.validation.valid
+		!this.saveInFlight && this.hasUnsaved && this.configErrors.length === 0 && this.validation.valid
 	)
 	validationProblems = $derived(PROBLEMS.filter(([name]) => this.validation[name].length > 0)
 		.map(([name, key]) => ({ name, key: `${PREFIX}validation_summary_${key}`, count: new Set(this.validation[name].map(ref => `${ref.page}:${ref.level}`)).size })))
@@ -174,6 +178,7 @@ export class Recognizer {
 		initStarts(pages, this.dateFormatPattern)
 		initFieldStates(pages, this.catalog)
 		initLabels(pages)
+		this.baseline = savedState(pages, this.catalog, this.volumeHidden)
 		this.pages = pages
 		this.clearOffers()
 		this.preview = null
@@ -352,7 +357,6 @@ export class Recognizer {
 			this.dismissedOffers = new Map([...this.dismissedOffers].map(([first, signature]) => [shiftIndex(first, removed), signature]))
 		}
 		this.pages = pages
-		this.dataDirty = true
 		this.refresh()
 		this.updateOffers(offers, offerFrom)
 	}
@@ -685,25 +689,21 @@ export class Recognizer {
 
 	changeDate(node: BlockNode, value: string) {
 		setDateInput(node.start, value, this.dateFormatPattern)
-		this.dataDirty = true
 		this.touch()
 	}
 
 	changeField(node: BlockNode, name: 'prefix' | 'number' | 'suffix', value: string) {
 		node.start[name] = value === '' ? null : value
-		this.dataDirty = true
 		this.touch()
 	}
 
 	changeValue(node: BlockNode, key: string, value: string) {
 		setFieldValue(node, key, value, this.catalog)
-		this.dataDirty = true
 		this.touch()
 	}
 
 	resetValue(node: BlockNode, key: string) {
 		resetFieldValue(node.start, key)
-		this.dataDirty = true
 		this.touch()
 	}
 
@@ -887,7 +887,6 @@ export class Recognizer {
 			this.pendingExit = false
 			return
 		}
-		this.dataDirty = false
 		this.loadData(this.bridge.readData())
 		if (this.pendingExit) {
 			this.pendingExit = false
@@ -909,7 +908,7 @@ export class Recognizer {
 			return
 		}
 		this.commitOpenEdit()
-		if (!this.dataDirty) {
+		if (!this.hasUnsaved) {
 			this.bridge.finish()
 			return
 		}
@@ -924,7 +923,7 @@ export class Recognizer {
 		if (this.saveInFlight) {
 			return
 		}
-		if (this.dataDirty) {
+		if (this.hasUnsaved) {
 			this.askConfirmation('pluginLeave', PREFIX + 'confirmLeaveUnsaved', 'pluginLeave', () => this.bridge.finish())
 			return
 		}
