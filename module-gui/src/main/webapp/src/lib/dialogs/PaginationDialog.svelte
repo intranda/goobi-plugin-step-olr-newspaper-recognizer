@@ -9,7 +9,6 @@
 	import Icon from '../ui/Icon.svelte';
 	import Check from '../ui/Check.svelte';
 	import PageRef from '../ui/PageRef.svelte';
-	import Toggle from '../ui/Toggle.svelte';
 	import DisclosureButton from '../ui/DisclosureButton.svelte';
 	import { PRESET_KEYS, ruleText as ruleTextOf } from '../ruleText';
 	import type { FreshOffer, Page, PaginationSettings, RulesScope, StreamPart } from '../../types';
@@ -244,10 +243,10 @@
 	type Group = (typeof preview.groups)[number];
 
 	/*
-	 * the rows of the preview: with "hide unchanged" a run of level-0 blocks without change (with their child blocks, all unchanged) is one row
+	 * the rows of the preview: with "only changes" a run of level-0 blocks without change (with their child blocks, all unchanged) is one row
 	 * that opens to them; all rows start closed
 	 */
-	let hideUnchanged = $state(true);
+	let onlyChanges = $state(false);
 	let open: Set<string> = $state(new Set());
 	const id = $props.id();
 	const groupKey = (group: Group) => 'g' + group.first;
@@ -266,7 +265,7 @@
 		const runs: { fold: boolean, groups: Group[] }[] = [];
 		for (const root of roots) {
 			const last = runs[runs.length - 1];
-			const fold = hideUnchanged && unchanged(root);
+			const fold = onlyChanges && unchanged(root);
 			if (fold && last?.fold) {
 				last.groups.push(...root);
 			} else {
@@ -490,7 +489,9 @@
 				</p>
 			{:else}
 				<div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-					<Toggle class="btn-sm" data-preview-hide pressed={hideUnchanged} onclick={() => (hideUnchanged = !hideUnchanged)}>{t(P + 'preview_hideUnchanged')}</Toggle>
+					<Check class="form-switch mb-0 me-auto" id="pagination-onlyChanges" role="switch" data-preview-only checked={onlyChanges} onchange={() => (onlyChanges = !onlyChanges)}>
+						{t(P + 'preview_onlyChanges')}
+					</Check>
 					<Button size="sm" icon={allOpen ? 'chevrons-up' : 'chevrons-down'} data-preview-all disabled={visibleKeys.length === 0} onclick={toggleAll}>
 						{t(P + (allOpen ? 'preview_collapseAll' : 'preview_expandAll'))}
 					</Button>
