@@ -63,18 +63,18 @@ export type Catalog = Record<string, TypeInfo>;
 
 /** The state as last loaded or saved (logic/unsaved.mjs savedState): the blocks that have an id by id, and the number of structures hidden at the volume. */
 export interface Baseline {
-  blocks: Map<string, unknown>;
-  volumeStructures: number;
+	blocks: Map<string, unknown>;
+	volumeStructures: number;
 }
 
 /** What differs from the baseline (logic/unsaved.mjs unsavedChanges): the changed blocks by "first:level", the pages with a changed label, the number of removed blocks. */
 export interface Unsaved {
-  blocks: Map<string, { isNew: boolean; fields: string[]; boundary: boolean; nesting: boolean; hidden: boolean }>;
-  labels: number[];
-  removed: number;
-  volume: boolean;
-  count: number;
-  any: boolean;
+	blocks: Map<string, { isNew: boolean; fields: string[]; boundary: boolean; nesting: boolean; hidden: boolean }>;
+	labels: number[];
+	removed: number;
+	volume: boolean;
+	count: number;
+	any: boolean;
 }
 export interface TypeOption { name: string; label: string }
 

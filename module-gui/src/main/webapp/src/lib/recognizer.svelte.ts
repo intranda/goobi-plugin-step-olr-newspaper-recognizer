@@ -108,7 +108,8 @@ export class Recognizer {
 	// what differs from the last loaded or saved state: the baseline is taken in loadData, so a save that was not written leaves it unsaved
 	baseline: Baseline = $state.raw({ blocks: new Map(), volumeStructures: 0 })
 	unsaved: Unsaved = $derived.by(() => unsavedChanges(this.baseline, this.pages, this.catalog, this.operations, this.volumeHidden))
-	hasUnsaved = $derived(this.unsaved.any || this.hasOpenEdit)
+	typingPending = $state(false) // a date, number, prefix or suffix is being typed and not yet applied; saving stays possible meanwhile
+	hasUnsaved = $derived(this.unsaved.any || this.hasOpenEdit || this.typingPending)
 	canSave = $derived.by(() =>
 		!this.saveInFlight && this.hasUnsaved && this.configErrors.length === 0 && this.validation.valid
 	)
@@ -179,6 +180,7 @@ export class Recognizer {
 		initFieldStates(pages, this.catalog)
 		initLabels(pages)
 		this.baseline = savedState(pages, this.catalog, this.volumeHidden)
+		this.typingPending = false
 		this.pages = pages
 		this.clearOffers()
 		this.preview = null
@@ -195,6 +197,7 @@ export class Recognizer {
 
 	/* after an in-place change of a page: a copy of the page list makes everything that reads from it update */
 	touch() {
+		this.typingPending = false
 		this.pages = clonePages(this.pages)
 		this.refresh()
 	}
