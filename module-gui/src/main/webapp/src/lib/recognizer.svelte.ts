@@ -1,4 +1,4 @@
-import { createContext } from 'svelte'
+import { createContext, tick } from 'svelte'
 import {
 	buildTree, flatten, refOf, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
 	removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest, clonePages, siblingsFrom, syncDateInputs,
@@ -537,8 +537,9 @@ export class Recognizer {
 		elements[this.offerCursor].scrollIntoView({ behavior: 'smooth', block: 'center' })
 	}
 
-	/** scrolls smoothly so that the row of the block starts just below the sticky help line */
-	scrollToBlock(first: number) {
+	/** scrolls smoothly so that the row of the block starts just below the sticky help line; after a change it waits until the new rows are drawn */
+	async scrollToBlock(first: number) {
+		await tick()
 		const element = document.getElementById(this.blockElementId({ first, level: 0 }))
 		const help = (this.root.querySelector('[data-help]') as HTMLElement | null)
 		if (!element) {
