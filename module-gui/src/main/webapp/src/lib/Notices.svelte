@@ -15,8 +15,8 @@
 
 	const jump = (count: number) => t(count > 1 ? P + 'validation_jumpNext' : P + 'validation_jump');
 
-	// one entry per configuration error, per validation problem, per decision and per piece of information
-	const blocking = $derived(app.configErrors.length + app.validationProblems.length);
+	// one entry for the configuration errors (listed together), one per validation problem, per decision and per piece of information
+	const blocking = $derived((app.configErrors.length > 0 ? 1 : 0) + app.validationProblems.length);
 	const decide = $derived((app.showMissingBanner ? 1 : 0) + (app.showOffersBanner ? 1 : 0));
 	const info = $derived((app.unsaved.any ? 1 : 0) + (app.hiddenBlocks.length > 0 ? 1 : 0) + (app.volumeHidden.structures.length > 0 ? 1 : 0)
 		+ app.otherNotices.length);
@@ -72,7 +72,7 @@
 					<div class="d-flex flex-column gap-2" data-notices-group="decide">
 						<div class="notices-group text-primary">{t(P + 'notices_groupDecide')}</div>
 						{#if app.showMissingBanner}
-							<NoticeEntry icon="list-numbers" tone="text-primary" data-banner-missing>
+							<NoticeEntry icon="list-numbers" tone="text-primary" data-notice-missing>
 								{app.missingText()}
 								{#snippet actions()}
 									<Button variant="primary" size="sm" class="text-nowrap" data-generate onclick={() => app.generateMissing()}>{t(P + 'pagination_missing_generate')}</Button>
@@ -106,7 +106,9 @@
 							<NoticeEntry icon="pencil" tone="text-muted" data-notice-unsaved>
 								{unsavedText}
 								{#snippet actions()}
-									<Button size="sm" class="text-nowrap" data-unsaved-next onclick={() => app.jumpToNextUnsaved()}>{t(P + 'unsaved_next')}</Button>
+									{#if app.unsavedTargets.length > 0}
+										<Button size="sm" class="text-nowrap" data-unsaved-next onclick={() => app.jumpToNextUnsaved()}>{t(P + 'unsaved_next')}</Button>
+									{/if}
 								{/snippet}
 							</NoticeEntry>
 						{/if}
@@ -114,7 +116,7 @@
 							<NoticeEntry icon="info-circle" tone="text-muted" data-notice-hidden>
 								{fmt(P + 'hidden_notice', app.hiddenBlocks.length)}
 								{#snippet actions()}
-									<Button size="sm" class="text-nowrap" onclick={() => app.jumpToNextHidden()}>{jump(app.hiddenBlocks.length)}</Button>
+									<Button size="sm" class="text-nowrap" data-jump-hidden onclick={() => app.jumpToNextHidden()}>{jump(app.hiddenBlocks.length)}</Button>
 								{/snippet}
 							</NoticeEntry>
 						{/if}

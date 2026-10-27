@@ -590,26 +590,30 @@ export class Recognizer {
 		}
 	}
 
-	/** scrolls to the next unsaved thing, cycling: the changed blocks in page order, then the runs of changed labels on pages outside any block */
+	/** what "Zum nächsten" can reach, in page order: the changed blocks (a block before a run starting at its first page) and the runs of changed labels on any page */
+	unsavedTargets = $derived.by(() => {
+		const targets: { at: number, level: number, block: boolean }[] = [...this.unsaved.blocks.keys()].map(key => {
+			const [first, level] = key.split(':').map(Number)
+			return { at: first, level, block: true }
+		})
+		const labels = [...this.unsaved.labels].sort((a, b) => a - b)
+		labels.forEach((index, k) => k > 0 && labels[k - 1] === index - 1 || targets.push({ at: index, level: 0, block: false }))
+		return targets.sort((a, b) => a.at - b.at || Number(b.block) - Number(a.block) || a.level - b.level)
+	})
+
+	/** scrolls to the next unsaved thing, cycling through unsavedTargets */
 	jumpToNextUnsaved() {
-		const blocks = [...this.unsaved.blocks.keys()].map(key => key.split(':').map(Number)).sort((a, b) => a[0] - b[0] || a[1] - b[1])
-		const looseLabels = new Set(this.unsaved.labels)
-		const runs: number[] = []
-		for (const row of this.rows) {
-			if (row.loose) {
-				row.pages.forEach((index, k) => looseLabels.has(index) && !(k > 0 && looseLabels.has(row.pages[k - 1])) && runs.push(index))
-			}
-		}
-		const targets: (() => HTMLElement | null)[] = [
-			...blocks.map(([first, level]) => () => document.getElementById(this.blockElementId({ first, level }))),
-			...runs.map(index => () => (this.root.querySelector(`[data-label="${index + 1}"]`) as HTMLElement | null)?.closest('.newspaper-thumbnail, .thumbnail-image') as HTMLElement | null
-				?? (this.root.querySelector(`[data-label="${index + 1}"]`) as HTMLElement | null)),
-		]
+		const targets = this.unsavedTargets
 		if (targets.length === 0) {
 			return
 		}
 		this.unsavedCursor = (this.unsavedCursor + 1) % targets.length
-		targets[this.unsavedCursor]()?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+		const target = targets[this.unsavedCursor]
+		const element = target.block
+			? document.getElementById(this.blockElementId({ first: target.at, level: target.level }))
+			: this.root.querySelector(`[data-label="${target.at + 1}"]`)
+		const shown = (target.block ? element : element?.closest('.newspaper-thumbnail, .thumbnail-image')) ?? element
+		shown?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 	}
 
 	/** true if there is a label field to go to */
