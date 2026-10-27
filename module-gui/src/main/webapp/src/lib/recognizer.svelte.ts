@@ -542,7 +542,7 @@ export class Recognizer {
 		elements[this.offerCursor].scrollIntoView({ behavior: 'smooth', block: 'center' })
 	}
 
-	/** scrolls smoothly so that the row of the block starts just below the sticky help line; after a change it waits until the new rows are drawn */
+	/** scrolls smoothly so that the row of the block starts just below the sticky [data-help] element (the bottom edge of the title bar); after a change it waits until the new rows are drawn */
 	async scrollToBlock(first: number) {
 		await tick()
 		const element = document.getElementById(this.blockElementId({ first, level: 0 }))

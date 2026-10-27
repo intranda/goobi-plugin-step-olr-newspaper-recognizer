@@ -467,7 +467,7 @@ progress {
 	position: absolute;
 	left: 0;
 	right: 0;
-	bottom: 0;
+	top: 0; /* the box has no height: drawn below its sticky edge, in view */
 	height: 3px;
 	border: 0;
 	appearance: none;
