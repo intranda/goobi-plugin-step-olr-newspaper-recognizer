@@ -76,7 +76,6 @@ export class Recognizer {
 	// session
 	saveInFlight = $state(false) // true while a save request is on its way; blocks everything that would abort it
 	ajaxBusy = $state(false)
-	helpHidden = $state(false)
 	actionsOpen = $state(false)
 	missingDeclined = $state(false) // "Nicht erzeugen": the banner stays hidden until the plugin is opened again (not reset by loadData)
 	confirmation: Confirmation | null = $state.raw(null) // {title, text, button, action, icon, params}
@@ -506,10 +505,6 @@ export class Recognizer {
 	/* all labels from the METS as last loaded, all offers gone */
 	restoreLabels() {
 		this.applyChange(restoreFromMets(this.pages), { paginate: false, afterCommit: () => this.clearOffers() })
-	}
-
-	hideHelp() {
-		this.helpHidden = true
 	}
 
 	// ---- scrolling and jumping

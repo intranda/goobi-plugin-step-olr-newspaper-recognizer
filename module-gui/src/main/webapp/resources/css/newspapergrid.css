@@ -456,13 +456,11 @@ progress {
 	.preview-table td:nth-child(2) { white-space: normal; }
 }
 
-/* the help line stays visible under the plugin's title bar while scrolling */
+/* carries the loading progress under the plugin's title bar; without content it has no height, scrollToBlock takes its bottom as the sticky offset */
 .newspaper-help {
 	position: sticky;
 	top: 0;
 	z-index: 10;
-	background: var(--bs-body-bg);
-	border-bottom: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color);
 }
 
 .newspaper-help__progress {
@@ -508,15 +506,6 @@ progress {
 	display: block;
 	max-width: 100%;
 	height: auto;
-}
-
-.newspaper-help__hints {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.25rem 1.25rem;
-	padding: 0.4rem var(--section-padding, 1rem);
-	font-size: 0.875rem;
 }
 
 /* the label of a page under its thumbnail: unobtrusive until hovered or focused */

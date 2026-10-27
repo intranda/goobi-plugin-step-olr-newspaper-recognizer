@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { shortcutSection } from './lib/shortcutSection';
 	import { Recognizer, setApp } from './lib/recognizer.svelte';
 	import BoxTitle from './lib/ui/BoxTitle.svelte';
 	import TitleAction from './lib/ui/TitleAction.svelte';
@@ -30,6 +31,17 @@
 	onMount(() => {
 		app.listenToFaces();
 		app.loadMessages();
+	});
+
+	// the usage hints are a section of goobi's shortcuts dialog; the effect follows the language of the loaded messages
+	$effect(() => {
+		const section = shortcutSection(t);
+		const sections = ((window as any).goobiShortcutSections ??= []);
+		sections.push(section);
+		return () => {
+			const i = sections.indexOf(section);
+			if (i >= 0) sections.splice(i, 1);
+		};
 	});
 
 	const onpointerend = () => {
