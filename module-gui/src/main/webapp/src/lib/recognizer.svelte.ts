@@ -5,7 +5,7 @@ import {
 	canMerge, makeLoose, shiftIndex,
 } from '../../logic/blocks.mjs'
 import { initLabels, structureChanged, streams, volumeOffers, applyOffers } from '../../logic/pagination.mjs'
-import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules, sameSettings } from '../../logic/pagination-tools.mjs'
+import { missingRuns, fillMissing, restoreFromMets, simulateRules, sameSettings } from '../../logic/pagination-tools.mjs'
 import { previewLabel, ownNumberingAll } from '../../logic/typing.mjs'
 import { parseLabel, isCounting } from '../../logic/labels.mjs'
 import { applyTypePattern } from '../../logic/generation.mjs'
@@ -90,6 +90,8 @@ export class Recognizer {
 	operations: Operation[] = $state.raw([])
 	hiddenCursor = -1
 	offerCursor = -1
+	unsavedCursor = -1
+	noticesOpen = $state(false) // the section "Hinweise" is collapsed at every opening of the plugin
 	lastJumped = -1 // index of the first page of the run the last jump led to
 	problemCursor: Record<string, number> = {}
 	// the element of the app, set by App.svelte before anything uses it
@@ -97,11 +99,9 @@ export class Recognizer {
 
 	hiddenBlocks = $derived(flatten(this.tree.roots).filter(node => hasHidden(node.start)))
 	missingRunList = $derived(missingRuns(this.pages))
-	changedCount = $derived(changedSinceOpening(this.pages).length)
 	showMissingBanner = $derived(this.settings.enabled && !this.missingDeclined && this.missingRunList.length > 0)
 	showOffersBanner = $derived(this.settings.enabled && this.offers.length >= 2)
 	offersPageCount = $derived(this.offers.reduce((sum, offer) => sum + offer.pages.length, 0))
-	showChangedBanner = $derived(this.settings.enabled && this.changedCount > 0)
 	// the notice about structures of the volume is part of the additional data notice
 	otherNotices = $derived(this.notices.filter(n => n.key !== PREFIX + 'notice_volumeHidden'))
 	hasOpenEdit = $derived(!!this.preview && this.preview.result.pages.some((page, i) => page.label !== this.pages[i].label))
@@ -486,10 +486,6 @@ export class Recognizer {
 		return count === 1 ? this.t(PREFIX + 'pagination_missing_one') : this.fmt(PREFIX + 'pagination_missing_many', count)
 	}
 
-	changedText() {
-		return this.changedCount === 1 ? this.t(PREFIX + 'pagination_changed_one') : this.fmt(PREFIX + 'pagination_changed_many', this.changedCount)
-	}
-
 	/* every page without label gets its rule value */
 	generateMissing() {
 		this.applyChange(fillMissing(this.pages, this.settings), { paginate: false })
@@ -592,6 +588,28 @@ export class Recognizer {
 		if (element) {
 			element.scrollIntoView({ behavior: 'smooth', block: 'center' })
 		}
+	}
+
+	/** scrolls to the next unsaved thing, cycling: the changed blocks in page order, then the runs of changed labels on pages outside any block */
+	jumpToNextUnsaved() {
+		const blocks = [...this.unsaved.blocks.keys()].map(key => key.split(':').map(Number)).sort((a, b) => a[0] - b[0] || a[1] - b[1])
+		const looseLabels = new Set(this.unsaved.labels)
+		const runs: number[] = []
+		for (const row of this.rows) {
+			if (row.loose) {
+				row.pages.forEach((index, k) => looseLabels.has(index) && !(k > 0 && looseLabels.has(row.pages[k - 1])) && runs.push(index))
+			}
+		}
+		const targets: (() => HTMLElement | null)[] = [
+			...blocks.map(([first, level]) => () => document.getElementById(this.blockElementId({ first, level }))),
+			...runs.map(index => () => (this.root.querySelector(`[data-label="${index + 1}"]`) as HTMLElement | null)?.closest('.newspaper-thumbnail, .thumbnail-image') as HTMLElement | null
+				?? (this.root.querySelector(`[data-label="${index + 1}"]`) as HTMLElement | null)),
+		]
+		if (targets.length === 0) {
+			return
+		}
+		this.unsavedCursor = (this.unsavedCursor + 1) % targets.length
+		targets[this.unsavedCursor]()?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 	}
 
 	/** true if there is a label field to go to */

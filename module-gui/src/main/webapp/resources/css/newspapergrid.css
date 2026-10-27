@@ -790,3 +790,11 @@ details.newspaper-details[open] > summary .newspaper-details__open {
 	border-radius: 50%;
 	background: var(--clr-action);
 }
+
+/* the section "Hinweise": the heading of a group of entries */
+.notices-group {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}

@@ -5,7 +5,7 @@
 	import TitleAction from './lib/ui/TitleAction.svelte';
 	import HelpBar from './lib/HelpBar.svelte';
 	import ActionsMenu from './lib/ActionsMenu.svelte';
-	import Banners from './lib/Banners.svelte';
+	import Notices from './lib/Notices.svelte';
 	import BlockRow from './lib/BlockRow.svelte';
 	import LooseRow from './lib/LooseRow.svelte';
 	import Dialogs from './lib/Dialogs.svelte';
@@ -87,7 +87,7 @@
 				<HelpBar />
 
 				<div>
-					<Banners />
+					<Notices />
 
 					<div class="section-body">
 						<div class="issues">
