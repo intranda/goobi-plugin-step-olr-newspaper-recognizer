@@ -87,7 +87,7 @@ If a value is set back to the saved one, its marker disappears. After a successf
 
 ### Usage hints
 
-The line with usage hints above the blocks no longer exists. The hints on the mouse (click, `CTRL`/`ALT`, `SHIFT`) are in Goobi's help menu (?) under "Keyboard shortcuts", in the section "Newspaper recognition". While images load, the plugin still shows a progress bar.
+The line with usage hints above the blocks no longer exists. The hints on the mouse (click, `CTRL`/`ALT`, `SHIFT`) are in Goobi's help menu (the person icon in the top navigation, "Show help functions") under "Keyboard shortcuts", in the section "Newspaper recognition". While images load, the plugin still shows a progress bar.
 
 ### Counting through the whole volume
 

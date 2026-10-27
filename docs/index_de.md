@@ -86,7 +86,7 @@ Wird ein Wert auf den gespeicherten zurückgesetzt, verschwindet seine Markierun
 
 ### Bedienhinweise
 
-Die Zeile mit den Bedienhinweisen über den Blöcken gibt es nicht mehr. Die Hinweise zur Maus (Klick, `STRG`/`ALT`, `SHIFT`) stehen im Hilfemenü von Goobi (?) unter „Tastenkombinationen“, im Abschnitt „Zeitungserkennung“. Beim Laden der Bilder zeigt das Plugin weiterhin einen Fortschrittsbalken.
+Die Zeile mit den Bedienhinweisen über den Blöcken gibt es nicht mehr. Die Hinweise zur Maus (Klick, `STRG`/`ALT`, `SHIFT`) stehen im Hilfemenü von Goobi (Symbol Person oben in der Navigation, „Hilfefunktionen anzeigen“) unter „Tastenkombinationen“, im Abschnitt „Zeitungserkennung“. Beim Laden der Bilder zeigt das Plugin weiterhin einen Fortschrittsbalken.
 
 ### Durch den ganzen Band zählen
 
