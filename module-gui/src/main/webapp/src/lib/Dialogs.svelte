@@ -12,7 +12,7 @@
 
 	/** Whatever modal is open: the dialogs of a block or of the volume, the question about additional data, the confirmation of a destructive action. */
 	const app = getApp();
-	const { t } = app;
+	const { t, fmt } = app;
 	const dialog = $derived(app.dialog);
 	const cancel = () => app.closeDialog();
 </script>
@@ -35,7 +35,7 @@
 {#if app.confirmation}
 	{@const confirmation = app.confirmation}
 	<Modal title={t(confirmation.title)} onclose={() => app.cancelConfirmation()}>
-		<p class="mb-0">{t(confirmation.text)}</p>
+		<p class="mb-0">{confirmation.params ? fmt(confirmation.text, ...confirmation.params) : t(confirmation.text)}</p>
 		{#snippet footer()}
 			<Button onclick={() => app.cancelConfirmation()}>{t('abbrechen')}</Button>
 			<Button variant="danger" onclick={() => app.runConfirmation()}>

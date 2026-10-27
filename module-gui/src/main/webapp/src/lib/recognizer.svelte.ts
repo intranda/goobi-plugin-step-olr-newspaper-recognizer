@@ -79,7 +79,7 @@ export class Recognizer {
 	helpHidden = $state(false)
 	actionsOpen = $state(false)
 	missingDeclined = $state(false) // "Nicht erzeugen": the banner stays hidden until the plugin is opened again (not reset by loadData)
-	confirmation: Confirmation | null = $state.raw(null) // {title, text, button, action, icon}
+	confirmation: Confirmation | null = $state.raw(null) // {title, text, button, action, icon, params}
 	openHidden: string | null = $state(null) // element id of the block whose hidden data is listed, or 'volume'
 	pendingChange: PendingChange | null = $state.raw(null) // a change waiting for the user's decision about hidden data
 	dialog: DialogState | null = $state.raw(null) // {kind: 'pattern' | 'continue' | 'rules', ...}
@@ -500,6 +500,13 @@ export class Recognizer {
 		this.missingDeclined = true
 	}
 
+	/* asks first, naming how many pages lose their changed label */
+	askRestoreLabels() {
+		const count = this.unsaved.labels.length
+		this.askConfirmation(PREFIX + 'restore_title', PREFIX + (count === 1 ? 'restore_confirmOne' : 'restore_confirm'), PREFIX + 'restore_title',
+			() => this.restoreLabels(), undefined, [count])
+	}
+
 	/* all labels from the METS as last loaded, all offers gone */
 	restoreLabels() {
 		this.applyChange(restoreFromMets(this.pages), { paginate: false, afterCommit: () => this.clearOffers() })
@@ -804,8 +811,8 @@ export class Recognizer {
 	// ---- confirmations
 
 	/** every confirmation guards a destructive action; icon is optional (e.g. 'trash') */
-	askConfirmation(title: string, text: string, button: string, action: () => void, icon?: string) {
-		this.confirmation = { title, text, button, action, icon }
+	askConfirmation(title: string, text: string, button: string, action: () => void, icon?: string, params?: (string | number)[]) {
+		this.confirmation = { title, text, button, action, icon, params }
 	}
 
 	cancelConfirmation() {

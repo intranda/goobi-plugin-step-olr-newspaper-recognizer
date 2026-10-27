@@ -60,6 +60,9 @@
 				<li><button type="button" data-action-pagination class="dropdown-item" onclick={() => run(() => app.openRulesDialog(null))}>{t(P + 'pagination_rules_menu')}</button></li>
 				<li><hr class="dropdown-divider" /></li>
 			{/if}
+			{#if app.unsaved.labels.length > 0}
+				<li><button type="button" data-action-restore class="dropdown-item" onclick={() => run(() => app.askRestoreLabels())}>{t(P + 'pagination_changed_restore')}</button></li>
+			{/if}
 			<li><button type="button" class="dropdown-item" onclick={() => run(() => app.askResetToAnalysis())}>{t(P + 'action_takeAnalysis')}</button></li>
 			<li><button type="button" class="dropdown-item" onclick={() => run(() => app.askRemoveAllBlocks())}>{t(P + 'removeAllBlocks')}</button></li>
 			<li><hr class="dropdown-divider" /></li>
