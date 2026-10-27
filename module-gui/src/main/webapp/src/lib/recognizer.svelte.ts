@@ -110,9 +110,9 @@ export class Recognizer {
 	unsaved: Unsaved = $derived.by(() => unsavedChanges(this.baseline, this.pages, this.catalog, this.operations, this.volumeHidden))
 	typingPending = $state(false) // a date, number, prefix or suffix is being typed and not yet applied; saving stays possible meanwhile
 	hasUnsaved = $derived(this.unsaved.any || this.hasOpenEdit || this.typingPending)
-	canSave = $derived.by(() =>
-		!this.saveInFlight && this.hasUnsaved && this.configErrors.length === 0 && this.validation.valid
-	)
+	saveBlocked = $derived.by(() => this.configErrors.length > 0 || !this.validation.valid)
+	saveBlockedOpen = $state(false) // the summary of what keeps the data from being saved
+	canSave = $derived(!this.saveInFlight && this.hasUnsaved && !this.saveBlocked)
 	validationProblems = $derived(PROBLEMS.filter(([name]) => this.validation[name].length > 0)
 		.map(([name, key]) => ({ name, key: `${PREFIX}validation_summary_${key}`, count: new Set(this.validation[name].map(ref => `${ref.page}:${ref.level}`)).size })))
 
@@ -862,7 +862,7 @@ export class Recognizer {
 				shiftStructures(structures, index)
 				this.volumeHidden = { ...this.volumeHidden, structures }
 				this.bridge.deleteFile(page.filename, index)
-				this.save()
+				this.save(false)
 			},
 		})
 	}
@@ -897,8 +897,21 @@ export class Recognizer {
 		}
 	}
 
-	save() {
+	openSaveBlocked() {
+		this.saveBlockedOpen = true
+	}
+
+	closeSaveBlocked() {
+		this.saveBlockedOpen = false
+	}
+
+	/* the save button: while something blocks saving it explains what instead of doing nothing; the save after a deletion stays silent */
+	save(explain = true) {
 		this.commitOpenEdit()
+		if (this.saveBlocked && !this.saveInFlight && this.hasUnsaved && explain) {
+			this.openSaveBlocked()
+			return
+		}
 		if (!this.canSave) {
 			return
 		}
@@ -915,7 +928,8 @@ export class Recognizer {
 			this.bridge.finish()
 			return
 		}
-		if (!this.canSave) {
+		if (this.saveBlocked) {
+			this.openSaveBlocked()
 			return
 		}
 		this.pendingExit = true

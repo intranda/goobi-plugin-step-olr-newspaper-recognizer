@@ -7,6 +7,7 @@
 	import Modal from './ui/Modal.svelte';
 	import Button from './ui/Button.svelte';
 	import Icon from './ui/Icon.svelte';
+	import NoticeRow from './ui/NoticeRow.svelte';
 	import type { Page, PaginationSettings, RulesScope } from '../types';
 
 	/** Whatever modal is open: the dialogs of a block or of the volume, the question about additional data, the confirmation of a destructive action. */
@@ -41,6 +42,25 @@
 				{#if confirmation.icon}<Icon name={confirmation.icon} class="me-2" />{/if}
 				<span>{t(confirmation.button)}</span>
 			</Button>
+		{/snippet}
+	</Modal>
+{/if}
+
+{#if app.saveBlockedOpen}
+	{@const P = 'plugin_newspaperRecognizer_'}
+	<Modal title={t(P + 'saveBlocked_title')} onclose={() => app.closeSaveBlocked()} data-save-blocked>
+		<p>{t(P + 'saveBlocked_text')}</p>
+		<ul class="mb-0 list-unstyled d-flex flex-column gap-1">
+			{#each app.configErrors as error (error)}
+				<li>{error}</li>
+			{/each}
+			{#each app.validationProblems as problem (problem.name)}
+				<NoticeRow text={app.fmt(problem.key, problem.count)} button={t(P + (problem.count > 1 ? 'validation_jumpNext' : 'validation_jump'))}
+					onclick={() => { app.closeSaveBlocked(); app.jumpToProblem(problem.name) }} />
+			{/each}
+		</ul>
+		{#snippet footer()}
+			<Button onclick={() => app.closeSaveBlocked()}>{t('abbrechen')}</Button>
 		{/snippet}
 	</Modal>
 {/if}
