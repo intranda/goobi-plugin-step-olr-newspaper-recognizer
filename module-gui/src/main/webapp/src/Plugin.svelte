@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { shortcutSection } from './lib/shortcutSection';
 	import { Recognizer, setApp } from './lib/recognizer.svelte';
 	import BoxTitle from './lib/ui/BoxTitle.svelte';
@@ -28,10 +27,9 @@
 	const { t } = app;
 	const P = 'plugin_newspaperRecognizer_';
 
-	onMount(() => {
-		app.listenToFaces();
-		app.loadMessages();
-	});
+	// the page is built in the browser only: no mount hook needed, the request starts with the component
+	app.listenToFaces();
+	app.loadMessages();
 
 	// the usage hints are a section of goobi's shortcuts dialog; the effect follows the language of the loaded messages
 	$effect(() => {
