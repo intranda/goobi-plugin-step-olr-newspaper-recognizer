@@ -49,14 +49,6 @@
 			app.commitDeferredEdit();
 		}, 0);
 	};
-
-	// close the actions menu on a click outside of it or on Escape
-	function onclick(e: MouseEvent) {
-		const target = (e.target as Element);
-		if (app.actionsOpen && !target.closest('.dropdown-menu') && !target.closest('[aria-haspopup]')) {
-			app.actionsOpen = false;
-		}
-	}
 </script>
 
 <!-- an edited label field loses its focus on mousedown; its edit is committed with the click, not before, because a re-render
@@ -65,9 +57,7 @@
 	onpointerdowncapture={() => (app.pointerDown = true)}
 	onpointerupcapture={onpointerend}
 	onpointercancelcapture={onpointerend}
-	onclickcapture={() => app.commitDeferredEdit()}
-	{onclick}
-	onkeydown={e => app.actionsOpen && e.key === 'Escape' && (app.actionsOpen = false)} />
+	onclickcapture={() => app.commitDeferredEdit()} />
 
 <div {@attach el => { app.root = el; }} aria-busy={!app.msgsLoaded || app.ajaxBusy ? 'true' : 'false'}>
 	{#if !app.msgsLoaded}

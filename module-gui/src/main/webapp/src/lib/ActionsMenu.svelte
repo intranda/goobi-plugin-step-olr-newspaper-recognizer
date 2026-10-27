@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { getApp } from './recognizer.svelte';
 	import TitleAction from './ui/TitleAction.svelte';
+	import { dismiss } from './dismiss';
 
 	/**
-	 * The "more" menu of the title bar: pagination rules and the actions that start over. Closes on a click outside or Escape (see App).
+	 * The "more" menu of the title bar: pagination rules and the actions that start over. Closes on a click outside or Escape.
 	 * Keyboard: the focus moves to the first entry when the menu opens, the arrow keys move within it, Escape or leaving it with Tab closes it,
 	 * and the focus returns to the button.
 	 */
@@ -40,6 +41,13 @@
 		entries[next]?.focus();
 	}
 
+	// a click on the button (it toggles by itself) or in a menu or on a popup trigger elsewhere does not close it
+	const closeOutside = () => dismiss(
+		target => !!wrapper?.contains(target) || !(target instanceof Element) || !!target.closest('.dropdown-menu, [aria-haspopup]'),
+		() => (app.actionsOpen = false),
+		'click',
+	);
+
 	// Tab to something outside of the menu closes it
 	function onfocusout(e: FocusEvent) {
 		const target = e.relatedTarget;
@@ -55,7 +63,7 @@
 	{#if app.actionsOpen}
 		<!-- after the button, so that the Tab order is button, entries; Goobi's margin for a title button that is not the last child is switched off with me-0 -->
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions (the keys are handled for the buttons inside, which have the focus) -->
-		<ul {@attach focusFirst} {onkeydown} class="dropdown-menu dropdown-menu-end show" style="position: absolute; right: 0; top: 100%;">
+		<ul {@attach focusFirst} {@attach closeOutside} {onkeydown} class="dropdown-menu dropdown-menu-end show" style="position: absolute; right: 0; top: 100%;">
 			{#if app.settings.enabled}
 				<li><button type="button" data-action-pagination class="dropdown-item" onclick={() => run(() => app.openRulesDialog(null))}>{t(P + 'pagination_rules_menu')}</button></li>
 			{/if}

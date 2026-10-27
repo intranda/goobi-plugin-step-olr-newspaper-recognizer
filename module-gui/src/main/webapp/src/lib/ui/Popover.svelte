@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { dismiss } from '../dismiss';
 
 	interface Props {
 		title: string;
@@ -17,14 +18,7 @@
 	const closeOutside = (popover: HTMLElement) => {
 		// the positioned container holds the trigger too
 		const area = popover.closest('.position-relative, .newspaper-field') || (popover.parentElement as HTMLElement);
-		const onKeyDown = (e: KeyboardEvent) => e.key === 'Escape' && onclose();
-		const onPointerDown = (e: MouseEvent) => area.contains((e.target as Node)) || onclose();
-		document.addEventListener('keydown', onKeyDown);
-		document.addEventListener('mousedown', onPointerDown);
-		return () => {
-			document.removeEventListener('keydown', onKeyDown);
-			document.removeEventListener('mousedown', onPointerDown);
-		};
+		return dismiss(target => area.contains(target), onclose);
 	};
 </script>
 
