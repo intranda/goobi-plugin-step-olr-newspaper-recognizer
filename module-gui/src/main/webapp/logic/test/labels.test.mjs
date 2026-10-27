@@ -70,3 +70,17 @@ test('nextLabel keeps the roman case across a length change', () => {
   assert.equal(nextLabel('ix'), 'x');
   assert.equal(nextLabel('XIX'), 'XX');
 });
+
+test('nextLabel keeps the zero padding of an arabic number', () => {
+  assert.equal(nextLabel('0001'), '0002');
+  assert.equal(nextLabel('0099'), '0100');
+  assert.equal(nextLabel('0999'), '1000');
+  assert.equal(nextLabel('9999'), '10000');
+  assert.equal(nextLabel('S.007a'), 'S.008a');
+  assert.equal(nextLabel('[09]'), '[10]');
+});
+
+test('follows accepts the zero padded continuation', () => {
+  assert.equal(follows('0001', '0002'), true);
+  assert.equal(follows('0001', '2'), false);
+});

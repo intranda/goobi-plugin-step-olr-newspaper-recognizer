@@ -53,7 +53,7 @@ export function parseLabel(text) {
   }
   const arabic = value.match(/^(.*?)(\d+)(\D*)$/);
   if (arabic) {
-    return { kind: 'arabic', number: Number(arabic[2]), prefix: arabic[1], suffix: arabic[3], fictitious };
+    return { kind: 'arabic', number: Number(arabic[2]), digits: arabic[2].length, prefix: arabic[1], suffix: arabic[3], fictitious };
   }
   return { kind: 'text', fictitious };
 }
@@ -75,7 +75,7 @@ export function nextLabel(text) {
   const label = parseLabel(text);
   let next;
   if (label.kind === 'arabic') {
-    next = label.prefix + (label.number + 1) + label.suffix;
+    next = label.prefix + String(label.number + 1).padStart(label.digits, '0') + label.suffix; // keeps a zero padding (0001)
   } else if (label.kind === 'roman') {
     next = toRoman(label.number + 1);
     if (label.upper) {
