@@ -64,7 +64,7 @@ Saving updates the METS file in place: new blocks are added, removed blocks are 
 
 ### Notes
 
-Above the blocks there is a single collapsed row "Notes". It gives the number of entries per group, for example "2 to decide · 3 for information"; a click expands it. It scrolls with the page and does not change on its own while you work. If there is no entry, it is not shown. An entry disappears as soon as its cause is gone. The entries are in three groups:
+Above the blocks there is a single collapsed row "Notes". It gives the number of entries per group, for example "2 to decide · 3 for information"; a click expands it. It is always there while the plugin is open, scrolls with the page and does not expand on its own. If there is no entry, it reads "Notes · none". An entry disappears as soon as its cause is gone. The entries are in three groups:
 
 - **Saving blocked:** configuration errors and problems that prevent saving (missing type, missing required value, invalid date, duplicate), problems at a block each with a button that jumps to that block.
 - **To decide:** pages without pagination in the METS (generate, jump to the next, hide) and – from two open offers on – the summary of the pagination offers.
@@ -83,7 +83,7 @@ Everything that differs from the last saved METS file is marked in orange (the c
 - **New block:** the block also carries "new block" with a pencil icon.
 - **Save button:** a small orange dot while anything is unsaved.
 
-If a value is set back to the saved one, its marker disappears. After a successful save all markers are gone. The entry "Not saved: 3 blocks, 5 page labels" in the "Notes" section sums it up; a button jumps in turn to changed blocks and to changed page labels, also outside blocks (without a reachable target, for example when only the volume's additional data changed, the button is missing). The marker of an overwritten generated value (dot in the field, see above) is independent of this.
+If a value is set back to the saved one, its marker disappears. After a successful save all markers are gone. The entry "Not saved: 3 blocks, 5 page labels" in the "Notes" section sums it up (a deleted image counts as "1 deleted page" until the save after it has succeeded); a button jumps in turn to changed blocks and to changed page labels, also outside blocks (without a reachable target, for example when only the volume's additional data changed, the button is missing). The marker of an overwritten generated value (dot in the field, see above) is independent of this.
 
 ### Usage hints
 

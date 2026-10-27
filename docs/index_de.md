@@ -63,7 +63,7 @@ Beim Speichern wird die METS-Datei angepasst: neue Blöcke werden ergänzt, entf
 
 ### Hinweise
 
-Über den Blöcken steht eine einzelne, eingeklappte Zeile „Hinweise“. Sie nennt je Gruppe die Zahl der Einträge, zum Beispiel „1 sperrt das Speichern · 2 zu entscheiden · 3 zur Info“; ein Klick klappt sie auf. Sie scrollt mit der Seite und ändert sich nicht von selbst, während Sie arbeiten. Gibt es keinen Eintrag, erscheint sie nicht. Ein Eintrag verschwindet, sobald seine Ursache behoben ist. Die Einträge stehen in drei Gruppen:
+Über den Blöcken steht eine einzelne, eingeklappte Zeile „Hinweise“. Sie nennt je Gruppe die Zahl der Einträge, zum Beispiel „1 sperrt das Speichern · 2 zu entscheiden · 3 zur Info“; ein Klick klappt sie auf. Sie steht immer da, solange das Plugin geöffnet ist, scrollt mit der Seite und klappt nicht von selbst auf. Gibt es keinen Eintrag, lautet sie „Hinweise · keine“. Ein Eintrag verschwindet, sobald seine Ursache behoben ist. Die Einträge stehen in drei Gruppen:
 
 - **Speichern gesperrt:** Konfigurationsfehler und Probleme, die das Speichern verhindern (fehlender Typ, fehlender Pflichtwert, ungültiges Datum, Duplikat), Probleme an einem Block jeweils mit einem Button, der zu diesem Block springt.
 - **Zu entscheiden:** Seiten ohne Paginierung im METS (Erzeugen, zum nächsten springen, ausblenden) und – ab zwei offenen Angeboten – die Zusammenfassung der Paginierungsangebote.
@@ -82,7 +82,7 @@ Alles, was sich von der zuletzt gespeicherten METS-Datei unterscheidet, ist oran
 - **Neuer Block:** der Block trägt zusätzlich „neuer Block“ mit einem Stift-Symbol.
 - **Speichern-Schaltfläche:** ein kleiner orangefarbener Punkt, solange etwas ungespeichert ist.
 
-Wird ein Wert auf den gespeicherten zurückgesetzt, verschwindet seine Markierung. Nach einem erfolgreichen Speichern sind alle Markierungen weg. Der Eintrag „Nicht gespeichert: 3 Blöcke, 5 Seitenbezeichnungen“ im Bereich „Hinweise“ fasst es zusammen; ein Button springt der Reihe nach zu geänderten Blöcken und zu geänderten Seitenbezeichnungen, auch außerhalb von Blöcken (ohne erreichbares Ziel, etwa bei nur geänderten zusätzlichen Daten des Bandes, fehlt der Button). Die Markierung eines überschriebenen generierten Werts (Punkt im Feld, siehe oben) bleibt davon unabhängig.
+Wird ein Wert auf den gespeicherten zurückgesetzt, verschwindet seine Markierung. Nach einem erfolgreichen Speichern sind alle Markierungen weg. Der Eintrag „Nicht gespeichert: 3 Blöcke, 5 Seitenbezeichnungen“ im Bereich „Hinweise“ fasst es zusammen (ein gelöschtes Bild zählt als „1 gelöschte Seite“, bis das Speichern danach gelungen ist); ein Button springt der Reihe nach zu geänderten Blöcken und zu geänderten Seitenbezeichnungen, auch außerhalb von Blöcken (ohne erreichbares Ziel, etwa bei nur geänderten zusätzlichen Daten des Bandes, fehlt der Button). Die Markierung eines überschriebenen generierten Werts (Punkt im Feld, siehe oben) bleibt davon unabhängig.
 
 ### Bedienhinweise
 
