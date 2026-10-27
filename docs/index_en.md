@@ -39,7 +39,7 @@ The plugin shows the images of a volume as blocks. Each block is a structure of 
 
 A click on a page starts a new block there; a click on the first page of a block removes it, and its pages join the previous block. A click with `CTRL` or `ALT` starts a child block (for example a supplement) inside a block that runs to the end of the block or to the next child block; on the first page of a child block it removes it, on a later page it splits it; such pages are marked with a coloured number. Hovering over a page while holding `SHIFT` enlarges it.
 
-The drop-down of a block offers exactly the types the ruleset allows at that position, with their labels from the ruleset. A date field appears if the type allows the configured date metadata, a number field (with prefix and suffix, if configured) if it allows the number metadata. Below them follow the configured metadata fields of the type, for example the title. A field with a generated value shows that value and updates it while date and number change; it can be overwritten. An overwritten value is highlighted and has a button inside the field to restore the generated value. If the generated value changes afterwards, for example because the number was changed, this button gets a dot; clicking it shows the new value, which can be taken or dismissed. This only covers changes since the plugin was opened. When the type of a block changes, values entered in fields the new type does not show are kept as additional data; values the new type does not allow are listed in the dialog for the type change. Required values are marked with `*`. The plugin cannot be saved while a block has no type, a required value is missing, a date is invalid or — if configured — two blocks are duplicates.
+The drop-down of a block offers exactly the types the ruleset allows at that position, with their labels from the ruleset. A date field appears if the type allows the configured date metadata, a number field (with prefix and suffix, if configured) if it allows the number metadata. Below them follow the configured metadata fields of the type, for example the title. A field with a generated value shows that value and updates it while date and number change; it can be overwritten. An overwritten value is highlighted and has a button inside the field to restore the generated value. If the generated value changes afterwards, for example because the number was changed, this button gets a dot; clicking it shows the new value, which can be taken or dismissed. This only covers changes since the plugin was opened. When the type of a block changes, values entered in fields the new type does not show are kept as additional data; values the new type does not allow are listed in the dialog for the type change. Required values are marked with `*`. The plugin cannot be saved while a block has no type, a required value is missing, a date is invalid or — if configured — two blocks are duplicates. What blocks saving is marked at the block where it arises; see "Errors and saving".
 
 ![Type and fields of a block](screen4_en.png)
 
@@ -50,17 +50,44 @@ Two tools fill many blocks at once:
 
 ![Continue date and no.](screen5_en.png)
 
-Structures and metadata that the plugin does not manage – for example articles below a supplement or a note added in the metadata editor – are kept. A badge next to the block shows how many there are; a click lists them. If a change would affect them (removing the block, changing its type or its pages), the plugin asks what to do with them. Saving never drops them silently.
+Structures and metadata that the plugin does not manage – for example articles below a supplement or a note added in the metadata editor – are kept. A badge next to the block shows how many there are; a click lists them. The "Notes" section also says how many blocks have such data ("Next" jumps there) and shows the additional data of the whole volume. If a change would affect them (removing the block, changing its type or its pages), the plugin asks what to do with them. Saving never drops them silently.
 
 ![Additional data of a block](screen6_en.png)
 
-Every page shows its pagination label under its thumbnail; it can be edited there. While typing, the plugin shows what it recognised and which of the following pages count on, and `Enter` accepts the label. The rules by which blocks are paginated (the first label per type, pages without block) are edited in the dialog "Pagination …" of the actions menu or with "Rules …" in the "Pagination" row of a top-level block, which shows the rule of the block's type; a preview shows what would change before it is applied. The dialog lists the rules from the plugin configuration and below them the rules created in this session; further types are added with "Add rule". Configured rules can be changed or removed for the session and restored one by one or with "Reset the configured rules"; the configuration file stays unchanged. A hint at the top points out pages without pagination in the METS (they can be generated by the rules) and pages changed since the plugin was opened (their pagination can be restored from the METS).
+Every page shows its pagination label under its thumbnail; it can be edited there. While typing, the plugin shows what it recognised and which of the following pages count on, and `Enter` accepts the label. The rules by which blocks are paginated (the first label per type, pages without block) are edited in the dialog "Pagination …" of the actions menu or with "Rules …" in the "Pagination" row of a top-level block, which shows the rule of the block's type; a preview shows what would change before it is applied. The dialog lists the rules from the plugin configuration and below them the rules created in this session; further types are added with "Add rule". Configured rules can be changed or removed for the session and restored one by one or with "Reset the configured rules"; the configuration file stays unchanged. The "Notes" section points out pages without pagination in the METS (they can be generated by the rules). The pagination of pages changed since the plugin was opened is restored by the entry "Restore pagination from the METS …" in the actions menu (⋮); before that the plugin asks, naming how many pages get their label from the METS back and that the changes to them are lost. The entry appears only while labels differ from the METS.
 
-With automatic pagination, a structure change can leave the labels of a block different from what the rules would give. Own labels are never overwritten silently; instead the block shows an offer below its fields: the text says how many pages would change, "Renumber by the rules" applies exactly these pages at once, and the cross hides the offer. An offer disappears when its block changes. If two or more offers are open, a banner above the blocks sums them up (number of blocks and pages) with the buttons "Renumber all by the rules", "Review …", "Jump to the next" and "Hide all". "Review …" opens the rules dialog with the overwrite scope "only the offered pages"; only these pages are changed and only their offers are cleared.
+With automatic pagination, a structure change can leave the labels of a block different from what the rules would give. Own labels are never overwritten silently; instead the block shows an offer below its fields: the text says how many pages would change, "Renumber by the rules" applies exactly these pages at once, and the cross hides the offer. An offer disappears when its block changes. If two or more offers are open, an entry in the "Notes" section sums them up (number of blocks and pages) with the buttons "Renumber all by the rules", "Review …", "Jump to the next" and "Hide all". "Review …" opens the rules dialog with the overwrite scope "only the offered pages"; only these pages are changed and only their offers are cleared.
 
 The preview of the rules dialog lists one row per block of the chosen scope: the first page with its thumbnail, the type (child blocks indented, with their colour) and the first and last label before and after, for example `111–118 → 1–8`, with the number of changed pages on the right. A block whose labels are not one counting sequence shows its labels as a list instead. A click on the arrow of a row shows the pages of the block with their new label and, if changed, the old one struck through above it. At first every block has its own row. With the switch "Show changes only" above the preview, blocks without change are folded into one grey line per run ("12 blocks without change"), which can be unfolded as well; "Expand all" / "Collapse all" opens or closes all rows at once.
 
 Saving updates the METS file in place: new blocks are added, removed blocks are deleted, changed blocks keep everything the plugin does not manage.
+
+### Notes
+
+Above the blocks there is a single collapsed row "Notes". It gives the number of entries per group, for example "2 to decide · 3 for information"; a click expands it. It scrolls with the page and does not change on its own while you work. If there is no entry, it is not shown. An entry disappears as soon as its cause is gone. The entries are in three groups:
+
+- **Saving blocked:** configuration errors and problems that prevent saving (missing type, missing required value, invalid date, duplicate), each with a button that jumps to the block.
+- **To decide:** pages without pagination in the METS (generate, jump to the next, hide) and – from two open offers on – the summary of the pagination offers.
+- **For information:** unsaved changes, blocks with additional data, additional data of the volume and notices from loading.
+
+### Errors and saving
+
+What blocks saving stays visible at the block (the affected field is red with a message); there is no bar above the blocks for it any more. The buttons "Save" and "Save and leave plugin" can be clicked as soon as there is something to save, even while saving is blocked. In that case a click opens the dialog "Saving not possible", which lists the points with a button to the block each; a click on a button closes the dialog and jumps there. Nothing is written while something blocks saving. Leaving without saving still asks for confirmation.
+
+### Unsaved changes
+
+Everything that differs from the last saved METS file is marked in orange (the colour Goobi uses for changes):
+
+- **Field:** a changed value in orange and bold, with a thin orange bar to the left of the field (type, date, number, prefix, suffix, metadata fields, page labels).
+- **Block:** an orange stripe at the left edge of the row if something about the block changed, that is type, values, pages, nesting or decisions about additional data ("Additional data changed"). Child blocks are marked in their own row.
+- **New block:** the block also carries "new block" with a pencil icon.
+- **Save button:** a small orange dot while anything is unsaved.
+
+If a value is set back to the saved one, its marker disappears. After a successful save all markers are gone. The entry "Not saved: 3 blocks, 5 page labels" in the "Notes" section sums it up; "Next" jumps in turn to changed blocks and to changed page labels, also outside blocks. The marker of an overwritten generated value (dot in the field, see above) is independent of this.
+
+### Usage hints
+
+The line with usage hints above the blocks no longer exists. The hints on the mouse (click, `CTRL`/`ALT`, `SHIFT`) are in Goobi's help menu (?) under "Keyboard shortcuts", in the section "Newspaper recognition". While images load, the plugin still shows a progress bar.
 
 ### Counting through the whole volume
 
@@ -68,7 +95,7 @@ By default every top-level block begins its numbering anew. With the choice "Cou
 
 A non-counting first value such as `–` in `beginsWith = "– 1"` applies in every block (`… 7 8 | – 9 10 …`); a counting start value applies only in the first block, later blocks continue from the last counting label before them. If top-level types have different rules (for example one with `1`, another with `i`), the counting value of a later block's rule is not used: the block continues the stream.
 
-With automatic pagination, a structure change paginates only up to the end of the changed block, and a typed label continues the count only up to the end of its block. Every later block whose labels the volume count would change gets its own offer; from two offers on the banner with "Renumber all by the rules" appears. The offers are recalculated after every change: here an offer does not disappear as soon as its block changes, but once the block fits the volume count.
+With automatic pagination, a structure change paginates only up to the end of the changed block, and a typed label continues the count only up to the end of its block. Every later block whose labels the volume count would change gets its own offer; from two offers on the entry in the "Notes" section with "Renumber all by the rules" appears. The offers are recalculated after every change: here an offer does not disappear as soon as its block changes, but once the block fits the volume count.
 
 ## Configuration
 
