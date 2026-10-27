@@ -146,6 +146,6 @@
 	</div>
 	{#snippet footer()}
 		<Button onclick={oncancel}>{t('cancel')}</Button>
-		<Button variant="primary" onclick={() => onapply(pattern.map(entry => entry.type))}>{fmt(P + 'apply', siblings.length)}</Button>
+		<Button variant="primary" onclick={() => onapply(pattern.map(entry => entry.type))}>{siblings.length === 1 ? t(P + 'applyOne') : fmt(P + 'apply', siblings.length)}</Button>
 	{/snippet}
 </Modal>

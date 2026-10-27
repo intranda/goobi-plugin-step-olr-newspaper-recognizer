@@ -261,7 +261,7 @@
 		<span class="me-auto text-muted">{t(P + 'continue_footer')}</span>
 		<Button onclick={oncancel}>{t('cancel')}</Button>
 		<Button variant="primary" disabled={!!result.error || result.count === 0} onclick={() => !result.error && onapply(result.pages)}>
-			{fmt(P + 'apply', result.count || 0)}
+			{result.count === 1 ? t(P + 'applyOne') : fmt(P + 'apply', result.count || 0)}
 		</Button>
 	{/snippet}
 </Modal>
