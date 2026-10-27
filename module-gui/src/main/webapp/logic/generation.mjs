@@ -105,6 +105,42 @@ export function groupByDay(preview, start) {
   return groups.filter(group => group.rows.length > 0);
 }
 
+/** @typedef {{ date: string | null, dayNumber: string | null, rows: ContinueRow[] }} PreviewDay */
+
+/**
+ * The days of the continue preview with the rows `shown` keeps, at most `limit` rows in all; the days after the limit are left out.
+ * A day entry is {fold: false, day, rows, blocks, hidden}. With `fold` each run of days without a row left becomes one entry
+ * {fold: true, days, blocks} (blocks counts the blocks of all its days); without it every day stays a day entry.
+ * @param {PreviewDay[]} days
+ * @param {(row: ContinueRow) => boolean} shown
+ * @returns {({ fold: false, day: PreviewDay, rows: ContinueRow[], blocks: number, hidden: number } | { fold: true, days: PreviewDay[], blocks: number })[]}
+ */
+export function previewDays(days, shown, limit, fold) {
+  /** @type {({ fold: false, day: PreviewDay, rows: ContinueRow[], blocks: number, hidden: number } | { fold: true, days: PreviewDay[], blocks: number })[]} */
+  const entries = [];
+  let room = limit;
+  for (const day of days) {
+    if (room <= 0) {
+      break;
+    }
+    const kept = day.rows.filter(shown);
+    const last = entries[entries.length - 1];
+    if (fold && kept.length === 0) {
+      if (last?.fold) {
+        last.days.push(day);
+        last.blocks += day.rows.length;
+      } else {
+        entries.push({ fold: true, days: [day], blocks: day.rows.length });
+      }
+      continue;
+    }
+    const rows = kept.slice(0, room);
+    room -= rows.length;
+    entries.push({ fold: false, day, rows, blocks: day.rows.length, hidden: day.rows.length - kept.length });
+  }
+  return entries;
+}
+
 /** A copy of the pattern with the entry at {@code from} moved to {@code to}; out of range moves change nothing. */
 export function movePatternEntry(pattern, from, to) {
   if (from === to || from < 0 || to < 0 || from >= pattern.length || to >= pattern.length) {

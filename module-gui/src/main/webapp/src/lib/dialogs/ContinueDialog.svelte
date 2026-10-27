@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getApp } from '../recognizer.svelte';
 	import { buildTree, siblingsFrom } from '../../../logic/blocks.mjs';
-	import { continueFrom, followingTypeCounts, groupByDay, numberModeMatters } from '../../../logic/generation.mjs';
+	import { continueFrom, followingTypeCounts, groupByDay, numberModeMatters, previewDays } from '../../../logic/generation.mjs';
 	import { fromIso, formatByPattern, weekday, WEEKDAY_PRESETS } from '../../../logic/dates.mjs';
 	import Modal from '../ui/Modal.svelte';
 	import Button from '../ui/Button.svelte';
@@ -11,6 +11,7 @@
 	import PreviewTable from '../ui/PreviewTable.svelte';
 	import PageRef from '../ui/PageRef.svelte';
 	import MoreRows from '../ui/MoreRows.svelte';
+	import DisclosureButton from '../ui/DisclosureButton.svelte';
 	import type { BlockRef, Page, TypeOption } from '../../types';
 
 	interface Props {
@@ -26,6 +27,7 @@
 	 * on which weekdays the paper appears. The preview lists the following blocks by publication day with their old and new values.
 	 */
 	let { pages, startRef, typeOptions, oncancel, onapply }: Props = $props();
+	const id = $props.id();
 
 	const { t, fmt, typeLabel, catalog, dateFormatPattern } = getApp();
 	const P = 'plugin_newspaperRecognizer_';
@@ -99,25 +101,34 @@
 	});
 	// "only changes" hides the blocks whose values stay; left-out blocks are always shown
 	const shown = (row: (typeof result.preview)[number]) => !onlyChanges || row.changed || !!row.reason;
-	// the days with the rows still shown, the first PREVIEW_ROWS of them; every day up to there keeps its header, even with all its
-	// blocks hidden, and counts all its blocks and the hidden ones
+	// the days with the rows still shown, the first PREVIEW_ROWS of them; a day header counts all blocks of its day and the hidden ones.
+	// With "only changes" each run of days without a shown block folds into one row (mockups 19, approach A)
 	const days = $derived(result.start ? groupByDay(result.preview, result.start) : []);
 	const visibleCount = $derived(result.preview.filter(shown).length);
 	const hiddenCount = $derived(result.preview.length - visibleCount);
-	const shownDays = $derived.by(() => {
-		let room = PREVIEW_ROWS;
-		return days.flatMap(day => {
-			if (room <= 0) {
-				return [];
-			}
-			const kept = day.rows.filter(shown);
-			const rows = kept.slice(0, room);
-			room -= rows.length;
-			return [{ ...day, key: day.rows[0].ref.page, blocks: day.rows.length, hidden: day.rows.length - kept.length, rows }];
-		});
-	});
 	// a header needs a date or a day number to name; without dates and with a single day it would only repeat the starting point
 	const headers = $derived(days.some(day => day.date) || (numberMode === 'perDay' && days.length > 1));
+	const entries = $derived(previewDays(days, shown, PREVIEW_ROWS, onlyChanges && headers));
+	const dayKey = (day: { rows: { ref: { page: number } }[] }) => day.rows[0].ref.page;
+	// the open folds belong to the result they were opened in: any change of the selection on the left closes them all
+	let opened: { result: typeof result | null, keys: Set<number> } = $state.raw({ result: null, keys: new Set() });
+	const openFolds = $derived(opened.result === result ? opened.keys : new Set<number>());
+	const toggleFold = (key: number) => {
+		const keys = new Set(openFolds);
+		if (!keys.delete(key)) {
+			keys.add(key);
+		}
+		opened = { result, keys };
+	};
+	const dayHeader = (day: (typeof days)[number]) => [day.date && dayText(day.date), numberMode === 'perDay' && day.dayNumber && numberText(day.dayNumber)].filter(Boolean).join(' · ');
+	// "Mo 04.03.1912 – Mi 06.03.1912 · 3 Tage, 6 Blöcke ohne Änderung": the days by their date, without dates by their number
+	const foldDay = (day: (typeof days)[number]) => (day.date ? dayText(day.date) : numberText(day.dayNumber || ''));
+	const foldText = (fold: { days: (typeof days)[number][], blocks: number }) => {
+		const first = foldDay(fold.days[0]), last = foldDay(fold.days[fold.days.length - 1]);
+		return (fold.days.length === 1 ? first : first + ' – ' + last) + ' · '
+			+ (fold.days.length === 1 ? t(P + 'continue_foldDaysOne') : fmt(P + 'continue_foldDays', fold.days.length)) + ', '
+			+ (fold.blocks === 1 ? t(P + 'preview_unchangedOne') : fmt(P + 'preview_unchanged', fold.blocks));
+	};
 	const toggleInclude = (type: string | null) => (include = include.includes(type) ? include.filter(t => t !== type) : [...include, type]);
 	const toggleDay = (index: number) => (weekdays = weekdays.map((on, i) => (i === index ? !on : on)));
 </script>
@@ -130,6 +141,32 @@
 		{#if before !== '—'}<span class="preview-old"><span class="visually-hidden">{t(P + 'preview_before')}: </span>{before}</span>{/if}
 		<span class="preview-changed">{after}</span>
 	{/if}
+{/snippet}
+
+<!-- a publication day: its header (when the preview has headers) and the given rows of it -->
+{#snippet dayRows(day: (typeof days)[number], rows: (typeof days)[number]['rows'], hidden: number)}
+	{#if headers}
+		<tr class="preview-day" id="{id}-day-{dayKey(day)}" data-continue-day>
+			<th colspan="4" scope="rowgroup">
+				<Icon name="calendar" class="me-1" />
+				{dayHeader(day)}
+				<span class="small text-muted fw-normal">· {day.rows.length === 1 ? t(P + 'continue_dayBlocksOne') : fmt(P + 'continue_dayBlocks', day.rows.length)}{hidden ? ', ' + fmt(P + 'continue_dayHidden', hidden) : ''}</span>
+			</th>
+		</tr>
+	{/if}
+	{#each rows as row (row.ref.page)}
+		<tr class={row.reason ? 'preview-skip' : undefined} data-continue-row={row.ref.page + 1} data-changed={row.changed}>
+			<td><PageRef number={row.ref.page + 1} thumb={thumb(row.ref.page)} /></td>
+			<td>
+				{#if row.reason}
+					<span title={reasonText(row.reason)}><Icon name="circle-minus" class="me-1" /><span class="visually-hidden">{reasonText(row.reason)}, </span></span>
+				{/if}
+				{typeLabel(row.type)}
+			</td>
+			<td>{@render value(formatDate(row.before.date), formatDate(row.after.date))}</td>
+			<td>{@render value(row.before.number || '—', row.after.number || '—')}</td>
+		</tr>
+	{/each}
 {/snippet}
 
 <Modal title={t(P + 'continue_title')} size="xl" data-continue-dialog="true" onclose={oncancel}>
@@ -220,29 +257,20 @@
 					{ label: t(P + 'preview_date'), col: 'preview-col-date' },
 					{ label: t(P + 'preview_number'), col: 'preview-col-number' },
 				]}>
-					{#each shownDays as day (day.key)}
-						{#if headers}
-							<tr class="preview-day" data-continue-day>
-								<th colspan="4" scope="rowgroup">
-									<Icon name="calendar" class="me-1" />
-									{[day.date && dayText(day.date), numberMode === 'perDay' && day.dayNumber && numberText(day.dayNumber)].filter(Boolean).join(' · ')}
-									<span class="small text-muted fw-normal">· {day.blocks === 1 ? t(P + 'continue_dayBlocksOne') : fmt(P + 'continue_dayBlocks', day.blocks)}{day.hidden ? ', ' + fmt(P + 'continue_dayHidden', day.hidden) : ''}</span>
-								</th>
+					{#each entries as entry (entry.fold ? 'f' + dayKey(entry.days[0]) : dayKey(entry.day))}
+						{#if entry.fold}
+							{@const key = dayKey(entry.days[0])}
+							<tr class="preview-start preview-fold" data-continue-fold={entry.days.length}>
+								<td><DisclosureButton expanded={openFolds.has(key)} controls={entry.days.map(day => `${id}-day-${dayKey(day)}`).join(' ')} label={t(P + 'preview_showUnchanged')}
+									onclick={() => toggleFold(key)} /></td>
+								<td colspan="3" class="small text-muted">{foldText(entry)}</td>
 							</tr>
+							{#if openFolds.has(key)}
+								{#each entry.days as day (dayKey(day))}{@render dayRows(day, day.rows, 0)}{/each}
+							{/if}
+						{:else}
+							{@render dayRows(entry.day, entry.rows, entry.hidden)}
 						{/if}
-						{#each day.rows as row (row.ref.page)}
-							<tr class={row.reason ? 'preview-skip' : undefined} data-continue-row={row.ref.page + 1} data-changed={row.changed}>
-								<td><PageRef number={row.ref.page + 1} thumb={thumb(row.ref.page)} /></td>
-								<td>
-									{#if row.reason}
-										<span title={reasonText(row.reason)}><Icon name="circle-minus" class="me-1" /><span class="visually-hidden">{reasonText(row.reason)}, </span></span>
-									{/if}
-									{typeLabel(row.type)}
-								</td>
-								<td>{@render value(formatDate(row.before.date), formatDate(row.after.date))}</td>
-								<td>{@render value(row.before.number || '—', row.after.number || '—')}</td>
-							</tr>
-						{/each}
 					{/each}
 				</PreviewTable>
 				<MoreRows count={visibleCount - PREVIEW_ROWS} />

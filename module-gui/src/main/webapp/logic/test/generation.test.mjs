@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { catalog, start, pages } from './fixtures.mjs';
-import { applyTypePattern, continueFrom, followingTypeCounts, groupByDay, movePatternEntry, numberModeMatters } from '../generation.mjs';
+import { applyTypePattern, continueFrom, followingTypeCounts, groupByDay, movePatternEntry, numberModeMatters, previewDays } from '../generation.mjs';
 
 const ALL_DAYS = [true, true, true, true, true, true, true];
 const options = (overrides = {}) => ({ include: ['MorningIssue', 'EveningIssue'], mode: 'perDay', weekdays: ALL_DAYS, biweekly: false, ...overrides });
@@ -192,4 +192,29 @@ test('with a new date for every issue, per day and per issue count alike unless 
   assert.equal(numberModeMatters({ dateMode: 'perIssue', include: ['MorningIssue', 'EveningIssue'] }, catalog), false);
   assert.equal(numberModeMatters({ dateMode: 'perIssue', include: ['MorningIssue', 'ExtraEdition'] }, catalog), true);
   assert.equal(numberModeMatters({ dateMode: 'perIssue', include: ['MorningIssue', 'TableOfContents'] }, catalog), false);
+});
+
+// previewDays: the day groups of the continue preview with "only changes" (mockups 19, approach A)
+const dayOf = (date, ...flags) => ({ date, dayNumber: null, rows: flags.map((flag, i) => ({ ref: { page: Number(date.slice(-2)) * 10 + i }, changed: flag === 'c', reason: flag === 's' ? 'excluded' : null })) });
+const changedOrSkipped = row => row.changed || !!row.reason;
+const outline = entries => entries.map(e => (e.fold ? `F${e.days.length}/${e.blocks}` : `D${e.rows.length}/${e.blocks}-${e.hidden}`));
+
+test('previewDays folds each run of days without a shown row into one entry; days with one keep their shown rows', () => {
+  const days = [dayOf('1912-03-01', '-'), dayOf('1912-03-02', '-', '-'), dayOf('1912-03-03', 'c', '-'), dayOf('1912-03-04', '-', '-'),
+    dayOf('1912-03-05', '-', '-'), dayOf('1912-03-06', '-', 's'), dayOf('1912-03-07', '-', '-')];
+  const entries = previewDays(days, changedOrSkipped, 20, true);
+  assert.deepEqual(outline(entries), ['F2/3', 'D1/2-1', 'F2/4', 'D1/2-1', 'F1/2']);
+  assert.deepEqual(entries[0].days.map(d => d.date), ['1912-03-01', '1912-03-02']);
+  assert.deepEqual(entries[1].rows.map(r => r.changed), [true]);
+});
+
+test('previewDays without folding keeps every day, also one with no row left (today\'s view)', () => {
+  const days = [dayOf('1912-03-01', '-', '-'), dayOf('1912-03-02', 'c', '-')];
+  assert.deepEqual(outline(previewDays(days, changedOrSkipped, 20, false)), ['D0/2-2', 'D1/2-1']);
+  assert.deepEqual(outline(previewDays(days, () => true, 20, false)), ['D2/2-0', 'D2/2-0']);
+});
+
+test('previewDays shows at most limit block rows; folds do not count, days and folds after the limit are left out', () => {
+  const days = [dayOf('1912-03-01', 'c', 'c'), dayOf('1912-03-02', '-'), dayOf('1912-03-03', 'c', 'c'), dayOf('1912-03-04', '-'), dayOf('1912-03-05', 'c')];
+  assert.deepEqual(outline(previewDays(days, changedOrSkipped, 3, true)), ['D2/2-0', 'F1/1', 'D1/2-0']);
 });
