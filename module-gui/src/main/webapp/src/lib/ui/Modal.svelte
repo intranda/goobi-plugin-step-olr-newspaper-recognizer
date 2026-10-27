@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { getApp } from '../recognizer.svelte';
+	import Icon from './Icon.svelte';
 
 	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'title' | 'children'> {
 		title: string;
@@ -65,7 +66,7 @@
 			<div class="modal-header bg-primary text-white">
 				<h4 class="modal-title" id="{id}-title">{title}</h4>
 				<button type="button" class="btn text-white" title={t('cancel')} aria-label={t('cancel')} onclick={onclose}>
-					<span aria-hidden="true" class="icon-wrapper"><svg><use href={GoobiIcons.iconHref('x')} /></svg></span>
+					<Icon name="x" />
 				</button>
 			</div>
 			<div class="modal-body">{@render children()}</div>
