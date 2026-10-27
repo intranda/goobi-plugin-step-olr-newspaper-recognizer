@@ -92,7 +92,8 @@
 					{/if}
 					<ActionsMenu />
 					<TitleAction icon="x" disabled={app.saveInFlight} onclick={() => app.exit()} title={t('pluginLeave')} data-bs-toggle="tooltip" />
-					<TitleAction icon="device-floppy" disabled={app.saveInFlight || !app.hasUnsaved} dot={app.hasUnsaved ? t('plugin_newspaperRecognizer_unsaved_save') : null} onclick={() => app.save()} title={t('save')} data-bs-toggle="tooltip" />
+					<TitleAction icon="device-floppy" disabled={app.saveInFlight || !app.hasUnsaved} dot={app.hasUnsaved} onclick={() => app.save()} title={t('save')}
+						aria-label={app.hasUnsaved ? `${t('save')} (${t('plugin_newspaperRecognizer_unsaved_save')})` : t('save')} data-bs-toggle="tooltip" />
 					<TitleAction icon="logout" disabled={app.saveInFlight || !app.hasUnsaved} onclick={() => app.saveAndExit()} title={t('pluginSaveAndLeave')} data-bs-toggle="tooltip" />
 				</BoxTitle>
 
