@@ -8,3 +8,8 @@ declare const faces: {
 		addOnError(callback: (data: { source?: { id: string } }) => void): void;
 	};
 };
+
+interface Window {
+	/** the sections of goobi's shortcuts dialog; every plugin adds its own while it is on the page */
+	goobiShortcutSections?: import('./lib/shortcutSection').ShortcutSection[];
+}

@@ -34,7 +34,7 @@
 	// the usage hints are a section of goobi's shortcuts dialog; the effect follows the language of the loaded messages
 	$effect(() => {
 		const section = shortcutSection(t);
-		const sections = ((window as any).goobiShortcutSections ??= []);
+		const sections = (window.goobiShortcutSections ??= []);
 		sections.push(section);
 		return () => {
 			const i = sections.indexOf(section);
