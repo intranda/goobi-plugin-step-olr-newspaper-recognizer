@@ -417,13 +417,14 @@ export class Recognizer {
 		this.offers = volume.filter(offer => !dismissed.has(offer.first)).map(offer => ({ ...offer, signature: this.offerSignature(offer.first) }))
 	}
 
-	/** an offer belongs to its block as it is: another structure change or label in the block makes it disappear; a page removed before it does not */
+	/** an offer belongs to its block as it is: another structure change, child type or label in the block makes it disappear; a page removed before it does not */
 	offerSignature(first: number) {
 		const node = this.tree.roots.find(root => root.first === first)
 		if (!node) {
 			return null
 		}
-		return JSON.stringify([node.last - node.first, node.start.type, this.pages.slice(node.first, node.last + 1).map(page => [page.label, page.depth])])
+		return JSON.stringify([node.last - node.first, node.start.type,
+			this.pages.slice(node.first, node.last + 1).map(page => [page.label, page.depth, page.starts.map(start => start.type)])])
 	}
 
 	keepOffers(fresh: FreshOffer[]) {
