@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clonePages } from '../blocks.mjs';
+import { clonePages, removePage } from '../blocks.mjs';
 import { initLabels } from '../pagination.mjs';
 import { savedState, unsavedChanges } from '../unsaved.mjs';
 import { catalog, fieldCatalog, pages, start } from './fixtures.mjs';
@@ -134,4 +134,27 @@ test('additional data of the volume counts', () => {
   assert.equal(unsaved.volume, true);
   assert.equal(unsaved.any, true);
   assert.equal(unsaved.blocks.size, 0);
+});
+
+test('deleting a page without block is unsaved', () => {
+  const list = saved();
+  const unsaved = unsavedChanges(savedState(list, catalog, VH), removePage(list, 4), catalog, [], VH);
+  assert.equal(unsaved.any, true);
+  assert.deepEqual(unsaved.pages, { removed: 1, added: 0 });
+  assert.equal(unsaved.blocks.size, 0);
+});
+
+test('deleting a page inside a block marks only that block', () => {
+  const list = saved();
+  const unsaved = unsavedChanges(savedState(list, catalog, VH), removePage(list, 1), catalog, [], VH);
+  assert.deepEqual([...unsaved.blocks.keys()], ['0:0']); // b2 keeps its pages 0003.tif..0004.tif, now at 1..2
+  assert.equal(unsaved.blocks.get('0:0').boundary, true);
+  assert.deepEqual(unsaved.pages, { removed: 1, added: 0 });
+});
+
+test('a new baseline after a deletion clears it', () => {
+  const current = removePage(saved(), 1);
+  const unsaved = unsavedChanges(savedState(current, catalog, VH), current, catalog, [], VH);
+  assert.deepEqual(unsaved.pages, { removed: 0, added: 0 });
+  assert.equal(unsaved.any, false);
 });

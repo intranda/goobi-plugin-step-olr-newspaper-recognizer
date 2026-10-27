@@ -105,7 +105,7 @@ export class Recognizer {
 	otherNotices = $derived(this.notices.filter(n => n.key !== PREFIX + 'notice_volumeHidden'))
 	hasOpenEdit = $derived(!!this.preview && this.preview.result.pages.some((page, i) => page.label !== this.pages[i].label))
 	// what differs from the last loaded or saved state: the baseline is taken in loadData, so a save that was not written leaves it unsaved
-	baseline: Baseline = $state.raw({ blocks: new Map(), volumeStructures: 0 })
+	baseline: Baseline = $state.raw({ blocks: new Map(), files: [], volumeStructures: 0 })
 	unsaved: Unsaved = $derived.by(() => unsavedChanges(this.baseline, this.pages, this.catalog, this.operations, this.volumeHidden))
 	typingPending = $state(false) // a date, number, prefix or suffix is being typed and not yet applied; saving stays possible meanwhile
 	hasUnsaved = $derived(this.unsaved.any || this.hasOpenEdit || this.typingPending)
