@@ -1,7 +1,8 @@
 /* The data of the plugin page: what the backend sends (see plugin_newspaperRecognizer.xhtml) and what logic/*.mjs derives from it. */
 
-export interface HiddenStructure { label: string; title?: string; firstPage: number; lastPage: number }
-export interface HiddenMetadata { label: string; value: string }
+/** `key` is the backend's id of the entry (unique in the volume), the handle for removing or moving it */
+export interface HiddenStructure { key: string; label: string; title?: string; firstPage: number; lastPage: number }
+export interface HiddenMetadata { key: string; label: string; value: string }
 /** Additional data of a block that the plugin keeps but shows no fields for */
 export interface Hidden { structures: HiddenStructure[]; metadata: HiddenMetadata[] }
 

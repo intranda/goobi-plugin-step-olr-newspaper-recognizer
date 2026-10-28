@@ -58,10 +58,10 @@
 							<li>
 								{blockLabel(conflict)}
 								<ul>
-									{#each conflict.structures as structure (structure.label + '|' + structure.title)}
+									{#each conflict.structures as structure (structure.key)}
 										<li>{structure.label}{structure.title ? ' – ' + structure.title : ''}</li>
 									{/each}
-									{#each conflict.metadata as entry (entry.label + '|' + entry.value)}<li>{entry.label}: {entry.value}</li>{/each}
+									{#each conflict.metadata as entry (entry.key)}<li>{entry.label}: {entry.value}</li>{/each}
 								</ul>
 							</li>
 						{/each}

@@ -33,7 +33,7 @@
 			<div>
 				<strong>{t('plugin_newspaperRecognizer_hidden_structures')}</strong>
 				<ul class="mb-0">
-					{#each structures as structure (structure.label + '|' + structure.title + '|' + structure.firstPage)}
+					{#each structures as structure (structure.key)}
 						<li>{structure.label}{structure.title ? ' – ' + structure.title : ''} ({pages(structure)})</li>
 					{/each}
 				</ul>
@@ -43,7 +43,7 @@
 			<div>
 				<strong>{t('plugin_newspaperRecognizer_hidden_metadata')}</strong>
 				<ul class="mb-0">
-					{#each metadata as entry (entry.label + '|' + entry.value)}<li>{entry.label}: {entry.value}</li>{/each}
+					{#each metadata as entry (entry.key)}<li>{entry.label}: {entry.value}</li>{/each}
 				</ul>
 			</div>
 		{/if}
