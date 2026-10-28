@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getApp } from '../recognizer.svelte';
+	import { flash } from '../flash';
 	import { streams } from '../logic/pagination.mjs';
 	import { inScope, previewGroups, simulateRules } from '../logic/pagination-tools.mjs';
 	import { tick } from 'svelte';
@@ -131,14 +132,9 @@
 	const selectOf = (key: string) => body?.querySelector<HTMLElement>(`[data-rule-row="${key}"] [data-rule-preset]`);
 
 	// the select of a rule that came back lights up once (like the label fields a jump leads to)
-	async function flash(key: string) {
+	async function flashRule(key: string) {
 		await tick();
-		const wrapper = selectOf(key)?.parentElement;
-		if (wrapper) {
-			wrapper.classList.remove('newspaper-flash');
-			void wrapper.offsetWidth;
-			wrapper.classList.add('newspaper-flash');
-		}
+		flash(selectOf(key)?.parentElement);
 	}
 
 	async function addRule(key: string) {
@@ -170,7 +166,7 @@
 
 	function restoreRule(key: string) {
 		setRow(key, configuredRow(key));
-		flash(key);
+		flashRule(key);
 		focusAfter(`[data-rule-row="${key}"] [data-rule-preset]`);
 	}
 
@@ -179,7 +175,7 @@
 		const restored = configuredRows.filter(differs);
 		for (const entry of restored) {
 			setRow(entry.key, configuredRow(entry.key));
-			flash(entry.key);
+			flashRule(entry.key);
 		}
 		focusAfter(`[data-rule-row="${restored[0]?.key}"] [data-rule-preset]`);
 	}

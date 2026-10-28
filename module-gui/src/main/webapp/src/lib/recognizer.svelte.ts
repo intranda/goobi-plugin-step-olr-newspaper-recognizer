@@ -12,6 +12,7 @@ import { applyTypePattern } from './logic/generation.mjs'
 import { fieldStates, initFieldStates, keepFieldValue, resetFieldValue, setFieldValue } from './logic/fields.mjs'
 import { savedState, unsavedChanges } from './logic/unsaved.mjs'
 import { positionColor } from './logic/colors.mjs'
+import { flash } from './flash'
 import { FacesBridge } from './faces-bridge.js'
 import { ThumbnailLoader } from './thumbnails.svelte'
 import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from './logic/hidden.mjs'
@@ -527,10 +528,7 @@ export class Recognizer {
 		this.lastJumped = first;
 		(target.closest('.newspaper-thumbnail, .thumbnail-image') || target).scrollIntoView({ behavior: 'smooth', block: 'center' })
 		this.root.querySelectorAll('.newspaper-flash').forEach(element => element.classList.remove('newspaper-flash')) // the flash of an earlier jump is over
-		void document.body.offsetWidth // restart the animation
-		for (let i = first; i <= last; i++) {
-			field(i)?.classList.add('newspaper-flash')
-		}
+		flash(Array.from({ length: last - first + 1 }, (_, k) => field(first + k)))
 	}
 
 	/** scrolls to the next block that shows an offer, after the one of the last jump; from the last one back to the first */

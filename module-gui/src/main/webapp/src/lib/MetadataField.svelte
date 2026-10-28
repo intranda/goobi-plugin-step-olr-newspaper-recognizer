@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getApp } from './recognizer.svelte';
+	import { flash } from './flash';
 	import FormRow from './ui/FormRow.svelte';
 	import Icon from './ui/Icon.svelte';
 	import Popover from './ui/Popover.svelte';
@@ -38,9 +39,7 @@
 		shownGenerated = generated ? field.value : null;
 		shownType = type;
 		if (updated) {
-			wrapper.classList.remove('newspaper-field--updated');
-			void wrapper.offsetWidth; // restart the animation
-			wrapper.classList.add('newspaper-field--updated');
+			flash(wrapper, 'newspaper-field--updated');
 		}
 	};
 
