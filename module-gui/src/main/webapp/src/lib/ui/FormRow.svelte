@@ -42,7 +42,7 @@
 	<div class={['input-group flex-nowrap', unsaved && 'is-unsaved']}>
 		<label class="input-group-text" style="min-width: 6.5rem;" for={id}>
 			{#if color}
-				<span aria-hidden="true" class="me-2" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: {color};"></span>
+				<span aria-hidden="true" class="position-dot form-row__dot" style="background: {color};"></span>
 			{:else if icon}
 				<Icon name={icon} class="me-2" />
 			{/if}

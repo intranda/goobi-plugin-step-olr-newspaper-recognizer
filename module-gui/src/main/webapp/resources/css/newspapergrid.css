@@ -393,6 +393,12 @@ progress {
 	border-radius: 50%;
 }
 
+/* the colour dot in the label of a field is a little larger than the one in the lists */
+.form-row__dot {
+	width: 12px;
+	height: 12px;
+}
+
 /* rules dialog: pages whose label changes, in the colour of changed fields (the selector beats the cell colour of Bootstrap tables) */
 .preview-table .preview-changed {
 	color: var(--clr-action);

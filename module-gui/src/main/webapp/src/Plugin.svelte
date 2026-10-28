@@ -64,7 +64,7 @@
 		<div class="box box--neutral section">
 			<div class="box__content">
 				<BoxTitle title={app.title} icon="puzzle" />
-				<div class="section-body-padded" style="background-color:#eee;">
+				<div class="section-body-padded bg-neutral-200">
 					<div class="text-center">
 						<img src="template/img/goobi/ajaxloader2.gif" alt="" style="max-height: 140px;" />
 					</div>
