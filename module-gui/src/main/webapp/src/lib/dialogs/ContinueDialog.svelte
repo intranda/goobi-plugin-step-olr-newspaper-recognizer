@@ -187,20 +187,20 @@
 			</fieldset>
 			<fieldset>
 				<legend class="fs-6 fw-bold">{t(P + 'continue_date')}</legend>
-				<Check type="radio" name="continue-dateMode" id="continue-dateRepeat" checked={dateMode === 'perDay'} onchange={() => (dateMode = 'perDay')}>
+				<Check type="radio" name="{id}-dateMode" id="{id}-dateRepeat" checked={dateMode === 'perDay'} onchange={() => (dateMode = 'perDay')}>
 					{t(P + 'continue_dateRepeat')}
 				</Check>
-				<Check type="radio" name="continue-dateMode" id="continue-datePerIssue" checked={dateMode === 'perIssue'} onchange={() => (dateMode = 'perIssue')}>
+				<Check type="radio" name="{id}-dateMode" id="{id}-datePerIssue" checked={dateMode === 'perIssue'} onchange={() => (dateMode = 'perIssue')}>
 					{t(P + 'continue_datePerIssue')}
 				</Check>
 			</fieldset>
 			<!-- with a new date for every issue both settings count alike (unless a type has a number but no date): locked, with the reason -->
 			<fieldset disabled={!matters}>
 				<legend class={['fs-6 fw-bold', !matters && 'text-muted']}>{t(P + 'continue_number')}</legend>
-				<Check type="radio" name="continue-mode" id="continue-perDay" checked={numberMode === 'perDay'} onchange={() => (mode = 'perDay')}>
+				<Check type="radio" name="{id}-mode" id="{id}-perDay" checked={numberMode === 'perDay'} onchange={() => (mode = 'perDay')}>
 					{t(P + 'continue_perDay')}
 				</Check>
-				<Check type="radio" name="continue-mode" id="continue-perIssue" checked={numberMode === 'perIssue'} onchange={() => (mode = 'perIssue')}>
+				<Check type="radio" name="{id}-mode" id="{id}-perIssue" checked={numberMode === 'perIssue'} onchange={() => (mode = 'perIssue')}>
 					{t(P + 'continue_perIssue')}
 				</Check>
 				{#if !matters}
@@ -230,7 +230,7 @@
 						{/each}
 					</div>
 				</div>
-				<Check class="form-switch mt-3" id="continue-biweekly" checked={biweekly} onchange={() => (biweekly = !biweekly)} role="switch">
+				<Check class="form-switch mt-3" id="{id}-biweekly" checked={biweekly} onchange={() => (biweekly = !biweekly)} role="switch">
 					{t(P + 'biWeekly')}
 				</Check>
 			</fieldset>
@@ -247,7 +247,7 @@
 				<!-- the starting point and the switch of the view, right above the table -->
 				<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
 					<span class="me-auto" data-continue-start>{startingPoint}</span>
-					<Check class="form-switch mb-0" id="continue-onlyChanges" role="switch" data-preview-only checked={onlyChanges} onchange={() => (onlyChanges = !onlyChanges)}>
+					<Check class="form-switch mb-0" id="{id}-onlyChanges" role="switch" data-preview-only checked={onlyChanges} onchange={() => (onlyChanges = !onlyChanges)}>
 						{t(P + 'preview_onlyChanges')}
 					</Check>
 				</div>
