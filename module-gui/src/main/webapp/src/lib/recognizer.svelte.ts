@@ -85,7 +85,7 @@ export class Recognizer {
 	dialog: DialogState | null = $state.raw(null) // {kind: 'pattern' | 'continue' | 'rules', ...}
 
 	// plain fields
-	pendingExit = false // set by saveAndExit, acted upon once the backend confirms the write
+	pendingExit = false // set by saveAndLeave, acted upon once the backend confirms the write
 	pointerDown = false
 	operations: Operation[] = $state.raw([])
 	hiddenCursor = -1
@@ -112,6 +112,8 @@ export class Recognizer {
 	hasUnsaved = $derived(this.unsaved.any || this.hasOpenEdit || this.typingPending)
 	saveBlocked = $derived.by(() => this.configErrors.length > 0 || !this.validation.valid)
 	saveBlockedOpen = $state(false) // the summary of what keeps the data from being saved
+	saveBlockedLeave = $state(false) // the summary was opened by the leave button: it offers "leave anyway"
+	leaveOpen = $state(false) // the question whether to save or discard the unsaved changes before leaving
 	canSave = $derived(!this.saveInFlight && this.hasUnsaved && !this.saveBlocked)
 	validationProblems = $derived(PROBLEMS.filter(([name]) => this.validation[name].length > 0)
 		.map(([name, key]) => ({ name, key: `${PREFIX}validation_summary_${key}`, count: new Set(this.validation[name].map(ref => `${ref.page}:${ref.level}`)).size })))
@@ -934,6 +936,7 @@ export class Recognizer {
 
 	closeSaveBlocked() {
 		this.saveBlockedOpen = false
+		this.saveBlockedLeave = false
 	}
 
 	/* the save button: while something blocks saving it explains what instead of doing nothing; the save after a deletion stays silent */
@@ -950,7 +953,9 @@ export class Recognizer {
 		this.bridge.submitSave(toSaveRequest(this.pages, this.operations, this.catalog))
 	}
 
-	saveAndExit() {
+	/* the leave button: nothing unsaved leaves right away; an invalid state shows what blocks saving, with the way out "leave anyway";
+	   otherwise the user decides between saving and discarding */
+	leave() {
 		if (this.saveInFlight) {
 			return
 		}
@@ -960,21 +965,28 @@ export class Recognizer {
 			return
 		}
 		if (this.saveBlocked) {
+			this.saveBlockedLeave = true
 			this.openSaveBlocked()
 			return
 		}
+		this.leaveOpen = true
+	}
+
+	closeLeave() {
+		this.leaveOpen = false
+	}
+
+	saveAndLeave() {
+		this.leaveOpen = false
 		this.pendingExit = true
 		this.save()
 	}
 
-	exit() {
-		if (this.saveInFlight) {
-			return
-		}
-		if (this.hasUnsaved) {
-			this.askConfirmation('pluginLeave', PREFIX + 'confirmLeaveUnsaved', 'pluginLeave', () => this.bridge.finish())
-			return
-		}
+	/* "Änderungen verwerfen" and "Trotzdem verlassen": the unsaved state is dropped with the page */
+	leaveWithoutSaving() {
+		this.leaveOpen = false
+		this.saveBlockedOpen = false
+		this.saveBlockedLeave = false
 		this.bridge.finish()
 	}
 }

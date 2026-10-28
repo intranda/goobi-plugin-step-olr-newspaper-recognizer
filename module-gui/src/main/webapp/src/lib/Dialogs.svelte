@@ -61,6 +61,21 @@
 		</ul>
 		{#snippet footer()}
 			<Button onclick={() => app.closeSaveBlocked()}>{t('abbrechen')}</Button>
+			{#if app.saveBlockedLeave}
+				<Button variant="danger" icon="logout" onclick={() => app.leaveWithoutSaving()}>{t(P + 'leave_anyway')}</Button>
+			{/if}
+		{/snippet}
+	</Modal>
+{/if}
+
+{#if app.leaveOpen}
+	{@const P = 'plugin_newspaperRecognizer_'}
+	<Modal title={t(P + 'leave_title')} onclose={() => app.closeLeave()} data-leave>
+		<p class="mb-0">{t(P + 'leave_text')}</p>
+		{#snippet footer()}
+			<Button onclick={() => app.closeLeave()}>{t('abbrechen')}</Button>
+			<Button variant="danger" onclick={() => app.leaveWithoutSaving()}>{t(P + 'leave_discard')}</Button>
+			<Button variant="primary" icon="device-floppy" onclick={() => app.saveAndLeave()}>{t('speichern')}</Button>
 		{/snippet}
 	</Modal>
 {/if}
