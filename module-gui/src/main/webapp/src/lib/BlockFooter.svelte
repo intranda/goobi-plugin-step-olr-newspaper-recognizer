@@ -27,23 +27,16 @@
 	const pageFirst = $derived(main ? node.first + 1 : 0);
 	const pageLast = $derived(node.last + 1);
 
-	const change = $derived(app.unsaved.blocks.get(`${node.first}:${node.level}`));
-	const unsavedText = $derived([
-		change?.isNew && t('plugin_newspaperRecognizer_unsaved_newBlock'),
-		change?.hidden && t('plugin_newspaperRecognizer_unsaved_hidden'),
-	].filter(Boolean).join(', '));
-
 	const hiddenText = $derived([
 		structures.length > 0 && fmt('plugin_newspaperRecognizer_hidden_structureCount', structures.length),
 		metadata.length > 0 && fmt('plugin_newspaperRecognizer_hidden_metadataCount', metadata.length),
 	].filter(Boolean).join(', '));
 </script>
 
-{#if pageFirst || hiddenCount > 0 || unsavedText}
+{#if pageFirst || hiddenCount > 0}
 	<div class="d-flex justify-content-between align-items-center gap-3 small border-top pt-2 position-relative">
 		<span class="d-flex flex-wrap column-gap-3">
 			<span class="text-muted">{pageFirst ? app.pagesSummary(pageFirst, pageLast) : ''}</span>
-			{#if unsavedText}<span data-unsaved-footer class="unsaved-text"><Icon name="pencil" />{unsavedText}</span>{/if}
 		</span>
 		{#if hiddenCount > 0}
 			<button type="button" class="btn btn-link btn-sm p-0 d-flex align-items-center gap-1 text-decoration-none"

@@ -26,7 +26,6 @@
 	const uid = $props.id();
 
 	const start = $derived(node.start);
-	const changed = $derived(app.unsaved.blocks.get(`${node.first}:${node.level}`)?.fields ?? []);
 	const info = $derived(app.catalog[start.type ?? '']);
 	const flags = $derived(app.flagsFor(node));
 	const fields = $derived(app.fieldsOf(node));
@@ -42,7 +41,7 @@
 
 <div class="d-flex flex-column gap-2">
 	<!-- type, hidden data and tools share one input group, so they line up with the field -->
-	<FormRow id="{uid}-type" unsaved={changed.includes('type')} label={t('plugin_newspaperRecognizer_preview_type')} icon="category" {color}
+	<FormRow id="{uid}-type" label={t('plugin_newspaperRecognizer_preview_type')} icon="category" {color}
 		errors={[flags.missingType && t('plugin_newspaperRecognizer_validation_missingType'), flags.notAllowed && t('plugin_newspaperRecognizer_validation_notAllowed')]}
 		invalid={flags.missingType || flags.notAllowed}>
 		{#snippet children(aria)}
@@ -66,7 +65,7 @@
 	{#if info?.dated || info?.numbered}
 		<div class="block-dates" style="--rows: {(info?.dated ? 1 : 0) + (info?.numbered ? 1 : 0)};">
 			{#if info?.dated}
-				<FormRow id="{uid}-date" unsaved={changed.includes('date')} label={t('plugin_newspaperRecognizer_date') + (info.dateRequired ? ' *' : '')} icon="calendar"
+				<FormRow id="{uid}-date" label={t('plugin_newspaperRecognizer_date') + (info.dateRequired ? ' *' : '')} icon="calendar"
 					errors={[
 						flags.invalidDate && `${t('plugin_newspaperRecognizer_wrongDateFormat')} ${app.dateFormatPattern}`,
 						flags.missingDate && t('plugin_newspaperRecognizer_validation_missingRequired'),
@@ -80,7 +79,7 @@
 			{/if}
 
 			{#if info?.numbered}
-				<FormRow id="{uid}-number" unsaved={changed.includes('number')} label={t('plugin_newspaperRecognizer_nro') + (info.numberRequired ? ' *' : '')} icon="hash"
+				<FormRow id="{uid}-number" label={t('plugin_newspaperRecognizer_nro') + (info.numberRequired ? ' *' : '')} icon="hash"
 					errors={[flags.missingNumber && t('plugin_newspaperRecognizer_validation_missingRequired')]}>
 					{#snippet children(aria)}
 						{#if info.partNumbered}

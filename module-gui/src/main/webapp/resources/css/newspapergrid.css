@@ -546,11 +546,6 @@ progress {
 	color: var(--clr-primary-400, #368ee0);
 }
 
-.label-input.is-changed input {
-	color: var(--clr-action);
-	font-weight: 600;
-}
-
 /* hint line and offer of a block under its thumbnails */
 .newspaper-hint,
 .newspaper-alert {
@@ -749,30 +744,7 @@ details.newspaper-details[open] > summary .newspaper-details__open {
 	.preview-table--blocks td:nth-child(3) { white-space: normal; }
 }
 
-/* not yet saved: a changed field (value in the action colour, bar at the left), the cells of a changed block (stripe at the left of the first cell),
-   the dot on the save button; the colour is the one of .label-input.is-changed */
-/* outside the group: the label inside it has an opaque background */
-.input-group.is-unsaved {
-	box-shadow: -3px 0 0 var(--clr-action);
-}
-.input-group.is-unsaved .form-control,
-.input-group.is-unsaved .form-select {
-	color: var(--clr-action);
-	font-weight: 600;
-}
-.thumbnail-image.block-unsaved {
-	box-shadow: inset 5px 0 0 var(--clr-action);
-}
-/* a changed child block: the stripe at the left of its row in the tree */
-.block-tree__item.block-unsaved {
-	box-shadow: -5px 0 0 var(--clr-action);
-}
-.unsaved-text {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.25rem;
-	color: var(--clr-action);
-}
+/* not yet saved: the dot on the save button */
 .btn--title-action {
 	position: relative;
 }

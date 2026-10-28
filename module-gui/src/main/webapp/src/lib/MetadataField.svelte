@@ -25,7 +25,6 @@
 	let bubble = $state(false); // shows the changed generated value of a field whose value was overwritten
 	const readonly = $derived(field.display === 'readonly');
 	const icon = $derived(({ textarea: 'align-left', select1: 'selector', readonly: 'lock' } as Record<string, string>)[field.display] || 'letter-case');
-	const unsaved = $derived(app.unsaved.blocks.get(`${node.first}:${node.level}`)?.fields.includes(field.key) ?? false);
 	const missing = $derived(field.required && !String(field.value).trim());
 	const oninput = (e: Event & { currentTarget: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement }) => app.changeValue(node, field.key, e.currentTarget.value);
 
@@ -49,7 +48,7 @@
 	}
 </script>
 
-<FormRow {id} {icon} {unsaved} label={field.label + (field.required ? ' *' : '')} errors={[missing && t('plugin_newspaperRecognizer_validation_missingRequired')]}>
+<FormRow {id} {icon} label={field.label + (field.required ? ' *' : '')} errors={[missing && t('plugin_newspaperRecognizer_validation_missingRequired')]}>
 	{#snippet children(aria)}
 		<div {@attach flashUpdated} class={['newspaper-field', field.display === 'textarea' && 'grow-wrap', field.overwritten && 'newspaper-field--overwritten']}
 			data-content={field.value} data-field-wrapper={field.key}>

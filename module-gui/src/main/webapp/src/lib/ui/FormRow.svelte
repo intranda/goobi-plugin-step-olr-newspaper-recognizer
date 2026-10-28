@@ -16,19 +16,17 @@
 		icon?: string | null;
 		color?: string | null;
 		invalid?: boolean;
-		unsaved?: boolean;
 		errors?: (string | false | null | undefined)[];
 		children: Snippet<[ControlAria]>;
 	}
 
 	/**
 	 * A labelled field of a block: icon (or colour dot) and label in front of the control, validation messages below.
-	 * `unsaved` marks a value that differs from the last saved state (orange, bold, bar at the left).
 	 * `errors` lists the messages; the row is marked as invalid as soon as there is one or `invalid` is set.
 	 * All labels get the same width, so the fields of a block line up.
 	 * The content is a snippet that receives the ARIA attributes for its controls (`aria-invalid`, `aria-describedby` for the messages).
 	 */
-	let { id, label, icon = null, color = null, invalid = false, unsaved = false, errors = [], children }: Props = $props();
+	let { id, label, icon = null, color = null, invalid = false, errors = [], children }: Props = $props();
 
 	const messages = $derived(errors.filter(Boolean));
 	const marked = $derived(invalid || messages.length > 0);
@@ -39,7 +37,7 @@
 </script>
 
 <div class={['form-group p-0 m-0', marked && 'has-validation-error']}>
-	<div class={['input-group flex-nowrap', unsaved && 'is-unsaved']}>
+	<div class="input-group flex-nowrap">
 		<label class="input-group-text" style="min-width: 6.5rem;" for={id}>
 			{#if color}
 				<span aria-hidden="true" class="position-dot form-row__dot" style="background: {color};"></span>

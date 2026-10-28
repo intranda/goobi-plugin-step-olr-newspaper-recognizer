@@ -23,10 +23,9 @@
 	const { t, fmt } = app;
 	const node = $derived(row.node);
 	const offer = $derived(app.offerFor(row));
-	const unsaved = $derived(app.unsaved.blocks.has(`${node.first}:${node.level}`));
 </script>
 
-<div class={['thumbnail-image px-3 pb-3', unsaved && 'block-unsaved']} id={app.blockElementId(node)}>
+<div class="thumbnail-image px-3 pb-3" id={app.blockElementId(node)}>
 	<div class="goobi-thumbnail font-light">
 		<div class="goobi-thumbnail-image">
 			<div class="thumb position-relative" style="min-height: {app.thumbHeight}px;">
@@ -37,14 +36,14 @@
 	{#if app.settings.enabled}<LabelInput index={node.first} />{/if}
 </div>
 
-<div class={['issue-controls d-flex flex-column gap-3 px-3 pb-3', unsaved && 'block-unsaved']} style="min-height: {app.thumbHeight}px;" role="group"
+<div class="issue-controls d-flex flex-column gap-3 px-3 pb-3" style="min-height: {app.thumbHeight}px;" role="group"
 	aria-label={fmt('plugin_newspaperRecognizer_block_group', node.first + 1)}>
 	<BlockFields {node} main typeOptions={app.typeOptions(app.volumeType)} />
 
 	{#if node.children.length > 0}
 		<div class="block-tree">
 			{#each node.children as child, childIndex (child.first)}
-				<div class={['block-tree__item d-flex flex-column gap-2', app.unsaved.blocks.has(`${child.first}:${child.level}`) && 'block-unsaved']} id={app.blockElementId(child)} role="group"
+				<div class="block-tree__item d-flex flex-column gap-2" id={app.blockElementId(child)} role="group"
 					aria-label={fmt('plugin_newspaperRecognizer_block_childGroup', child.first + 1)}>
 					<BlockFields node={child} typeOptions={app.typeOptions(node.start.type)} color={app.childColor(childIndex + 1)} />
 					<BlockFooter node={child} />
@@ -68,7 +67,7 @@
 	{/if}
 </div>
 
-<div class={['thumbnails px-3 pb-3', unsaved && 'block-unsaved']} style="--thumb-size: {app.thumbHeight / 2.5}px;" role="group"
+<div class="thumbnails px-3 pb-3" style="--thumb-size: {app.thumbHeight / 2.5}px;" role="group"
 	aria-label={fmt('plugin_newspaperRecognizer_block_pages', node.first + 1)}>
 	{#each app.pagesOf(node) as entry (app.pages[entry.index].filename + ':' + entry.child)}
 		<PageCell index={entry.index} child={entry.child} />

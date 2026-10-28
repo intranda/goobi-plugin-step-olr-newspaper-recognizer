@@ -22,7 +22,6 @@
 	const typed = $derived(app.preview && app.preview.index === index ? app.preview : null);
 	const own = $derived(!!app.ownFlags[index]);
 	const follow = $derived(app.ownFlags[index]);
-	const changed = $derived(page.label !== page.metsLabel);
 	// only pages whose label really changes are highlighted
 	const previewed = $derived(!typed && !!preview && preview.run.includes(index) && preview.pages[index].label !== page.label);
 	const stateClasses = $derived([
@@ -30,7 +29,6 @@
 		// a page without counting label that ends a run has no own numbering to point out
 		preview && preview.stop === index && isCounting(page.label) && 'is-stop',
 		own && 'is-own',
-		changed && 'is-changed',
 	]);
 	// what the field shows: the typed text, the would-be result while another page is typed, else the label
 	const shown = $derived(typed ? typed.text : previewed ? preview?.pages[index].label : page.label);
