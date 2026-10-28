@@ -68,8 +68,8 @@
 	}
 </script>
 
-<div bind:this={wrapper} class="position-relative me-2" {onfocusout}>
-	<TitleAction bind:element={trigger} class="me-0" icon="dots-vertical" disabled={app.saveInFlight} onclick={() => app.toggleActions()} onkeydown={onbuttonkeydown} title={t(P + 'actions_more')} aria-label={t(P + 'actions_more')}
+<div bind:this={wrapper} class="position-relative" {onfocusout}>
+	<TitleAction bind:element={trigger} icon="dots-vertical" disabled={app.saveInFlight} onclick={() => app.toggleActions()} onkeydown={onbuttonkeydown} title={t(P + 'actions_more')} aria-label={t(P + 'actions_more')}
 		aria-haspopup="menu" aria-controls="{id}-menu" aria-expanded={app.actionsOpen ? 'true' : 'false'} />
 	{#if app.actionsOpen}
 		<!-- after the button, so that the Tab order is button, entries; Goobi's margin for a title button that is not the last child is switched off with me-0 -->

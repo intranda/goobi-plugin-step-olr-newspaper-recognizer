@@ -16,7 +16,7 @@
 	let { icon, disabled = false, dot = false, element = $bindable(null), class: className = '', ...rest }: Props = $props();
 </script>
 
-<button bind:this={element} type="button" class={['btn d-flex align-items-center btn--title-action', className]} {disabled} {...rest}>
+<button bind:this={element} type="button" class={['btn d-flex align-items-center btn--title-action me-0', className]} {disabled} {...rest}>
 	<Icon name={icon} />
 	{#if dot}<span data-unsaved-dot class="unsaved-dot" aria-hidden="true"></span>{/if}
 </button>

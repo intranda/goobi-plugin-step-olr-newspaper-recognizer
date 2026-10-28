@@ -17,5 +17,5 @@
 		<Icon name={icon} />
 		{title}
 	</h2>
-	{#if children}<div class="actions d-flex align-items-center">{@render children()}</div>{/if}
+	{#if children}<div class="actions d-flex align-items-center gap-2">{@render children()}</div>{/if}
 </div>
