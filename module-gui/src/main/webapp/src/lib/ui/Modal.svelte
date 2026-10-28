@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { HTMLAttributes } from 'svelte/elements';
+	import type { HTMLDialogAttributes } from 'svelte/elements';
 	import { getApp } from '../recognizer.svelte';
 	import Icon from './Icon.svelte';
 
-	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'title' | 'children'> {
+	interface Props extends Omit<HTMLDialogAttributes, 'title' | 'children'> {
 		title: string;
 		size?: string;
 		onclose: () => void;
@@ -12,18 +12,18 @@
 		footer?: Snippet;
 	}
 
-	/** The modal markup Goobi uses (e.g. institution_edit.xhtml): Bootstrap modal, primary header, footer buttons. */
+	/** The modal markup Goobi uses (e.g. institution_edit.xhtml): Bootstrap modal, primary header, footer buttons, on a native dialog. */
 	let { title, size = '', onclose, children, footer, ...rest }: Props = $props();
 
 	const { t } = getApp();
 	const id = $props.id();
 
-	const FOCUSABLE = 'a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])';
-
-	// focus the dialog so that Escape works and screen readers announce it; on closing the focus goes back to where it was
-	const focus = (element: HTMLElement) => {
+	// the browser makes the page behind inert and keeps Tab within the dialog; on closing the focus goes back to where it was
+	const open = (dialog: HTMLDialogElement) => {
 		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-		element.focus();
+		dialog.showModal();
+		// the dialog itself, not its first control: screen readers announce the title, the first Tab leads into it
+		dialog.focus();
 		return () => {
 			if (opener?.isConnected) {
 				opener.focus({ preventScroll: true });
@@ -31,37 +31,15 @@
 		};
 	};
 
-	/* Escape closes; Tab and Shift+Tab stay within the dialog (the page behind it is not reachable) */
-	function onkeydown(e: KeyboardEvent & { currentTarget: HTMLElement }) {
-		if (e.key === 'Escape') {
-			onclose();
-			return;
-		}
-		if (e.key !== 'Tab') {
-			return;
-		}
-		const dialog = e.currentTarget;
-		const items = [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(el => !el.matches(':disabled') && el.getClientRects().length > 0);
-		if (items.length === 0) {
-			e.preventDefault();
-			return;
-		}
-		const first = items[0];
-		const last = items[items.length - 1];
-		const active = document.activeElement;
-		if (e.shiftKey && (active === first || active === dialog || !dialog.contains(active))) {
-			e.preventDefault();
-			last.focus();
-		} else if (!e.shiftKey && (active === last || !dialog.contains(active))) {
-			e.preventDefault();
-			first.focus();
-		}
+	// Escape asks the dialog to cancel; whoever opened it decides (and removes it)
+	function oncancel(e: Event) {
+		e.preventDefault();
+		onclose();
 	}
 </script>
 
-<div {@attach focus} class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="{id}-title"
-	{onkeydown} {...rest}>
-	<div class={['modal-dialog modal-dialog-scrollable', size && `modal-${size}`]} role="document">
+<dialog {@attach open} class="modal newspaper-modal" tabindex="-1" aria-labelledby="{id}-title" {oncancel} {...rest}>
+	<div class={['modal-dialog modal-dialog-scrollable', size && `modal-${size}`]}>
 		<div class="modal-content">
 			<div class="modal-header bg-primary text-white">
 				<h4 class="modal-title" id="{id}-title">{title}</h4>
@@ -73,5 +51,4 @@
 			<div class="modal-footer">{@render footer?.()}</div>
 		</div>
 	</div>
-</div>
-<div class="modal-backdrop fade show"></div>
+</dialog>

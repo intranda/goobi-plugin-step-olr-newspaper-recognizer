@@ -194,6 +194,8 @@
 			return;
 		}
 		if (e.key === 'Escape') {
+			// the key is the menu's: the dialog must not cancel with it
+			e.preventDefault();
 			e.stopPropagation();
 			menuOpen = false;
 			menu?.querySelector<HTMLElement>('[data-rule-add]')?.focus();
