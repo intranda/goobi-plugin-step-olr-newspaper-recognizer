@@ -20,7 +20,7 @@
 
 	/**
 	 * The preview of the continue dialog: the following blocks by publication day with their old and new values. "Only changes" and the
-	 * folds are the view's own state; the folds belong to the result they were opened in.
+	 * open folds are the view's own state.
 	 */
 	let { pages, result, numberMode }: Props = $props();
 	const id = $props.id();
@@ -63,15 +63,16 @@
 	const headers = $derived(days.some(day => day.date) || (numberMode === 'perDay' && days.length > 1));
 	const entries = $derived(previewDays(days, shown, PREVIEW_ROWS, onlyChanges && headers));
 	const dayKey = (day: { rows: { ref: { page: number } }[] }) => day.rows[0].ref.page;
-	// the open folds belong to the result they were opened in: any change of the selection on the left closes them all
-	let opened: { result: typeof result | null, keys: Set<number> } = $state.raw({ result: null, keys: new Set() });
-	const openFolds = $derived(opened.result === result ? opened.keys : new Set<number>());
+	// a fold stays open through a change on the left as long as the preview still has a fold that starts on the same day
+	let opened: Set<number> = $state.raw(new Set());
+	const foldKeys = $derived(new Set(entries.flatMap(entry => (entry.fold ? [dayKey(entry.days[0])] : []))));
+	const openFolds = $derived(new Set([...opened].filter(key => foldKeys.has(key))));
 	const toggleFold = (key: number) => {
 		const keys = new Set(openFolds);
 		if (!keys.delete(key)) {
 			keys.add(key);
 		}
-		opened = { result, keys };
+		opened = keys;
 	};
 </script>
 
