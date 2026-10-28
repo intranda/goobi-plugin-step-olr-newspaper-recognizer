@@ -330,7 +330,7 @@
 					{/if}
 				</div>
 				{#if entry.child}
-					<Check class="mt-1" id="rules-continue-{entry.key}" data-rule-continue checked={!!entry.continueInParent}
+					<Check class="mt-1" id="{id}-continue-{entry.key}" data-rule-continue checked={!!entry.continueInParent}
 						onchange={e => setRow(entry.key, { continueInParent: e.currentTarget.checked })}>
 						{t(R + 'continue')}
 					</Check>
@@ -456,21 +456,21 @@
 						</tr>
 					</tfoot>
 				</table>
-				<Check id="rules-automatic" data-automatic checked={automatic} onchange={e => (automatic = e.currentTarget.checked)}>{t(R + 'automatic')}</Check>
+				<Check id="{id}-automatic" data-automatic checked={automatic} onchange={e => (automatic = e.currentTarget.checked)}>{t(R + 'automatic')}</Check>
 			</fieldset>
-			<fieldset data-counting-group aria-describedby={scopeKind === 'offers' ? 'rules-counting-locked' : undefined}>
+			<fieldset data-counting-group aria-describedby={scopeKind === 'offers' ? `${id}-counting-locked` : undefined}>
 				<legend class="fs-6 fw-bold">{t(R + 'counting')}</legend>
-				<Check type="radio" name="rules-counting" id="rules-counting-block" data-counting="block" checked={!countThroughVolume} disabled={scopeKind === 'offers'}
+				<Check type="radio" name="{id}-counting" id="{id}-counting-block" data-counting="block" checked={!countThroughVolume} disabled={scopeKind === 'offers'}
 					onchange={() => (countChoice = false)}>{t(R + 'counting_block')}</Check>
-				<Check type="radio" name="rules-counting" id="rules-counting-volume" data-counting="volume" checked={countThroughVolume} disabled={scopeKind === 'offers'}
+				<Check type="radio" name="{id}-counting" id="{id}-counting-volume" data-counting="volume" checked={countThroughVolume} disabled={scopeKind === 'offers'}
 					onchange={() => (countChoice = true)}>{t(R + 'counting_volume')}</Check>
 				<!-- ruling R13: applying the offers is a confirm action, not a change of the counting -->
-				{#if scopeKind === 'offers'}<div class="form-text" id="rules-counting-locked" data-counting-locked>{t(R + 'counting_locked')}</div>{/if}
+				{#if scopeKind === 'offers'}<div class="form-text" id="{id}-counting-locked" data-counting-locked>{t(R + 'counting_locked')}</div>{/if}
 			</fieldset>
 			<fieldset>
 				<legend class="fs-6 fw-bold">{t(R + 'overwrite')}</legend>
 				{#each scopeKinds as kind (kind)}
-					<Check type="radio" name="rules-scope" id="rules-scope-{kind}" data-scope={kind} value={kind} checked={scopeKind === kind} onchange={() => (scopeKind = kind)}>
+					<Check type="radio" name="{id}-scope" id="{id}-scope-{kind}" data-scope={kind} value={kind} checked={scopeKind === kind} onchange={() => (scopeKind = kind)}>
 						{scopeText(kind)}
 					</Check>
 				{/each}
@@ -489,7 +489,7 @@
 				</p>
 			{:else}
 				<div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-					<Check class="form-switch mb-0 me-auto" id="pagination-onlyChanges" role="switch" data-preview-only checked={onlyChanges} onchange={() => (onlyChanges = !onlyChanges)}>
+					<Check class="form-switch mb-0 me-auto" id="{id}-onlyChanges" role="switch" data-preview-only checked={onlyChanges} onchange={() => (onlyChanges = !onlyChanges)}>
 						{t(P + 'preview_onlyChanges')}
 					</Check>
 					<Button size="sm" icon={allOpen ? 'chevrons-up' : 'chevrons-down'} data-preview-all disabled={visibleKeys.length === 0} onclick={toggleAll}>

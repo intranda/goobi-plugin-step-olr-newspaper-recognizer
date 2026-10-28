@@ -16,6 +16,7 @@
 
 	/** Asks what happens to the additional data (hidden structures and metadata) that a change would orphan, one decision per kind of conflict. */
 	let { conflicts, total, oncancel, onconfirm }: Props = $props();
+	const id = $props.id();
 
 	const { t, fmt, catalog } = getApp();
 	const KINDS = ['DELETED', 'TYPE', 'BOUNDARY', 'EXPLICIT'];
@@ -71,7 +72,7 @@
 					<p class="mb-0 text-muted">{t(P + 'DELETED_metadataLost')}</p>
 				{/if}
 				{#each group.options as option (option)}
-					<Check type="radio" name="conflict-{group.kind}" id="conflict-{group.kind}-{option}" checked={choices[group.kind] === option}
+					<Check type="radio" name="{id}-{group.kind}" id="{id}-{group.kind}-{option}" checked={choices[group.kind] === option}
 						onchange={() => (choices = { ...choices, [group.kind]: option })}>
 						{t(`${P}${group.kind}_${option}`)}
 					</Check>
