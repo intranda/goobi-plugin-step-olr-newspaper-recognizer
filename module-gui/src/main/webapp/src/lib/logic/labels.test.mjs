@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseLabel, normalizeLabel, isCounting, nextLabel, follows } from '../labels.mjs';
+import { parseLabel, normalizeLabel, isCounting, nextLabel, follows } from './labels.mjs';
 
 const pick = ({ kind, number, prefix, suffix }) => ({ kind, number, prefix, suffix });
 

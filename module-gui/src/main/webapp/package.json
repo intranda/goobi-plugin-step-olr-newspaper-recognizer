@@ -6,7 +6,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch --mode development",
-    "test": "node --experimental-strip-types --test \"logic/test/*.test.mjs\" \"src/**/*.test.mjs\"",
+    "test": "node --experimental-strip-types --test \"src/**/*.test.mjs\"",
     "check": "svelte-check --tsconfig ./tsconfig.json --compiler-warnings options_missing_custom_element:ignore"
   },
   "author": "Oliver Paetzel",

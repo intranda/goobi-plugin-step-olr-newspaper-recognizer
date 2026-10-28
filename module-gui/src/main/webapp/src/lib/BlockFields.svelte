@@ -116,7 +116,7 @@
 		</FormRow>
 	{/if}
 
-	<!-- the visible metadata fields of the type (plugin configuration), see logic/fields.mjs -->
+	<!-- the visible metadata fields of the type (plugin configuration), see lib/logic/fields.mjs -->
 	{#each fields as field (field.key)}
 		<MetadataField {node} {field} id="{uid}-field-{field.key}" />
 	{/each}

@@ -4,7 +4,7 @@ import { catalog, VOLUME, start, pages, shape } from './fixtures.mjs';
 import {
   buildTree, flatten, validatePages, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
   removeAllBlocks, resetToAnalysis, removePage, toSaveRequest, siblingsFrom, canMerge, makeLoose, clonePages, shiftIndex,
-} from '../blocks.mjs';
+} from './blocks.mjs';
 
 const issueWithSupplement = () => pages(
   { depth: 1, starts: [start('MorningIssue', { id: 'b1' })] },

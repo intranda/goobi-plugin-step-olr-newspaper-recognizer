@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { catalog, start, pages } from './fixtures.mjs';
-import { applyTypePattern, continueFrom, followingTypeCounts, groupByDay, movePatternEntry, numberModeMatters, previewDays } from '../generation.mjs';
+import { applyTypePattern, continueFrom, followingTypeCounts, groupByDay, movePatternEntry, numberModeMatters, previewDays } from './generation.mjs';
 
 const ALL_DAYS = [true, true, true, true, true, true, true];
 const options = (overrides = {}) => ({ include: ['MorningIssue', 'EveningIssue'], mode: 'perDay', weekdays: ALL_DAYS, biweekly: false, ...overrides });

@@ -13,7 +13,7 @@
 	}
 
 	/**
-	 * A metadata field of a block that the plugin configuration makes visible (see logic/fields.mjs): its value is generated from the
+	 * A metadata field of a block that the plugin configuration makes visible (see lib/logic/fields.mjs): its value is generated from the
 	 * date and number of the block until the user overwrites it. `field` is a field state of that module.
 	 */
 	let { node, field, id }: Props = $props();

@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { clonePages, removePage } from '../blocks.mjs';
-import { initLabels } from '../pagination.mjs';
-import { savedState, unsavedChanges } from '../unsaved.mjs';
+import { clonePages, removePage } from './blocks.mjs';
+import { initLabels } from './pagination.mjs';
+import { savedState, unsavedChanges } from './unsaved.mjs';
 import { catalog, fieldCatalog, pages, start } from './fixtures.mjs';
 
 const VH = { structures: [], metadata: [] };

@@ -3,18 +3,18 @@ import {
 	buildTree, flatten, refOf, toggleBlock, toggleChild, setType, setDateInput, initStarts, validateBlocks,
 	removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest, clonePages, siblingsFrom, syncDateInputs,
 	canMerge, makeLoose, shiftIndex,
-} from '../../logic/blocks.mjs'
-import { initLabels, structureChanged, streams, volumeOffers, applyOffers } from '../../logic/pagination.mjs'
-import { missingRuns, fillMissing, restoreFromMets, simulateRules, sameSettings } from '../../logic/pagination-tools.mjs'
-import { previewLabel, ownNumberingAll } from '../../logic/typing.mjs'
-import { parseLabel, isCounting } from '../../logic/labels.mjs'
-import { applyTypePattern } from '../../logic/generation.mjs'
-import { fieldStates, initFieldStates, keepFieldValue, resetFieldValue, setFieldValue } from '../../logic/fields.mjs'
-import { savedState, unsavedChanges } from '../../logic/unsaved.mjs'
-import { positionColor } from '../../logic/colors.mjs'
+} from './logic/blocks.mjs'
+import { initLabels, structureChanged, streams, volumeOffers, applyOffers } from './logic/pagination.mjs'
+import { missingRuns, fillMissing, restoreFromMets, simulateRules, sameSettings } from './logic/pagination-tools.mjs'
+import { previewLabel, ownNumberingAll } from './logic/typing.mjs'
+import { parseLabel, isCounting } from './logic/labels.mjs'
+import { applyTypePattern } from './logic/generation.mjs'
+import { fieldStates, initFieldStates, keepFieldValue, resetFieldValue, setFieldValue } from './logic/fields.mjs'
+import { savedState, unsavedChanges } from './logic/unsaved.mjs'
+import { positionColor } from './logic/colors.mjs'
 import { FacesBridge } from './faces-bridge.js'
 import { ThumbnailLoader } from './thumbnails.svelte'
-import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from '../../logic/hidden.mjs'
+import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from './logic/hidden.mjs'
 import type { Baseline, Unsaved, BlockFlags, Catalog, BlockNode, BlockRef, ChangeOptions, Confirmation, DialogState, FieldState, FreshOffer, Hidden, LabelMode, LabelPreview, Notice, Offer, Operation, Page, PaginationSettings, PendingChange, PluginProps, Problem, Row, RulesScope, Tree, TypeOption, Validation, VolumeStream } from '../types';
 
 /** the problems that validation reports, with the key of their summary text */
@@ -33,7 +33,7 @@ const PREFIX = 'plugin_newspaperRecognizer_'
 /**
  * The state and the actions of the plugin page: pages, blocks, validation, dialogs and the bridge to the JSF forms.
  *
- * The pure logic lives in ../../logic; this class only owns what changes. The page list is mutated in place by some actions (a typed
+ * The pure logic lives in ./logic; this class only owns what changes. The page list is mutated in place by some actions (a typed
  * date, a field value) and then replaced by a copy (touch), so everything that reads from it is re-evaluated.
  * The options are described in plugin_newspaperRecognizer.xhtml.
  */

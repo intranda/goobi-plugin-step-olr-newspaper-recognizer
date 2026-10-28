@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseByPattern, formatByPattern, fromIso, toIso, addDays, weekday, nextDate, WEEKDAY_PRESETS } from '../dates.mjs';
+import { parseByPattern, formatByPattern, fromIso, toIso, addDays, weekday, nextDate, WEEKDAY_PRESETS } from './dates.mjs';
 
 const ALL_DAYS = [true, true, true, true, true, true, true];
 

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { getApp } from '../recognizer.svelte';
-	import { streams } from '../../../logic/pagination.mjs';
-	import { inScope, labelRange, previewGroups, simulateRules } from '../../../logic/pagination-tools.mjs';
+	import { streams } from '../logic/pagination.mjs';
+	import { inScope, labelRange, previewGroups, simulateRules } from '../logic/pagination-tools.mjs';
 	import { tick } from 'svelte';
-	import { positionColor } from '../../../logic/colors.mjs';
+	import { positionColor } from '../logic/colors.mjs';
 	import Modal from '../ui/Modal.svelte';
 	import Button from '../ui/Button.svelte';
 	import Icon from '../ui/Icon.svelte';

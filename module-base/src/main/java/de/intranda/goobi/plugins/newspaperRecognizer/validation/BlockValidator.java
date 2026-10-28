@@ -16,7 +16,7 @@ import de.intranda.goobi.plugins.newspaperRecognizer.data.BlockStart;
 import de.intranda.goobi.plugins.newspaperRecognizer.model.BlockNode;
 import de.intranda.goobi.plugins.newspaperRecognizer.ruleset.RulesetTypes;
 
-/** Checks the blocks before anything is written. Mirrors {@code validateBlocks} in {@code logic/blocks.mjs}. */
+/** Checks the blocks before anything is written. Mirrors {@code validateBlocks} in {@code lib/logic/blocks.mjs}. */
 public class BlockValidator {
     private final RulesetTypes ruleset;
     private final String volumeType;

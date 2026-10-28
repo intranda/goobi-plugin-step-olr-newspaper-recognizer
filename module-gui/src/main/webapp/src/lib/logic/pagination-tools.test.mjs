@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules, sameSettings, labelRange, previewGroups } from '../pagination-tools.mjs';
+import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules, sameSettings, labelRange, previewGroups } from './pagination-tools.mjs';
 import { pages, start, settings, labels } from './fixtures.mjs';
 
 const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });

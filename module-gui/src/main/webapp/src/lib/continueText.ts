@@ -1,8 +1,8 @@
-import { fromIso, formatByPattern, weekday } from '../../logic/dates.mjs';
+import { fromIso, formatByPattern, weekday } from './logic/dates.mjs';
 
 const P = 'plugin_newspaperRecognizer_';
 
-/** The weekdays in the order of the weekday picker; index = weekday() of logic/dates.mjs (0 = Sunday). */
+/** The weekdays in the order of the weekday picker; index = weekday() of lib/logic/dates.mjs (0 = Sunday). */
 export const DAYS = [
 	{ index: 1, key: P + 'monday' },
 	{ index: 2, key: P + 'tuesday' },

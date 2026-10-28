@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getApp } from '../recognizer.svelte';
-	import { commonOptions } from '../../../logic/hidden.mjs';
+	import { commonOptions } from '../logic/hidden.mjs';
 	import Modal from '../ui/Modal.svelte';
 	import Button from '../ui/Button.svelte';
 	import Check from '../ui/Check.svelte';

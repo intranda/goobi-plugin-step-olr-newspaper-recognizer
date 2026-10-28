@@ -34,7 +34,7 @@ public record PluginConfiguration(boolean loadAllImages, boolean showDeletePageB
         Map<String, List<FieldDefinition>> types, List<String> parseErrors) {
 
     private static final Pattern DATE_PLACEHOLDER = Pattern.compile("\\{(?:parent\\.)?date:([^}]*)\\}");
-    /** The date tokens the browser can format, see logic/fields.mjs. */
+    /** The date tokens the browser can format, see lib/logic/fields.mjs. */
     private static final Set<String> BROWSER_DATE_TOKENS = Set.of("d", "dd", "M", "MM", "yy", "yyyy");
 
     public static PluginConfiguration parse(HierarchicalConfiguration config) {

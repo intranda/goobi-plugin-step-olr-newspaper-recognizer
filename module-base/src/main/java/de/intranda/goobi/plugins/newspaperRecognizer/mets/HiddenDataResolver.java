@@ -21,7 +21,7 @@ import ugh.dl.DocStruct;
 
 /**
  * Decides what happens to hidden data on save, following the shared rules in the implementation plan (mirrored by
- * {@code logic/hidden.mjs}). Throws before anything is changed if a decision is missing.
+ * {@code lib/logic/hidden.mjs}). Throws before anything is changed if a decision is missing.
  */
 public class HiddenDataResolver {
     private final RulesetTypes ruleset;

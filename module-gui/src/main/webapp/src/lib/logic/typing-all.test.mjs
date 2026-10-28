@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ownNumbering, ownNumberingAll, followValue } from '../typing.mjs';
+import { ownNumbering, ownNumberingAll, followValue } from './typing.mjs';
 import { pages, start, settings } from './fixtures.mjs';
 
 const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });

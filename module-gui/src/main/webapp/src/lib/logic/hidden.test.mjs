@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { catalog, VOLUME, start, pages } from './fixtures.mjs';
-import { buildTree, setType, toggleBlock, toggleChild, clonePages } from '../blocks.mjs';
-import { hasHidden, homeFor, findConflicts, explicitConflict, applyResolution, upsertOperation, commonOptions } from '../hidden.mjs';
+import { buildTree, setType, toggleBlock, toggleChild, clonePages } from './blocks.mjs';
+import { hasHidden, homeFor, findConflicts, explicitConflict, applyResolution, upsertOperation, commonOptions } from './hidden.mjs';
 
 const toc = { key: 'h1', type: 'TableOfContents', label: 'Inhaltsverzeichnis', firstPage: 1, lastPage: 3, title: null };
 const article = { key: 'h2', type: 'Article', label: 'Artikel', firstPage: 3, lastPage: 3, title: 'Leitartikel' };

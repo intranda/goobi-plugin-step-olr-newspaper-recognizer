@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { getApp } from '../recognizer.svelte';
-	import { buildTree, siblingsFrom } from '../../../logic/blocks.mjs';
-	import { continueFrom, followingTypeCounts, groupByDay, numberModeMatters, previewDays } from '../../../logic/generation.mjs';
-	import { fromIso, formatByPattern, WEEKDAY_PRESETS } from '../../../logic/dates.mjs';
+	import { buildTree, siblingsFrom } from '../logic/blocks.mjs';
+	import { continueFrom, followingTypeCounts, groupByDay, numberModeMatters, previewDays } from '../logic/generation.mjs';
+	import { fromIso, formatByPattern, WEEKDAY_PRESETS } from '../logic/dates.mjs';
 	import { continueTexts, DAYS } from '../continueText';
 	import Modal from '../ui/Modal.svelte';
 	import Button from '../ui/Button.svelte';

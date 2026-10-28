@@ -1,4 +1,4 @@
-/* The data of the plugin page: what the backend sends (see plugin_newspaperRecognizer.xhtml) and what logic/*.mjs derives from it. */
+/* The data of the plugin page: what the backend sends (see plugin_newspaperRecognizer.xhtml) and what lib/logic/*.mjs derives from it. */
 
 /** `key` is the backend's id of the entry (unique in the volume), the handle for removing or moving it */
 export interface HiddenStructure { key: string; label: string; title?: string; firstPage: number; lastPage: number }
@@ -44,7 +44,7 @@ export interface BlockRef { page: number; level: number }
 export type FieldDisplay = 'input' | 'textarea' | 'select1' | 'readonly';
 export interface FieldItem { value: string; label: string }
 export interface FieldDef { key: string; label: string; display: FieldDisplay; required?: boolean; pattern?: string | null; items: FieldItem[] }
-/** A field of a block with the value it shows (see logic/fields.mjs) */
+/** A field of a block with the value it shows (see lib/logic/fields.mjs) */
 export interface FieldState extends FieldDef { generated: string | null; value: string; overwritten: boolean; stale: boolean }
 
 export interface TypeInfo {
@@ -62,14 +62,14 @@ export interface TypeInfo {
 }
 export type Catalog = Record<string, TypeInfo>;
 
-/** The state as last loaded or saved (logic/unsaved.mjs savedState): the blocks that have an id by id, the file names of the pages, and the number of structures hidden at the volume. */
+/** The state as last loaded or saved (lib/logic/unsaved.mjs savedState): the blocks that have an id by id, the file names of the pages, and the number of structures hidden at the volume. */
 export interface Baseline {
 	blocks: Map<string, unknown>;
 	files: string[];
 	volumeStructures: number;
 }
 
-/** What differs from the baseline (logic/unsaved.mjs unsavedChanges): the changed blocks by "first:level", the pages with a changed label, the number of removed blocks, the deleted and added pages. */
+/** What differs from the baseline (lib/logic/unsaved.mjs unsavedChanges): the changed blocks by "first:level", the pages with a changed label, the number of removed blocks, the deleted and added pages. */
 export interface Unsaved {
 	blocks: Map<string, { isNew: boolean; fields: string[]; boundary: boolean; nesting: boolean; hidden: boolean }>;
 	labels: number[];
@@ -120,7 +120,7 @@ export interface Operation { blockId: string; kind: string; action: string }
 export interface Conflict { kind: 'DELETED' | 'TYPE' | 'BOUNDARY' | 'EXPLICIT'; blockId: string; type: string | null; page: number; structures: HiddenStructure[]; metadata: HiddenMetadata[]; options: string[] }
 /** removed: index of a page removed by the change, so that offers can follow it; offerFrom: without paginating, the first page of the block from which the volume offers follow */
 export interface ChangeOptions { bulk?: boolean; total?: number; paginate?: boolean; removed?: number; offerFrom?: number | null; afterCommit?: () => void }
-/** The stream of the blocks counted through the volume, see streams in logic/pagination.mjs */
+/** The stream of the blocks counted through the volume, see streams in lib/logic/pagination.mjs */
 export interface VolumeStream { key: string; pages: number[]; parts: { block: number; pages: number[] }[] }
 export interface PendingChange { pages: Page[]; conflicts: Conflict[]; options: ChangeOptions }
 

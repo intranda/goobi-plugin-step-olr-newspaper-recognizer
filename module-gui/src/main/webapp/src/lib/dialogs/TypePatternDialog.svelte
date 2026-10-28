@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { getApp } from '../recognizer.svelte';
-	import { buildTree, siblingsFrom } from '../../../logic/blocks.mjs';
-	import { positionColor } from '../../../logic/colors.mjs';
-	import { movePatternEntry } from '../../../logic/generation.mjs';
+	import { buildTree, siblingsFrom } from '../logic/blocks.mjs';
+	import { positionColor } from '../logic/colors.mjs';
+	import { movePatternEntry } from '../logic/generation.mjs';
 	import Modal from '../ui/Modal.svelte';
 	import Button from '../ui/Button.svelte';
 	import Icon from '../ui/Icon.svelte';

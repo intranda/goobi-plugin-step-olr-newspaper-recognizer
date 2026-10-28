@@ -108,7 +108,7 @@ export function generateValue(field, node, catalog) {
  * value. A field with a pattern is overwritten when its value differs from the generated one, and stale when the generated
  * value changed since it was overwritten (start.generatedBase, only known in this session).
  */
-/** @param {import('../src/types').BlockNode} node @param {import('../src/types').Catalog} catalog @returns {import('../src/types').FieldState[]} */
+/** @param {import('../../types').BlockNode} node @param {import('../../types').Catalog} catalog @returns {import('../../types').FieldState[]} */
 export function fieldStates(node, catalog) {
   const info = catalog[node.start.type];
   if (!info) {

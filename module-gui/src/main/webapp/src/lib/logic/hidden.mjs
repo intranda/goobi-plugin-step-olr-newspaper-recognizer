@@ -31,7 +31,7 @@ export function homeFor(structure, tree, catalog, volumeType) {
   return (catalog[volumeType]?.children || []).includes(structure.type) ? { kind: 'volume' } : null;
 }
 
-/** @returns {import('../src/types').Conflict[]} */
+/** @returns {import('../../types').Conflict[]} */
 export function findConflicts(oldPages, newPages, catalog, volumeType) {
   const newTree = buildTree(newPages);
   const newById = byId(newTree);

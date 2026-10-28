@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { streams, ruleValue, paginateBlock, initLabels, structureChanged, blockOffer, volumeOffers, applyOffers } from '../pagination.mjs';
-import { simulateRules } from '../pagination-tools.mjs';
+import { streams, ruleValue, paginateBlock, initLabels, structureChanged, blockOffer, volumeOffers, applyOffers } from './pagination.mjs';
+import { simulateRules } from './pagination-tools.mjs';
 import { pages, start, settings, labels, DEFAULT_RULES, insertPage } from './fixtures.mjs';
 
 const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });

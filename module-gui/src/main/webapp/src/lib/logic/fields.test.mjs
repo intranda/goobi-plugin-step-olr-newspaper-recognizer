@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildTree, flatten, setType, toSaveRequest, validateBlocks } from '../blocks.mjs';
-import { applyResolution, findConflicts } from '../hidden.mjs';
-import { fieldStates, formatJavaDate, generateValue, initFieldStates, keepFieldValue, resetFieldValue, setFieldValue } from '../fields.mjs';
-import { clonePages } from '../blocks.mjs';
+import { buildTree, flatten, setType, toSaveRequest, validateBlocks } from './blocks.mjs';
+import { applyResolution, findConflicts } from './hidden.mjs';
+import { fieldStates, formatJavaDate, generateValue, initFieldStates, keepFieldValue, resetFieldValue, setFieldValue } from './fields.mjs';
+import { clonePages } from './blocks.mjs';
 import { catalog as base, pages, start, VOLUME } from './fixtures.mjs';
 
 const field = (key, pattern = null, extra = {}) => ({ key, label: key, display: 'input', required: false, pattern, skipIfEmpty: false, items: [], ...extra });

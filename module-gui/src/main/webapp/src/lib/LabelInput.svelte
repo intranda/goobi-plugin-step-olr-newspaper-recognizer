@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getApp } from './recognizer.svelte';
-	import { isCounting } from '../../logic/labels.mjs';
+	import { isCounting } from './logic/labels.mjs';
 	import type { LabelMode } from '../types';
 
 	interface Props {
