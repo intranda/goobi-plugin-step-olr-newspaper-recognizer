@@ -2,7 +2,8 @@
 	import { getApp } from '../recognizer.svelte';
 	import { buildTree, siblingsFrom } from '../../../logic/blocks.mjs';
 	import { continueFrom, followingTypeCounts, groupByDay, numberModeMatters, previewDays } from '../../../logic/generation.mjs';
-	import { fromIso, formatByPattern, weekday, WEEKDAY_PRESETS } from '../../../logic/dates.mjs';
+	import { fromIso, formatByPattern, WEEKDAY_PRESETS } from '../../../logic/dates.mjs';
+	import { continueTexts, DAYS } from '../continueText';
 	import Modal from '../ui/Modal.svelte';
 	import Button from '../ui/Button.svelte';
 	import Icon from '../ui/Icon.svelte';
@@ -32,16 +33,6 @@
 	const { t, fmt, typeLabel, catalog, dateFormatPattern } = getApp();
 	const P = 'plugin_newspaperRecognizer_';
 	const PREVIEW_ROWS = 20;
-	// index = weekday() of logic/dates.mjs (0 = Sunday)
-	const DAYS = [
-		{ index: 1, key: P + 'monday' },
-		{ index: 2, key: P + 'tuesday' },
-		{ index: 3, key: P + 'wednesday' },
-		{ index: 4, key: P + 'thursday' },
-		{ index: 5, key: P + 'friday' },
-		{ index: 6, key: P + 'saturday' },
-		{ index: 0, key: P + 'sunday' },
-	];
 	const PRESETS: { name: keyof typeof WEEKDAY_PRESETS, key: string }[] = [
 		{ name: 'daily', key: P + 'weekdays_daily' },
 		{ name: 'monToSat', key: P + 'weekdays_monToSat' },
@@ -78,12 +69,7 @@
 		const date = fromIso(iso);
 		return date ? formatByPattern(date, dateFormatPattern) : '—';
 	};
-	// "Fr 01.03.1912": the short weekday in front of the date
-	const dayText = (iso: string) => {
-		const date = fromIso(iso);
-		return date ? t(DAYS.find(day => day.index === weekday(date))!.key).slice(0, 2) + ' ' + formatByPattern(date, dateFormatPattern) : iso;
-	};
-	const numberText = (number: string) => t(P + 'preview_number') + ' ' + number;
+	const { dayText, numberText, dayHeader, foldText } = continueTexts({ t, fmt, dateFormatPattern });
 	const reasonText = (reason: string) => t(P + 'continue_reason_' + reason);
 
 	// "ab Fr 01.03.1912, Nr. 61": only the parts the type of the start block has (continueFrom leaves the others out)
@@ -120,15 +106,6 @@
 		}
 		opened = { result, keys };
 	};
-	const dayHeader = (day: (typeof days)[number]) => [day.date && dayText(day.date), numberMode === 'perDay' && day.dayNumber && numberText(day.dayNumber)].filter(Boolean).join(' · ');
-	// "Mo 04.03.1912 – Mi 06.03.1912 · 3 Tage, 6 Blöcke ohne Änderung": the days by their date, without dates by their number
-	const foldDay = (day: (typeof days)[number]) => (day.date ? dayText(day.date) : numberText(day.dayNumber || ''));
-	const foldText = (fold: { days: (typeof days)[number][], blocks: number }) => {
-		const first = foldDay(fold.days[0]), last = foldDay(fold.days[fold.days.length - 1]);
-		return (fold.days.length === 1 ? first : first + ' – ' + last) + ' · '
-			+ (fold.days.length === 1 ? t(P + 'continue_foldDaysOne') : fmt(P + 'continue_foldDays', fold.days.length)) + ', '
-			+ (fold.blocks === 1 ? t(P + 'preview_unchangedOne') : fmt(P + 'preview_unchanged', fold.blocks));
-	};
 	const toggleInclude = (type: string | null) => (include = include.includes(type) ? include.filter(t => t !== type) : [...include, type]);
 	const toggleDay = (index: number) => (weekdays = weekdays.map((on, i) => (i === index ? !on : on)));
 </script>
@@ -149,7 +126,7 @@
 		<tr class="preview-day" id="{id}-day-{dayKey(day)}" data-continue-day>
 			<th colspan="4" scope="rowgroup">
 				<Icon name="calendar" class="me-1" />
-				{dayHeader(day)}
+				{dayHeader(day, numberMode === 'perDay')}
 				<span class="small text-muted fw-normal">· {day.rows.length === 1 ? t(P + 'continue_dayBlocksOne') : fmt(P + 'continue_dayBlocks', day.rows.length)}{hidden ? ', ' + fmt(P + 'continue_dayHidden', hidden) : ''}</span>
 			</th>
 		</tr>
