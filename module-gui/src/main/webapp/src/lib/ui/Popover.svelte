@@ -16,8 +16,8 @@
 	let { title, align = 'end', onclose, children }: Props = $props();
 
 	const closeOutside = (popover: HTMLElement) => {
-		// the positioned container holds the trigger too
-		const area = popover.closest('.position-relative, .newspaper-field') || (popover.parentElement as HTMLElement);
+		// the popover is placed below the element it is positioned against, which holds the trigger too
+		const area = (popover.offsetParent ?? popover.parentElement) as HTMLElement;
 		return dismiss(target => area.contains(target), onclose);
 	};
 </script>

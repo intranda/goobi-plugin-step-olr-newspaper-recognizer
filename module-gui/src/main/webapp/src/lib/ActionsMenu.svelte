@@ -14,21 +14,21 @@
 
 	let wrapper: HTMLElement | undefined = $state();
 
-	const trigger = () => wrapper?.querySelector<HTMLElement>('[aria-haspopup]');
+	let trigger: HTMLButtonElement | null = $state(null);
 	const items = (menu: HTMLElement) => [...menu.querySelectorAll<HTMLElement>('button.dropdown-item')];
 
 	const focusFirst = (menu: HTMLElement) => items(menu)[0]?.focus();
 
 	// the focus goes back to the button first, so that a dialog the action opens returns to it when it closes
 	const run = (action: () => void) => {
-		trigger()?.focus();
+		trigger?.focus();
 		app.runAction(action);
 	};
 
 	function onkeydown(e: KeyboardEvent & { currentTarget: HTMLElement }) {
 		if (e.key === 'Escape') {
 			app.actionsOpen = false;
-			trigger()?.focus();
+			trigger?.focus();
 			return;
 		}
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') {
@@ -58,7 +58,7 @@
 </script>
 
 <div bind:this={wrapper} class="position-relative me-2" {onfocusout}>
-	<TitleAction class="me-0" icon="dots-vertical" disabled={app.saveInFlight} onclick={() => app.toggleActions()} title={t(P + 'actions_more')} aria-label={t(P + 'actions_more')}
+	<TitleAction bind:element={trigger} class="me-0" icon="dots-vertical" disabled={app.saveInFlight} onclick={() => app.toggleActions()} title={t(P + 'actions_more')} aria-label={t(P + 'actions_more')}
 		aria-haspopup="true" aria-expanded={app.actionsOpen ? 'true' : 'false'} />
 	{#if app.actionsOpen}
 		<!-- after the button, so that the Tab order is button, entries; Goobi's margin for a title button that is not the last child is switched off with me-0 -->
