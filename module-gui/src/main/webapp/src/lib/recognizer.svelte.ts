@@ -149,16 +149,24 @@ export class Recognizer {
 		return this.t(notice.key).replace(/\{(\d+)\}/g, (match, i) => (notice.params && notice.params[i] !== undefined ? notice.params[i] : match))
 	}
 
+	/** the texts of the page; when they cannot be loaded the page works with the keys instead of a dead placeholder (t returns the key of an unknown text) */
 	async loadMessages() {
-		let path = window.location.pathname
-		path = path.substring(0, path.indexOf('/uii/'))
-		const response = await fetch(`${path}/api/messages/${this.props.language}`, { method: 'GET', credentials: 'same-origin' })
-		const json = await response.json()
-		const msgs: Record<string, string> = {}
-		for (const key of Object.keys(json)) {
-			msgs[key] = json[key].replace(' zzz', '')
+		try {
+			let path = window.location.pathname
+			path = path.substring(0, path.indexOf('/uii/'))
+			const response = await fetch(`${path}/api/messages/${this.props.language}`, { method: 'GET', credentials: 'same-origin' })
+			if (!response.ok) {
+				throw new Error(`${response.status} ${response.statusText}`)
+			}
+			const json = await response.json()
+			const msgs: Record<string, string> = {}
+			for (const key of Object.keys(json)) {
+				msgs[key] = json[key].replace(' zzz', '')
+			}
+			this.msgs = msgs
+		} catch (error) {
+			console.error('newspaper recognizer: the texts could not be loaded, the page shows their keys', error)
 		}
-		this.msgs = msgs
 		this.msgsLoaded = true
 	}
 
