@@ -108,6 +108,18 @@ test('detect: nested own count and continuing the parent, with a child type with
   assert.deepEqual(detected(continuing), ['rule:1', 'continue:parent']);
 });
 
+test('detect: a child whose default continues its parent is read after its parent', () => {
+  const s = settings({ ...DEFAULT_RULES, EveningIssue: { beginsWith: ['–', '1'] } });
+  const list = pages(I('EveningIssue', '–'), C('TableOfContents', '1'), p('2', 2), p('3'));
+  assert.deepEqual(detected(list, s), ['rule:– 1', 'continue:parent']);
+  // continue:parent fails: the child still gets a rule
+  assert.deepEqual(detected(pages(I(M, '1'), C('TableOfContents', 'i'), p('ii', 2), p('2'))), ['rule:1', 'rule:i']);
+});
+
+test('detect: a child that ends up hand makes its parent read once more', () => {
+  assert.deepEqual(detected(pages(I(M, '1'), p('2'), C('TableOfContents', '7'), p('8'))), ['hand', 'hand']);
+});
+
 test('detect: a later sibling of the same type continuing the first', () => {
   const list = pages(I(M, '1'), C(S, 'i'), p('ii', 2), C('TableOfContents', 'I'), C(S, 'iii'), p('iv', 2));
   assert.deepEqual(detected(list), ['rule:1', 'rule:i', 'rule:I', 'continue:sibling']);
@@ -171,6 +183,16 @@ test('strategyOptions: top-level vs nested entries, hand only when current, disa
   assert.deepEqual(options[6], { id: 'rule:p. 1', kind: 'rule', beginsWith: ['p.', '1'] });
   assert.deepEqual(options.find(option => option.id === 'continue:sibling'), { id: 'continue:sibling', kind: 'continue', type: S, disabled: false });
   assert.deepEqual(options.at(-1), { id: 'rules', kind: 'rules' });
+});
+
+test('strategyOptions: a current rule that is no entry follows the configured rules', () => {
+  const tree = buildTree(pages(I(M)));
+  const s = settings({ ...DEFAULT_RULES, X: { beginsWith: ['p.', '1'] }, Y: { beginsWith: [''] } });
+  const options = strategyOptions(tree, tree.roots[0], s, 'rule:S. 1');
+  assert.deepEqual(options.map(option => option.id),
+    ['rule:1', 'rule:i', 'rule:I', 'rule:[1]', 'rule:– 1', 'rule:–', 'rule:p. 1', 'rule:S. 1', 'continue:previous', 'rules']);
+  assert.deepEqual(options[7], { id: 'rule:S. 1', kind: 'rule', beginsWith: ['S.', '1'] });
+  assert.equal(strategyOptions(tree, tree.roots[0], s, 'rule:p. 1').length, 9);
 });
 
 test('detect: relabelling the whole volume by the detected strategies changes no label', () => {

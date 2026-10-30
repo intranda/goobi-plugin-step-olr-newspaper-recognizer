@@ -76,7 +76,7 @@ function ruleEntries(settings) {
   const entries = [];
   for (const values of [...PRESETS, ...Object.values(settings.rules ?? {}).map(rule => rule.beginsWith ?? [])]) {
     const id = values.length ? ruleId(values) : null;
-    if (id && !seen.has(id)) {
+    if (ruleOf(id) && !seen.has(id)) {
       seen.add(id);
       entries.push({ id, kind: 'rule', beginsWith: ruleOf(id) });
     }
@@ -90,7 +90,8 @@ const continueEntries = (node, earlier) => (node.level === 0
   : [{ id: 'continue:parent', kind: 'continue' }, { id: 'continue:sibling', kind: 'continue', type: node.start.type, disabled: !earlier }]);
 
 /**
- * The entries of the pagination dropdown of a node: the rule entries, hand only while it is the current strategy, the continue entries
+ * The entries of the pagination dropdown of a node: the rule entries (a current rule that is none of them after them), hand only while it
+ * is the current strategy, the continue entries
  * (top-level continue:previous, disabled on the first top-level block; nested continue:parent and continue:sibling, disabled without an
  * earlier sibling of its type), and the pagination rules.
  */
@@ -98,8 +99,12 @@ export function strategyOptions(tree, node, settings, current) {
   const siblings = siblingsOf(tree, node);
   const before = siblings.slice(0, siblings.indexOf(node));
   const earlier = node.level === 0 ? before.length > 0 : before.some(other => other.start.type === node.start.type);
+  const rules = ruleEntries(settings);
+  if (ruleOf(current) && !rules.some(entry => entry.id === current)) {
+    rules.push({ id: current, kind: 'rule', beginsWith: ruleOf(current) });
+  }
   return [
-    ...ruleEntries(settings),
+    ...rules,
     ...(current === 'hand' ? [{ id: 'hand', kind: 'hand' }] : []),
     ...continueEntries(node, earlier),
     { id: 'rules', kind: 'rules' },
@@ -112,8 +117,9 @@ const sameLabel = (a, b) => (normalizeLabel(a) || '–') === (normalizeLabel(b) 
  * The strategy of every node read back from its labels (per-block pagination design, decisions 8 and 11), by node key. A candidate
  * matches a node when relabelling its own pages by it, everything else at its strategy so far and later nodes hand, leaves them as they
  * are. Candidates in this order: the chosen entry (chosen is keyed by file name of the first page and level), the default, the dropdown
- * entries; hand and disabled entries are none. Nothing matches: hand. Children are read first without continue:parent, then their
- * parent with the children still open continuing it, then those children with continue:parent; one of them hand: its parent once more.
+ * entries; hand and disabled entries are none. Nothing matches: hand. Children are read first without continue:parent (a child whose first
+ * candidate is continue:parent stays open right away), then their parent with the children still open continuing it, then those children
+ * with all their candidates; one of them not continuing its parent: the parent once more.
  * Every top-level block is evaluated on its own pages, behind one page that stands for the stream continue:previous would join.
  */
 export function detectStrategies(pages, settings, chosen) {
@@ -147,10 +153,9 @@ export function detectStrategies(pages, settings, chosen) {
       const earlier = node.level === 0 ? rootIndex > 0
         : siblings.slice(0, index).some(other => other.start.type === node.start.type);
       const own = chosen?.get(`${pages[node.first].filename}:${node.level}`);
-      const ids = [own, defaults(nodeKey(node)), ...rules,
-        ...continueEntries(node, earlier).filter(entry => !entry.disabled).map(entry => entry.id)];
-      return [...new Set(ids)].filter(id => id && id !== 'hand' && (withParent || id !== 'continue:parent')
-        && (ruleOf(id) || ids.slice(2).includes(id)));
+      const continues = continueEntries(node, earlier).filter(entry => !entry.disabled).map(entry => entry.id);
+      return [...new Set([own, defaults(nodeKey(node)), ...rules, ...continues])]
+        .filter(id => (ruleOf(id) || continues.includes(id)) && (withParent || id !== 'continue:parent'));
     };
     const find = (node, siblings, index, withParent) => {
       for (const id of candidates(node, siblings, index, withParent)) {
@@ -170,14 +175,19 @@ export function detectStrategies(pages, settings, chosen) {
         }
       });
       open.forEach(([child]) => state.set(localKey(child), 'continue:parent'));
-      let id = find(node, siblings, index, withParent);
+      // a child that would try continue:parent first waits for its parent
+      const waits = !withParent && node.level > 0 && candidates(node, siblings, index, true)[0] === 'continue:parent';
+      if (waits) {
+        state.set(localKey(node), 'hand');
+      }
+      let id = waits ? null : find(node, siblings, index, withParent);
       let again = false;
       open.forEach(([child, k]) => {
-        if (find(child, node.children, k, true) === null) {
-          again = true;
+        if (find(child, node.children, k, true) !== 'continue:parent') {
+          again = true; // the parent was read with it continuing
         }
       });
-      if (again) {
+      if (again && !waits) {
         id = find(node, siblings, index, withParent);
       }
       return id;
