@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { changedSinceOpening, restoreFromMets, simulateRules, sameSettings, labelRange, previewGroups, acceptOffers } from './pagination-tools.mjs';
+import { changedSinceOpening, restoreFromMets, simulateRules, sameSettings, labelRange, previewGroups, acceptOffers, previewIndexes } from './pagination-tools.mjs';
 import { pages, start, settings, labels, DEFAULT_RULES } from './fixtures.mjs';
 import { detectStrategies } from './strategies.mjs';
 
@@ -143,4 +143,25 @@ test('previewGroups: only the pages in indexes; a gap splits a loose run', () =>
   const list = pages(I('MorningIssue', '1'), p('2'), p('3'), { label: 'x', depth: 0 }, { label: 'y', depth: 0 }, { label: 'z', depth: 0 });
   const groups = previewGroups(list, list, [1, 2, 3, 5]);
   assert.deepEqual(groups.map(group => [group.first, group.level, group.pages.join()]), [[1, 0, '1,2'], [3, -1, '3'], [5, -1, '5']]);
+});
+
+test('previewIndexes: the preview lists every page the rules change, also in the blocks continuing the scope', () => {
+  const list = pages(I('MorningIssue', '1'), p('2'), I('MorningIssue', '3'), p('4'), I('MorningIssue', '5'), p('6'));
+  const strategies = detectStrategies(list, settings(), new Map());
+  assert.deepEqual([...strategies.values()], ['rule:1', 'continue:previous', 'continue:previous']); // derived
+  const draft = settings({ ...DEFAULT_RULES, MorningIssue: { beginsWith: ['i'] } });
+  const scope = { kind: 'block', first: 2 };
+  const applied = simulateRules(list, draft, scope, strategies).pages;
+  assert.equal(labels(applied), '1 2 i ii iii iv'); // derived
+  const indexes = previewIndexes(list, applied, draft, scope);
+  assert.deepEqual(indexes, [2, 3, 4, 5]);
+  const changed = applied.map((page, i) => i).filter(i => applied[i].label !== list[i].label);
+  assert.deepEqual(changed.filter(i => !indexes.includes(i)), [], 'every page Apply changes is in the preview');
+  assert.equal(previewGroups(list, applied, indexes).reduce((sum, group) => sum + group.changed, 0), changed.length);
+});
+
+test('previewIndexes: pages in scope are listed also when they keep their label', () => {
+  const list = pages(I('MorningIssue', '1'), p('2'), I('MorningIssue', '1'), p('2'));
+  const scope = { kind: 'block', first: 0 };
+  assert.deepEqual(previewIndexes(list, simulateRules(list, settings(), scope).pages, settings(), scope), [0, 1]);
 });

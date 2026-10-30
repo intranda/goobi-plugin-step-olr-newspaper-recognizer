@@ -1,7 +1,7 @@
 // Volume-wide pagination tools, pure functions on the page list; behaviour as in the pagination v2 design (Changed since opening, Rules dialog).
 import { buildTree, clonePages, flatten } from './blocks.mjs';
 import { follows } from './labels.mjs';
-import { paginateParts, relabelOffers, offeredStrategies } from './pagination.mjs';
+import { streams, paginateParts, relabelOffers, offeredStrategies } from './pagination.mjs';
 import { defaultsIn, detectStrategies, relabelChain } from './strategies.mjs';
 
 /** Indices of the pages whose label differs from the METS as last loaded. */
@@ -15,10 +15,10 @@ export function restoreFromMets(pages) {
 
 /**
  * Whether a part of a stream is covered by the scope: none, block (the block starting on page scope.first), fromBlock (that block and all
- * after it), volume, offers (the blocks of scope.offers). simulateRules applies scope offers with acceptOffers; offers here is for the
- * callers that list the pages a scope covers, such as the preview of the rules dialog.
+ * after it), volume, offers (the blocks of scope.offers). simulateRules applies scope offers with acceptOffers; offers here is for
+ * previewIndexes.
  */
-export function inScope(scope) {
+function inScope(scope) {
   return {
     none: () => false,
     block: (stream, part) => part.block === scope.first,
@@ -50,6 +50,22 @@ export function simulateRules(pages, settings, scope, strategies) {
   const out = paginateParts(pages, settings, inScope(scope), key => next.get(key) ?? 'hand');
   const chained = roots.length ? relabelChain(out, settings, next, roots.at(-1).first) : { pages: out, offers: [] };
   return { ...chained, strategies: applied };
+}
+
+/**
+ * The pages the preview of the rules dialog lists, in page order: those of the parts the scope covers (inScope, streams under settings) and
+ * every page whose label differs in simulated (simulateRules: also the blocks after the scope that continue it).
+ */
+export function previewIndexes(pages, simulated, settings, scope) {
+  const covered = inScope(scope);
+  const indexes = new Set(streams(pages, settings).list
+    .flatMap(stream => stream.parts.filter(part => covered(stream, part)).flatMap(part => part.pages)));
+  pages.forEach((page, i) => {
+    if (page.label !== simulated[i].label) {
+      indexes.add(i);
+    }
+  });
+  return [...indexes].sort((a, b) => a - b);
 }
 
 /**

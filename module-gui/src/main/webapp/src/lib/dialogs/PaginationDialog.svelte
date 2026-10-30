@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { getApp } from '../recognizer.svelte';
 	import { flash } from '../flash';
-	import { streams } from '../logic/pagination.mjs';
-	import { inScope, previewGroups, simulateRules } from '../logic/pagination-tools.mjs';
+	import { previewGroups, previewIndexes, simulateRules } from '../logic/pagination-tools.mjs';
 	import { tick } from 'svelte';
 	import Modal from '../ui/Modal.svelte';
 	import Button from '../ui/Button.svelte';
@@ -10,7 +9,7 @@
 	import Check from '../ui/Check.svelte';
 	import PaginationPreview from './PaginationPreview.svelte';
 	import { PRESET_KEYS, ruleText as ruleTextOf } from '../ruleText';
-	import type { FreshOffer, Page, PaginationSettings, RulesScope, StreamPart } from '../../types';
+	import type { FreshOffer, Page, PaginationSettings, RulesScope } from '../../types';
 
 	interface Props {
 		pages: Page[];
@@ -230,12 +229,10 @@
 	const scopeText = (kind: RulesScope['kind']) => (kind !== 'offers' ? t(R + 'scope_' + kind)
 		: offers.length === 1 ? t(R + 'scope_offersOne') : fmt(R + 'scope_offers', offers.length));
 
-	/* the pages the scope covers, one group per block in page order, with their labels now and after the rules */
+	/* the pages the scope covers and every other page Apply changes, one group per block in page order, with their labels now and after the rules */
 	const preview = $derived.by(() => {
-		const covered = inScope(scope);
-		const indexes = streams(pages, draft).list
-			.flatMap(stream => stream.parts.filter((part: StreamPart) => covered(stream, part)).flatMap((part: StreamPart) => part.pages)).sort((a, b) => a - b);
-		const groups = previewGroups(pages, simulateRules(pages, draft, scope, strategies).pages, indexes);
+		const simulated = simulateRules(pages, draft, scope, strategies).pages;
+		const groups = previewGroups(pages, simulated, previewIndexes(pages, simulated, draft, scope));
 		return { groups, changed: groups.reduce((sum, group) => sum + group.changed, 0) };
 	});
 
