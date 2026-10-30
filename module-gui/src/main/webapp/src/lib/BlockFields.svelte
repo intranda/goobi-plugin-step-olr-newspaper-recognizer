@@ -146,8 +146,8 @@
 
 	{#if app.settings.enabled}
 		<FormRow id="{uid}-pagination" label={t('plugin_newspaperRecognizer_pagination_rules_title')} icon="list-numbers">
-			{#snippet children()}
-				<select class="form-select" id="{uid}-pagination" data-strategy={node.first} value={strategy} onchange={e => pick(e.currentTarget)}>
+			{#snippet children(aria)}
+				<select class="form-select" id="{uid}-pagination" data-strategy={node.first} value={strategy} onchange={e => pick(e.currentTarget)} {...aria}>
 					{#each strategyOptions as option, i (option.id)}
 						{#if (option.kind === 'continue' && strategyOptions[i - 1]?.kind !== 'continue') || option.kind === 'rules'}<hr />{/if}
 						<option value={option.id} disabled={option.disabled}>{optionText(option)}</option>
