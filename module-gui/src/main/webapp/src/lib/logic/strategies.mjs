@@ -43,19 +43,10 @@ function strategyFor(node, settings, earlier) {
 const siblingsOf = (tree, node) => (node.parent ? node.parent.children : tree.roots);
 
 /**
- * The strategy a node gets from the settings: untyped hand; top-level the rule of its type, else rule:–, and when counting through the
- * volume continue:previous after the first top-level block if the rule counts; nested the rule of its type (continue:sibling after an
- * earlier sibling of its type with continueInParent), else continue:parent.
- */
-export function defaultStrategy(tree, node, settings) {
-  const siblings = siblingsOf(tree, node);
-  const before = siblings.slice(0, siblings.indexOf(node));
-  return strategyFor(node, settings, node.level === 0 ? before.length > 0 : before.some(other => other.start.type === node.start.type));
-}
-
-/**
- * The default strategies of the given top-level nodes and their subtrees by node key, as defaultStrategy gives them, except that a
- * top-level node counts only the nodes before it in roots as earlier.
+ * The default strategies of the given top-level nodes and their subtrees by node key, the strategy a node gets from the settings: untyped
+ * hand; top-level the rule of its type, else rule:–, and when counting through the volume continue:previous after the first node in roots
+ * if the rule counts; nested the rule of its type (continue:sibling after an earlier sibling of its type with continueInParent), else
+ * continue:parent.
  */
 export function defaultsIn(roots, settings) {
   const byKey = new Map();
@@ -71,7 +62,7 @@ export function defaultsIn(roots, settings) {
   return byKey;
 }
 
-/** defaultStrategy of every node of the tree by node key; an unknown key is hand. */
+/** The default strategy (defaultsIn) of every node of the tree by node key; an unknown key is hand. */
 export function defaultResolver(tree, settings) {
   const byKey = defaultsIn(tree.roots, settings);
   return key => byKey.get(key) ?? 'hand';

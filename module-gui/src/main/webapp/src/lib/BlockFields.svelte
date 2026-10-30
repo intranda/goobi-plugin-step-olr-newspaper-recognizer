@@ -15,7 +15,7 @@
 	}
 
 	/**
-	 * The fields of a block: type, date, number, (for a block of level 0) the pagination strategy and the visible metadata fields (page range and additional data: see BlockFooter).
+	 * The fields of a block: type, date, number, the pagination strategy (on every block, nested ones included) and the visible metadata fields (page range and additional data: see BlockFooter).
 	 * `main` is set for a block of level 0: only it may become "without block", be repeated by a pattern or be continued; the others
 	 * show a colour dot (`color`) instead of an icon.
 	 */
@@ -147,7 +147,7 @@
 	{#if app.settings.enabled}
 		<FormRow id="{uid}-pagination" label={t('plugin_newspaperRecognizer_pagination_rules_title')} icon="list-numbers">
 			{#snippet children(aria)}
-				<select class="form-select" id="{uid}-pagination" data-strategy={node.first} value={strategy} onchange={e => pick(e.currentTarget)} {...aria}>
+				<select class="form-select" id="{uid}-pagination" data-strategy="{node.first}:{node.level}" value={strategy} onchange={e => pick(e.currentTarget)} {...aria}>
 					{#each strategyOptions as option, i (option.id)}
 						{#if (option.kind === 'continue' && strategyOptions[i - 1]?.kind !== 'continue') || option.kind === 'rules'}<hr />{/if}
 						<option value={option.id} disabled={option.disabled}>{optionText(option)}</option>

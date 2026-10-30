@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTree, flatten, clonePages, toggleBlock, toggleChild, setType, removePage, makeLoose } from './blocks.mjs';
-import { ruleOf, ruleId, nodeKey, defaultStrategy, defaultResolver, detectStrategies, strategyOptions, restructure, relabelChain, applyStrategy, afterTyping } from './strategies.mjs';
+import { ruleOf, ruleId, nodeKey, defaultResolver, detectStrategies, strategyOptions, restructure, relabelChain, applyStrategy, afterTyping } from './strategies.mjs';
 import { pages, settings, DEFAULT_RULES, I, p, C, labels, catalog, insertPage } from './fixtures.mjs';
 import { paginateParts } from './pagination.mjs';
 import { previewLabel } from './typing.mjs';
@@ -13,34 +13,35 @@ const S = 'NewspaperSupplement';
 /** The default strategy of every node of the page list, in page order. */
 const defaults = (list, s) => {
   const tree = buildTree(list);
-  return flatten(tree.roots).map(node => defaultStrategy(tree, node, s));
+  const resolve = defaultResolver(tree, s);
+  return flatten(tree.roots).map(node => resolve(nodeKey(node)));
 };
 
-test('defaultStrategy: a top-level block takes the rule of its type, rule:– without one, hand without type', () => {
+test('defaultResolver: a top-level block takes the rule of its type, rule:– without one, hand without type', () => {
   const list = pages(I(M), p(), I('TableOfContents'), I(null), p());
   assert.deepEqual(defaults(list, settings()), ['rule:1', 'rule:–', 'hand']);
 });
 
-test('defaultStrategy: a nested block with a rule takes it, without one it continues its parent', () => {
+test('defaultResolver: a nested block with a rule takes it, without one it continues its parent', () => {
   const list = pages(I(M), C(S), p('', 2), C('TableOfContents'), p('', 2), C(null));
   assert.deepEqual(defaults(list, settings()), ['rule:1', 'rule:i', 'continue:parent', 'hand']);
 });
 
-test('defaultStrategy: with continueInParent the second sibling of a type continues the first', () => {
+test('defaultResolver: with continueInParent the second sibling of a type continues the first', () => {
   const list = pages(I(M), C(S), p('', 2), C('TableOfContents'), C(S), p('', 2), I(M), C(S));
   const joined = settings({ ...DEFAULT_RULES, [S]: { beginsWith: ['i'], continueInParent: true } });
   assert.deepEqual(defaults(list, joined), ['rule:1', 'rule:i', 'continue:parent', 'continue:sibling', 'rule:1', 'rule:i']);
   assert.deepEqual(defaults(list, settings()), ['rule:1', 'rule:i', 'continue:parent', 'rule:i', 'rule:1', 'rule:i']);
 });
 
-test('defaultStrategy: counting through the volume continues every later top-level block with a counting rule', () => {
+test('defaultResolver: counting through the volume continues every later top-level block with a counting rule', () => {
   const s = { ...settings({ [M]: { beginsWith: ['1'] }, EveningIssue: { beginsWith: ['–', '1'] }, ExtraEdition: { beginsWith: ['–'] } }), countThroughVolume: true };
   const list = pages(I(M), p(), I(M), I('EveningIssue'), I('ExtraEdition'), I('TableOfContents'), I(null));
   assert.deepEqual(defaults(list, s), ['rule:1', 'continue:previous', 'continue:previous', 'rule:–', 'rule:–', 'hand']);
   assert.deepEqual(defaults(list, { ...s, countThroughVolume: false }), ['rule:1', 'rule:1', 'rule:– 1', 'rule:–', 'rule:–', 'hand']);
 });
 
-test('defaultStrategy: counting through the volume, the first top-level block starts with its rule', () => {
+test('defaultResolver: counting through the volume, the first top-level block starts with its rule', () => {
   const s = { ...settings(), countThroughVolume: true };
   assert.deepEqual(defaults(pages(p('', 0), I(M), p()), s), ['rule:1']);
 });

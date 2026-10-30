@@ -69,7 +69,7 @@ export function previewIndexes(pages, simulated, settings, scope) {
 }
 
 /**
- * New page list with the offers accepted (applyOffers), then the blocks after the offered ones that continue them relabelled (relabelChain)
+ * New page list with the offers accepted (relabelOffers), then the blocks after the offered ones that continue them relabelled (relabelChain)
  * with offeredStrategies; offers are the offers of these chains.
  */
 export function acceptOffers(pages, settings, offers, strategies) {

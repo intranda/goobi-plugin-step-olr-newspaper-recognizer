@@ -81,7 +81,7 @@
 				</div>
 			</fieldset>
 			<!-- date and number are never hidden: without a type that has them they are locked, with the reason -->
-			<fieldset disabled={!fields.dated}>
+			<fieldset disabled={!fields.dated} aria-describedby={!fields.dated ? `${id}-date-locked` : undefined}>
 				<legend class={['fs-6 fw-bold', !fields.dated && 'text-muted']}>{t(P + 'continue_date')}</legend>
 				<Check type="radio" name="{id}-dateMode" id="{id}-dateRepeat" checked={dateMode === 'perDay'} onchange={() => (dateMode = 'perDay')}>
 					{t(P + 'continue_dateRepeat')}
@@ -90,14 +90,14 @@
 					{t(P + 'continue_datePerIssue')}
 				</Check>
 				{#if !fields.dated}
-					<div class="form-text d-flex gap-1 mt-1">
+					<div class="form-text d-flex gap-1 mt-1" id="{id}-date-locked">
 						<Icon name="info-circle" />
 						<span>{t(P + 'continue_dateNone')}</span>
 					</div>
 				{/if}
 			</fieldset>
 			<!-- with a new date for every issue both settings count alike (unless a type has a number but no date): locked, with the reason -->
-			<fieldset disabled={!fields.numbered || !matters}>
+			<fieldset disabled={!fields.numbered || !matters} aria-describedby={!fields.numbered || !matters ? `${id}-number-locked` : undefined}>
 				<legend class={['fs-6 fw-bold', (!fields.numbered || !matters) && 'text-muted']}>{t(P + 'continue_number')}</legend>
 				<Check type="radio" name="{id}-mode" id="{id}-perDay" checked={numberMode === 'perDay'} onchange={() => (mode = 'perDay')}>
 					{t(P + 'continue_perDay')}
@@ -106,13 +106,14 @@
 					{t(P + 'continue_perIssue')}
 				</Check>
 				{#if !fields.numbered || !matters}
-					<div class="form-text d-flex gap-1 mt-1">
+					<div class="form-text d-flex gap-1 mt-1" id="{id}-number-locked">
 						<Icon name="info-circle" />
 						<span>{t(P + (!fields.numbered ? 'continue_numberNone' : 'continue_numberPerIssueHint'))}</span>
 					</div>
 				{/if}
 			</fieldset>
-			<fieldset disabled={!fields.dated}>
+			<!-- the weekdays only shape dates: locked with the reason of the date settings -->
+			<fieldset disabled={!fields.dated} aria-describedby={!fields.dated ? `${id}-date-locked` : undefined}>
 				<legend class={['fs-6 fw-bold', !fields.dated && 'text-muted']}>{t(P + 'continue_weekdays')}</legend>
 				<!-- seven equal segments, one per weekday -->
 				<div class="weekday-picker" role="group" aria-label={t(P + 'continue_weekdays')}>

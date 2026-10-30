@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { streams, ruleValue, paginateBlock, paginateParts, initLabels, applyOffers } from './pagination.mjs';
+import { streams, ruleValue, paginateParts, initLabels } from './pagination.mjs';
 import { defaultResolver } from './strategies.mjs';
 import { buildTree } from './blocks.mjs';
-import { simulateRules } from './pagination-tools.mjs';
+import { simulateRules, acceptOffers } from './pagination-tools.mjs';
+
+/** paginateParts over the top-level block starting on page first. */
+const paginateBlock = (list, s, first, strategyOf) => paginateParts(list, s, (stream, part) => part.block === first, strategyOf);
 import { pages, settings, labels, DEFAULT_RULES, I, p, C } from './fixtures.mjs';
 
 const keys = (result, indexes) => indexes.map(i => result.byPage[i]);
@@ -264,7 +267,7 @@ test('volume mode: paginateBlock of a later block continues from the block befor
 
 // Offers.
 
-test('applyOffers in block mode equals accepting each offer with paginateBlock', () => {
+test('acceptOffers in block mode equals accepting each offer with paginateBlock', () => {
   const list = lab([I(M), p(), p(), I(M), p(), p()], '1 5 6 1 7 8');
   const offers = [{ first: 0, pages: [1, 2] }, { first: 3, pages: [4, 5] }];
   const accept = (pagesNow, offer) => {
@@ -272,7 +275,7 @@ test('applyOffers in block mode equals accepting each offer with paginateBlock',
     return pagesNow.map((page, i) => (offer.pages.includes(i) ? { ...page, label: fresh[i].label } : page));
   };
   const expected = offers.reduce(accept, list);
-  assert.equal(labels(applyOffers(list, settings(), offers, null)), labels(expected));
+  assert.equal(labels(acceptOffers(list, settings(), offers, null).pages), labels(expected));
   assert.equal(labels(expected), '1 2 3 1 2 3'); // derived
   assert.equal(labels(list), '1 5 6 1 7 8', 'input unchanged'); // derived
 });

@@ -46,8 +46,9 @@ export function ownNumberingAll(pages, settings, strategyOf) {
 /**
  * The page list as it would look if text was typed on page index. mode: 'follow' counts on until a page with own numbering,
  * 'toEnd' to the end of the stream regardless, 'single' changes only this page. run = following pages that change, stop = the
- * page with own numbering that ended the run, end = last page of the stream, value = what the page itself gets. When counting
- * through the volume the stream ends with the block typed in; the blocks continuing it follow by relabelChain. strategyOf as in followValue.
+ * page with own numbering that ended the run, end = last page of the block typed in, value = what the page itself gets. The run
+ * always stops at the end of the block typed in (with its children that continue it); the blocks after it follow by afterTyping.
+ * strategyOf as in followValue.
  */
 /** @returns {import('../../types').LabelPreviewResult} */
 export function previewLabel(pages, settings, index, text, mode, strategyOf) {
