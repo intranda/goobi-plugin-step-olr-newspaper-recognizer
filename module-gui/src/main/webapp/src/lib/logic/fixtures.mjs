@@ -31,6 +31,13 @@ export function pages(...specs) {
   return specs.map((spec, i) => ({ filename: `${String(i + 1).padStart(4, '0')}.tif`, result: 0, ...spec, depth: spec.depth || 0, starts: spec.starts || [] }));
 }
 
+/** A page that starts a top-level block of type (null: untyped). */
+export const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });
+/** A page inside the open blocks, depth 1 by default. */
+export const p = (label = '', depth = 1) => ({ label, depth });
+/** A page that starts a block of type nested in a top-level block. */
+export const C = (type, label = '') => ({ label, depth: 2, starts: [start(type)] });
+
 /** Depth and number of starts per page, for compact assertions. */
 export const shape = list => list.map(p => `${p.depth}/${p.starts.length}`).join(' ');
 

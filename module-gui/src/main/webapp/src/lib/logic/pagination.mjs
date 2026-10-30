@@ -1,116 +1,157 @@
-// Pagination streams and rule values, pure functions on the page list; rules mirror the pagination v2 design (Streams, Rule value of a page).
-import { buildTree, flatten, clonePages } from './blocks.mjs';
+// Pagination streams and rule values, pure functions on the page list; rules mirror the pagination v2 design (Streams, Rule value of a page)
+// and the per-block pagination design (a strategy per node decides its stream and rule).
+import { buildTree, clonePages } from './blocks.mjs';
 import { normalizeLabel, isCounting, nextLabel, follows } from './labels.mjs';
+import { defaultResolver, nodeKey, ruleOf, typeRule } from './strategies.mjs';
 
-const ruleOfType = (settings, type) => (type && settings.rules?.[type]?.beginsWith) || null;
+/** Per streams result: the stream, the part and the positions in part and stream of every page, so valueIn does not scan. */
+const positions = new WeakMap();
 
 /**
- * Which pages count together. Level-0 blocks open their own stream, a child only with a rule of its type (otherwise it stays in
- * the stream of its parent); with continueInParent the children of one type in one parent share a stream; loose runs form one each.
- * With settings.countThroughVolume all level-0 blocks with a rule share the stream 'volume'. Every stream lists its parts in page
- * order, one per level-0 block or loose run, each with the rule of its block; block and rule of the stream are those of its first part.
- * byPage[i] is the key of the stream of page i; list is ordered by the first page of the streams.
+ * Which pages count together, by the strategy strategyOf(nodeKey) of every node (default: defaultResolver). rule:X and hand open a
+ * stream (hand without rule, its labels stay); continue:parent joins the stream of the parent, continue:sibling that of the nearest
+ * earlier sibling of its type, continue:previous that of the nearest earlier top-level block that counts (a rule with a counting value,
+ * continue:previous, or hand with a counting label); without one they open their own stream. A continuing node takes the rule of its
+ * type, else 1: the stream gives the count, the rule only its leading uncounted values. Loose runs form one stream each. Every stream
+ * lists its parts in the order of their first page, one per node (node key, block = first page of its top-level block) or loose run
+ * (node null, block -1); block and rule of the stream are those of its first part. byPage[i] is the key of the stream of page i; list
+ * is ordered by the first page of the streams.
  */
-export function streams(pages, settings) {
+export function streams(pages, settings, strategyOf) {
   const tree = buildTree(pages);
-  const nodes = flatten(tree.roots);
-  const streamOf = new Map(); // node → { id, rule, block }
-  for (const node of nodes) {
-    const rule = ruleOfType(settings, node.start.type);
-    const block = node.level === 0 ? node.first : streamOf.get(node.parent).block;
-    if (node.level === 0 || rule) {
-      const joined = node.level > 0 && settings.rules[node.start.type].continueInParent;
-      const volume = node.level === 0 && rule && settings.countThroughVolume;
-      const id = volume ? 'volume'
-        : joined ? `${streamOf.get(node.parent).id}/${node.parent.first}.${node.start.type}` : `${block}:${node.first}:${node.level}`;
-      streamOf.set(node, { id, rule, block });
-    } else {
-      streamOf.set(node, streamOf.get(node.parent));
+  const resolve = strategyOf ?? defaultResolver(tree, settings);
+  const streamOf = new Map(); // node → stream id
+  const ruleAt = new Map(); // node → rule of its part
+  const blockOf = new Map(); // node → first page of its top-level block
+  const owner = new Array(pages.length).fill(null); // the deepest node of every page
+  let next = 0;
+  let previous = null; // stream of the last top-level block that continue:previous follows
+  const walk = (siblings, root) => {
+    const lastOfType = new Map();
+    for (const node of siblings) {
+      const id = resolve(nodeKey(node)) ?? 'hand'; // a node the resolver does not know keeps its labels
+      let stream = null;
+      let rule = null;
+      if (ruleOf(id)) {
+        rule = ruleOf(id);
+      } else if (id.startsWith('continue:')) {
+        rule = typeRule(settings, node.start.type) ?? ['1'];
+        stream = {
+          'continue:parent': node.parent && streamOf.get(node.parent),
+          'continue:sibling': lastOfType.has(node.start.type) ? streamOf.get(lastOfType.get(node.start.type)) : null,
+          'continue:previous': node.level === 0 ? previous : null,
+        }[id] ?? null;
+      }
+      streamOf.set(node, stream ?? next++);
+      ruleAt.set(node, rule);
+      blockOf.set(node, (root ?? node).first);
+      lastOfType.set(node.start.type, node);
+      for (let i = node.first; i <= node.last; i++) {
+        owner[i] = node; // parents before children: the deepest block wins
+      }
+      walk(node.children, root ?? node);
+      if (node.level === 0 && counts(node, id)) {
+        previous = streamOf.get(node);
+      }
     }
-  }
-  const owner = new Array(pages.length).fill(null);
-  for (const node of nodes) { // parents before children: the deepest block wins
-    for (let i = node.first; i <= node.last; i++) {
-      owner[i] = streamOf.get(node);
-    }
-  }
+  };
+  const counts = (node, id) => id === 'continue:previous' || (ruleOf(id) ?? []).some(value => isCounting(normalizeLabel(value)))
+    || (id === 'hand' && pages.slice(node.first, node.last + 1)
+      .some((page, k) => streamOf.get(owner[node.first + k]) === streamOf.get(node) && isCounting(page.label)));
+  walk(tree.roots, null);
+
   const loose = settings.withoutBlock?.length ? settings.withoutBlock : null;
   const groups = new Map();
+  const partAt = new Array(pages.length);
+  const inPart = new Array(pages.length);
+  const inStream = new Array(pages.length);
   let run = null;
   pages.forEach((page, i) => {
+    const node = owner[i];
     let id;
     let info;
-    if (owner[i]) {
-      id = owner[i].id;
-      info = owner[i];
+    if (node) {
+      id = streamOf.get(node);
+      info = { block: blockOf.get(node), node: nodeKey(node), rule: ruleAt.get(node) };
       run = null;
     } else {
       run = run ?? i;
       id = `loose:${run}`;
-      info = { rule: loose, block: -1 };
+      info = { block: -1, node: null, rule: loose };
     }
     if (!groups.has(id)) {
-      groups.set(id, { id, pages: [], parts: [] });
+      groups.set(id, { pages: [], parts: [], byNode: new Map() });
     }
     const group = groups.get(id);
-    group.pages.push(i);
-    let part = group.parts[group.parts.length - 1];
-    if (!part || part.block !== info.block) {
-      part = { block: info.block, rule: info.rule, pages: [] };
+    let part = group.byNode.get(info.node);
+    if (!part) {
+      part = { ...info, pages: [] };
       group.parts.push(part);
+      group.byNode.set(info.node, part);
     }
-    part.pages.push(i);
+    partAt[i] = part;
+    inPart[i] = part.pages.push(i) - 1;
+    inStream[i] = group.pages.push(i) - 1;
   });
   const list = [...groups.values()].map(g => {
     const { block, rule } = g.parts[0];
-    return { key: g.id === 'volume' ? 'volume' : `${block}:${g.pages[0]}`, pages: g.pages, rule, block, parts: g.parts };
+    return { key: `${block}:${g.pages[0]}`, pages: g.pages, rule, block, parts: g.parts };
   });
   list.sort((a, b) => a.pages[0] - b.pages[0]);
   const byPage = new Array(pages.length);
-  list.forEach(s => s.pages.forEach(i => { byPage[i] = s.key; }));
+  const streamAt = new Array(pages.length);
+  list.forEach(s => s.pages.forEach(i => {
+    byPage[i] = s.key;
+    streamAt[i] = s;
+  }));
+  const index = { streamAt, partAt, inPart, inStream };
+  list.forEach(s => positions.set(s, index));
   return { byPage, list };
 }
 
-export const partOf = (stream, index) => stream.parts.find(part => part.pages.includes(index));
+export const partOf = (stream, index) => {
+  const { streamAt, partAt } = positions.get(stream);
+  return streamAt[index] === stream ? partAt[index] : undefined;
+};
 
 /**
- * The value for page index by the rule of its part: the n-th beginsWith value of the part (a counting one only in the first part of
- * the stream), else the next value after the last counting label before it in the stream, else the first counting rule value, else –.
+ * The value for page index by the rule of its part: the n-th beginsWith value (n counted in the stream for the first part of the stream,
+ * else in the part, where only uncounted values apply), else the next value after the last counting label before it in the stream, else
+ * the first counting rule value, else –.
  */
 export function valueIn(pages, stream, index) {
   const part = partOf(stream, index);
   if (!part?.rule) {
     return null;
   }
-  const position = part.pages.indexOf(index);
-  if (position < part.rule.length && (part === stream.parts[0] || !isCounting(normalizeLabel(part.rule[position])))) {
+  const { inPart, inStream } = positions.get(stream);
+  const first = part === stream.parts[0];
+  const position = first ? inStream[index] : inPart[index];
+  if (position < part.rule.length && (first || !isCounting(normalizeLabel(part.rule[position])))) {
     return normalizeLabel(part.rule[position]);
   }
-  const before = stream.pages.filter(i => i < index);
-  for (let k = before.length - 1; k >= 0; k--) {
-    const label = pages[before[k]].label;
+  for (let k = inStream[index] - 1; k >= 0; k--) {
+    const label = pages[stream.pages[k]].label;
     if (isCounting(label)) {
       return nextLabel(label);
     }
   }
-  const first = part.rule.map(normalizeLabel).find(isCounting);
-  return first ?? '–';
+  const counting = part.rule.map(normalizeLabel).find(isCounting);
+  return counting ?? '–';
 }
 
-export function ruleValue(pages, settings, index) {
-  const result = streams(pages, settings);
-  return valueIn(pages, result.list.find(s => s.pages.includes(index)), index);
+export function ruleValue(pages, settings, index, strategyOf) {
+  const result = streams(pages, settings, strategyOf);
+  return valueIn(pages, result.list.find(s => s.key === result.byPage[index]), index);
 }
 
 /** New page list, every page of the parts covered(stream, part) accepts gets the rule value of its stream; parts without a rule keep their labels. */
-export function paginateParts(pages, settings, covered) {
+export function paginateParts(pages, settings, covered, strategyOf) {
   const out = clonePages(pages);
-  for (const stream of streams(out, settings).list) {
-    for (const part of stream.parts) {
-      if (!part.rule || !covered(stream, part)) {
-        continue;
-      }
-      for (const i of part.pages) {
+  for (const stream of streams(out, settings, strategyOf).list) {
+    const paginated = new Set(stream.parts.filter(part => part.rule && covered(stream, part)));
+    for (const i of stream.pages) { // in page order: a page counts on from the pages of other parts before it
+      if (paginated.has(partOf(stream, i))) {
         out[i].label = valueIn(out, stream, i);
       }
     }
@@ -118,8 +159,8 @@ export function paginateParts(pages, settings, covered) {
   return out;
 }
 
-/** New page list, every page of the block starting on page first gets the rule value of its stream; streams without a rule keep their labels. */
-export const paginateBlock = (pages, settings, first) => paginateParts(pages, settings, (stream, part) => part.block === first);
+/** New page list, every page of the top-level block starting on page first gets the rule value of its stream; parts without a rule keep their labels. */
+export const paginateBlock = (pages, settings, first, strategyOf) => paginateParts(pages, settings, (stream, part) => part.block === first, strategyOf);
 
 /** Indices of the pages that paginateBlock would change in the block starting on page first. */
 export function blockOffer(pages, settings, first) {
@@ -230,9 +271,9 @@ export function structureChanged(before, after, settings) {
   if (!settings.countThroughVolume) {
     return { pages: out, changed, offers, offerFrom: null };
   }
-  // only level-0 blocks with a rule join the volume stream, so every part of it has a rule
-  const volume = result.list.find(stream => stream.key === 'volume');
-  const later = movedIndexes.length && volume ? volume.parts.find(part => part.block > movedIndexes[0]) : undefined;
+  // the blocks counted through the volume: the top-level parts of the streams that run over more than one top-level block
+  const later = movedIndexes.length ? result.list.filter(stream => stream.parts.some(part => part.block !== stream.block))
+    .flatMap(stream => stream.parts).filter(part => part.block > movedIndexes[0]).sort((a, b) => a.block - b.block)[0] : undefined;
   const offerFrom = offers.length ? offers[0].first : later?.block ?? null;
   return { pages: out, changed, offers: offerFrom === null ? [] : volumeOffers(out, settings, offerFrom), offerFrom };
 }

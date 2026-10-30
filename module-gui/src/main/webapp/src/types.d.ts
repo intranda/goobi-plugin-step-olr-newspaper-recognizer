@@ -89,8 +89,11 @@ export interface PaginationSettings {
 	withoutBlock: string[];
 	rules: Record<string, PaginationRule>;
 }
-/** the pages of one level-0 block (or loose run) in a pagination stream, with the rule of that block */
-export interface StreamPart { block: number; rule: string[] | null; pages: number[] }
+/** the pages of one node (or loose run) in a pagination stream, with the rule its strategy gives; block is the first page of its top-level
+ * block (-1 for a loose run), node its node key (null for a loose run) */
+export interface StreamPart { block: number; node: string | null; rule: string[] | null; pages: number[] }
+/** the pagination strategy of a node by its node key `first:level`: `rule:<values>`, `continue:previous|parent|sibling` or `hand` (lib/logic/strategies.mjs) */
+export type StrategyOf = (key: string) => string
 export interface RulesScope { kind: 'none' | 'block' | 'fromBlock' | 'volume' | 'offers'; first: number | null | undefined; offers?: FreshOffer[]; from?: number | null }
 
 export interface Validation {

@@ -1,12 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { streams, ruleValue, paginateBlock, initLabels, structureChanged, blockOffer, volumeOffers, applyOffers } from './pagination.mjs';
+import { streams, ruleValue, paginateBlock, paginateParts, initLabels, structureChanged, blockOffer, volumeOffers, applyOffers } from './pagination.mjs';
+import { defaultResolver } from './strategies.mjs';
+import { buildTree } from './blocks.mjs';
 import { simulateRules } from './pagination-tools.mjs';
-import { pages, start, settings, labels, DEFAULT_RULES, insertPage } from './fixtures.mjs';
-
-const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });
-const p = (label = '', depth = 1) => ({ label, depth });
-const C = (type, label = '') => ({ label, depth: 2, starts: [start(type)] });
+import { pages, settings, labels, DEFAULT_RULES, insertPage, I, p, C } from './fixtures.mjs';
 
 const keys = (result, indexes) => indexes.map(i => result.byPage[i]);
 
@@ -123,6 +121,102 @@ test('paginateBlock numbers a page of free text as uncounted and does not let it
 test('ruleValue continues bracketed labels', () => {
   const list = pages(I('MorningIssue', '1'), p('[2]'), p());
   assert.equal(ruleValue(list, settings(), 2), '[3]');
+});
+
+// Streams follow a strategy per node.
+
+/** Strategy resolver of the page list: the given strategies by node key, else the defaults. */
+const resolver = (list, s, picked) => {
+  const fallback = defaultResolver(buildTree(list), s);
+  return key => picked[key] ?? fallback(key);
+};
+const all = () => true;
+
+test('continue:previous keeps the leading uncounted value of the type rule', () => {
+  const s = settings({ MorningIssue: { beginsWith: ['–', '1'] } });
+  const list = pages(I('MorningIssue'), p(), p(), I('MorningIssue'), p(), p());
+  const strategyOf = resolver(list, s, { '3:0': 'continue:previous' });
+  assert.equal(labels(paginateParts(list, s, all, strategyOf)), '– 1 2 – 3 4');
+});
+
+test('continue:previous continues after a hand block with counting labels', () => {
+  const list = pages(I('MorningIssue'), p(), I('MorningIssue', '37'), p('38'), I('MorningIssue'), p());
+  const strategyOf = resolver(list, settings(), { '2:0': 'hand', '4:0': 'continue:previous' });
+  assert.equal(labels(paginateParts(list, settings(), all, strategyOf)), '1 2 37 38 39 40');
+});
+
+test('continue:previous skips blocks without counting value and loose pages', () => {
+  const list = pages(I('MorningIssue'), p(), p('', 0), I('MorningIssue', 'Titel'), I('MorningIssue'), I('MorningIssue'), p());
+  const strategyOf = resolver(list, settings(), { '3:0': 'hand', '4:0': 'rule:–', '5:0': 'continue:previous' });
+  assert.equal(labels(paginateParts(list, settings(), all, strategyOf)), '1 2 – Titel – 3 4');
+});
+
+test('continue:previous without a block before starts with its rule, without type rule at 1', () => {
+  const list = pages(I('MorningIssue'), p(), I('TableOfContents'), p());
+  const strategyOf = resolver(list, settings(), { '0:0': 'continue:previous', '2:0': 'continue:previous' });
+  assert.equal(labels(paginateParts(list, settings(), all, strategyOf)), '1 2 3 4');
+  assert.equal(labels(paginateParts(pages(I('TableOfContents'), p()), settings(), all, () => 'continue:previous')), '1 2');
+});
+
+test('rule:– on a nested block makes its pages uncounted whatever the parent does', () => {
+  const list = pages(I('MorningIssue'), p(), C('NewspaperSupplement'), p('', 2), p());
+  const strategyOf = resolver(list, settings(), { '2:1': 'rule:–' });
+  assert.equal(labels(paginateBlock(list, settings(), 0, strategyOf)), '1 2 – – 3');
+});
+
+test('a hand node keeps its labels', () => {
+  const list = pages(I('MorningIssue'), p(), C('NewspaperSupplement', 'Titel'), p('x', 2), p());
+  const strategyOf = resolver(list, settings(), { '2:1': 'hand' });
+  assert.equal(labels(paginateBlock(list, settings(), 0, strategyOf)), '1 2 Titel x 3');
+  const hand = pages(I('MorningIssue', 'a'), p('7'), C('TableOfContents', 'b'), p('', 2));
+  assert.equal(labels(paginateBlock(hand, settings(), 0, () => 'hand')), 'a 7 b ·');
+});
+
+test('continue:parent without type rule counts on from the parent', () => {
+  const list = pages(I('MorningIssue'), p(), C('TableOfContents'), p('', 2), p());
+  assert.equal(labels(paginateBlock(list, settings(), 0)), '1 2 3 4 5');
+});
+
+test('continue:parent: the parent keeps counting across the child, the child keeps its leading uncounted value', () => {
+  const s = settings({ MorningIssue: { beginsWith: ['–', '1'] }, TableOfContents: { beginsWith: ['–', '1'] } });
+  const list = pages(I('MorningIssue'), C('TableOfContents'), p('', 2), p('', 2), p());
+  const strategyOf = resolver(list, s, { '1:1': 'continue:parent' });
+  assert.equal(labels(paginateBlock(list, s, 0, strategyOf)), '– – 1 2 3');
+});
+
+test('continue:sibling without an earlier sibling of the type opens its own stream', () => {
+  const list = pages(I('MorningIssue'), p(), C('NewspaperSupplement'), p('', 2), C('TableOfContents'), p('', 2));
+  const strategyOf = resolver(list, settings(), { '2:1': 'continue:sibling', '4:1': 'continue:sibling' });
+  assert.equal(labels(paginateBlock(list, settings(), 0, strategyOf)), '1 2 i ii 1 2');
+});
+
+test('parts carry their node', () => {
+  const list = pages(I('MorningIssue'), p(), p(), C('NewspaperSupplement'), p('', 2), p(), C('TableOfContents'), p('', 2));
+  const result = streams(list, settings());
+  const parts = result.list.flatMap(stream => stream.parts);
+  const supplement = parts.find(part => part.pages.includes(3));
+  assert.equal(supplement.node, '3:1');
+  assert.equal(supplement.block, 0);
+  assert.deepEqual(supplement.pages, [3, 4]);
+  const issue = result.list.find(stream => stream.pages.includes(0));
+  assert.deepEqual(issue.parts.map(part => [part.node, part.pages]), [['0:0', [0, 1, 2, 5]], ['6:1', [6, 7]]]);
+  const loose = streams(pages(p('', 0), I('MorningIssue')), settings()).list[0].parts[0];
+  assert.deepEqual([loose.node, loose.block], [null, -1]);
+});
+
+test('streams: counting through the volume comes from the strategies, not from the settings', () => {
+  const list = pages(I('MorningIssue'), p(), I('MorningIssue'), p());
+  const s = { ...settings(), countThroughVolume: true };
+  assert.equal(streams(list, s, () => 'rule:1').list.length, 2);
+  assert.equal(streams(list, settings(), resolver(list, s, { '2:0': 'continue:previous' })).list.length, 1);
+  assert.ok(streams(list, s).list.every(stream => stream.key !== 'volume'));
+});
+
+test('ruleValue follows the given strategies', () => {
+  const list = pages(I('MorningIssue', '1'), p('2'), I('MorningIssue'), p());
+  assert.equal(ruleValue(list, settings(), 2), '1');
+  assert.equal(ruleValue(list, settings(), 2, resolver(list, settings(), { '2:0': 'continue:previous' })), '3');
+  assert.equal(ruleValue(list, settings(), 2, resolver(list, settings(), { '2:0': 'hand' })), null);
 });
 
 // structureChanged: before and after are page lists carrying the old labels; labels(result.pages) is the outcome.
@@ -335,8 +429,8 @@ test('volume mode: a counting start value applies only in the first block', () =
 
 test('volume mode: pages without block and rule-less blocks are skipped, the count continues after them', () => {
   const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true, withoutBlock: ['–'] };
-  const list = pages(I('MorningIssue'), p(), { label: 'x', depth: 0 }, I(null, 'u'), p('u2'), I('MorningIssue'), p());
-  assert.deepEqual(each(paginateAll(list, s)), ['1', '2', '–', 'u', 'u2', '3', '4']);
+  const list = pages(I('MorningIssue'), p(), { label: 'x', depth: 0 }, I(null, 'Titel'), p('Karte'), I('MorningIssue'), p());
+  assert.deepEqual(each(paginateAll(list, s)), ['1', '2', '–', 'Titel', 'Karte', '3', '4']);
 });
 
 test('block mode is unchanged: every block starts again', () => {

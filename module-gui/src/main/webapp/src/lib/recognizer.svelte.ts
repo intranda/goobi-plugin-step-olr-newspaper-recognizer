@@ -769,9 +769,9 @@ export class Recognizer {
 		this.applyChange(pages, { paginate: false })
 	}
 
-	/** the stream of the blocks counted through the volume with these settings */
+	/** the stream of the blocks counted through the volume with these settings: the one that runs over more than one top-level block */
 	volumeStream(settings: PaginationSettings): VolumeStream | undefined {
-		return streams(this.pages, settings).list.find((stream: { key: string }) => stream.key === 'volume')
+		return streams(this.pages, settings).list.find((stream: VolumeStream) => stream.parts.some(part => part.block !== stream.parts[0].block))
 	}
 
 	/** first page of the first block of the volume stream after page index, null if none follows */
