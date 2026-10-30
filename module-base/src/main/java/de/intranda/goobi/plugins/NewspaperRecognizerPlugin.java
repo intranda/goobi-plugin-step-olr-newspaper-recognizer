@@ -195,7 +195,7 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
         PaginationConfiguration pagination = configuration.pagination();
         return gson.toJson(Map.of("enabled", pagination.enabled(), "automatic", pagination.automatic(), "countThroughVolume",
                 pagination.countThroughVolume(), "withoutBlock", pagination.withoutBlock(),
-                "rules", pagination.resolvedRules(ruleset, getVolumeType())));
+                "rules", pagination.rules()));
     }
 
     public String getConfigErrorsJson() {

@@ -172,7 +172,7 @@ public class NewspaperRecognizerPluginTest {
     }
 
     @Test
-    public void paginationJson_containsSettingsAndResolvedRules() {
+    public void paginationJson_containsSettingsAndConfiguredRules() {
         PluginConfiguration base = TestDocuments.config(true);
         PaginationConfiguration pagination = new PaginationConfiguration(true, false, false, List.of("\u2013"),
                 Map.of("NewspaperSupplement", new PaginationRule(List.of("i"), false)));
@@ -183,7 +183,8 @@ public class NewspaperRecognizerPluginTest {
         assertEquals(false, json.get("automatic").getAsBoolean());
         assertEquals("[\"\u2013\"]", json.get("withoutBlock").toString());
         JsonObject rules = json.getAsJsonObject("rules");
-        assertEquals("[\"1\"]", rules.getAsJsonObject("MorningIssue").get("beginsWith").toString());
+        assertEquals(false, rules.has("MorningIssue"));
+        assertEquals(1, rules.size());
         assertEquals("[\"i\"]", rules.getAsJsonObject("NewspaperSupplement").get("beginsWith").toString());
         assertEquals(false, rules.getAsJsonObject("NewspaperSupplement").get("continueInParent").getAsBoolean());
     }

@@ -21,21 +21,21 @@ public class PageLabelsTest {
     private final Prefs prefs = TestDocuments.prefs();
 
     @Test
-    public void read_mapsUncountedMissingAndValues() throws UGHException {
-        DigitalDocument dd = volume(prefs, 4);
-        MetadataAccess.setFirst(pageOf(dd, 0), prefs.getMetadataTypeByName("logicalPageNumber"), "uncounted");
-        MetadataAccess.setFirst(pageOf(dd, 1), prefs.getMetadataTypeByName("logicalPageNumber"), null);
-        MetadataAccess.setFirst(pageOf(dd, 2), prefs.getMetadataTypeByName("logicalPageNumber"), " 5 ");
-        MetadataAccess.setFirst(pageOf(dd, 3), prefs.getMetadataTypeByName("logicalPageNumber"), "1r");
-        assertEquals(Map.of("0001.tif", "–", "0002.tif", "", "0003.tif", "5", "0004.tif", "1r"), PageLabels.read(dd));
+    public void read_mapsEveryUncountedSpellingAndMissing() throws UGHException {
+        DigitalDocument dd = volume(prefs, 7);
+        String[] values = { "uncounted", null, " ", "-", "\u2013", " 5 ", "1r" };
+        for (int i = 0; i < values.length; i++) {
+            MetadataAccess.setFirst(pageOf(dd, i), prefs.getMetadataTypeByName("logicalPageNumber"), values[i]);
+        }
+        assertEquals(Map.of("0001.tif", "\u2013", "0002.tif", "\u2013", "0003.tif", "\u2013", "0004.tif", "\u2013", "0005.tif", "\u2013",
+                "0006.tif", "5", "0007.tif", "1r"), PageLabels.read(dd));
     }
 
     @Test
     public void read_keepsRawNotation() throws UGHException {
-        DigitalDocument dd = volume(prefs, 2);
+        DigitalDocument dd = volume(prefs, 1);
         MetadataAccess.setFirst(pageOf(dd, 0), prefs.getMetadataTypeByName("logicalPageNumber"), "[ 3 ]");
-        MetadataAccess.setFirst(pageOf(dd, 1), prefs.getMetadataTypeByName("logicalPageNumber"), "-");
-        assertEquals(Map.of("0001.tif", "[ 3 ]", "0002.tif", "-"), PageLabels.read(dd));
+        assertEquals(Map.of("0001.tif", "[ 3 ]"), PageLabels.read(dd));
     }
 
     @Test
@@ -49,11 +49,11 @@ public class PageLabelsTest {
     }
 
     @Test
-    public void applyLabels_setsLabelsOrEmpty() {
+    public void applyLabels_setsLabelsOrUncounted() {
         List<NewspaperPage> pages = List.of(page("0001.tif", 0), page("0002.tif", 0), page("0003.tif", 0));
         PluginDataLoader.applyLabels(pages, Map.of("0001.tif", "–", "0003.tif", "7"));
         assertEquals("–", pages.get(0).getLabel());
-        assertEquals("", pages.get(1).getLabel());
+        assertEquals("\u2013", pages.get(1).getLabel());
         assertEquals("7", pages.get(2).getLabel());
     }
 }

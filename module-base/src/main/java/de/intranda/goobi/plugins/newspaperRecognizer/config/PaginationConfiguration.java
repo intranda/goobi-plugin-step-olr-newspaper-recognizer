@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +24,6 @@ public record PaginationConfiguration(boolean enabled, boolean automatic, boolea
         Map<String, PaginationRule> rules) {
 
     private static final List<String> DEFAULT_WITHOUT_BLOCK = List.of("–");
-    private static final List<String> DEFAULT_BEGINS_WITH = List.of("1");
     private static final List<String> REMOVED_ELEMENTS = List.of("createNewPagination", "type", "useFakePagination");
 
     public static PaginationConfiguration defaults() {
@@ -76,22 +74,5 @@ public record PaginationConfiguration(boolean enabled, boolean automatic, boolea
         rules.keySet().stream().filter(type -> !ruleset.exists(type))
                 .forEach(type -> errors.add("Unknown structure type \"" + type + "\" in <rule>"));
         return errors;
-    }
-
-    /**
-     * The rules in effect below the given volume type: the configured ones, plus {@code 1} for every type that the ruleset allows
-     * only directly under the volume. Types allowed as a child of another type have no rule unless configured.
-     */
-    public Map<String, PaginationRule> resolvedRules(RulesetTypes ruleset, String volumeType) {
-        Map<String, PaginationRule> result = new LinkedHashMap<>();
-        Set<String> reachable = PluginConfiguration.reachableTypes(ruleset, volumeType);
-        for (String type : ruleset.allowedChildren(volumeType)) {
-            boolean childElsewhere = reachable.stream().anyMatch(parent -> ruleset.isAllowedChild(parent, type));
-            if (!childElsewhere) {
-                result.put(type, new PaginationRule(DEFAULT_BEGINS_WITH, false));
-            }
-        }
-        result.putAll(rules);
-        return result;
     }
 }

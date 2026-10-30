@@ -82,10 +82,10 @@ public class PluginDataLoader {
         return new LoadedState(fileformat, dd, volumeType, data);
     }
 
-    /** Pages that are not in the mets get an empty label. */
+    /** Pages that are not in the mets are uncounted. */
     public static void applyLabels(List<NewspaperPage> pages, Map<String, String> labels) {
         for (NewspaperPage page : pages) {
-            page.setLabel(labels.getOrDefault(page.getFilename(), ""));
+            page.setLabel(labels.getOrDefault(page.getFilename(), PageLabels.UNCOUNTED));
         }
     }
 

@@ -336,6 +336,19 @@ public class MetsWriterTest {
     }
 
     @Test
+    public void write_keepsReadLabels() throws Exception {
+        enablePagination();
+        load(volume(strict, 6), filenames(6));
+        String[] values = { "1", "2", "uncounted", "i", "[3]", "" };
+        for (int i = 0; i < values.length; i++) {
+            setLabel(i, values[i]);
+        }
+        Map<String, String> read = PageLabels.read(dd);
+        writeLabels(filenames(6).stream().map(read::get).toArray(String[]::new));
+        assertEquals(List.of("1", "2", "uncounted", "i", "[3]", "uncounted"), labelsInMets());
+    }
+
+    @Test
     public void labels_dashWrittenAsUncounted() throws Exception {
         enablePagination();
         load(volume(strict, 1), filenames(1));

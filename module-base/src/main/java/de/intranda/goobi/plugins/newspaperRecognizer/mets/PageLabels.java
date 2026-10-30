@@ -24,10 +24,10 @@ public final class PageLabels {
         return result;
     }
 
-    /** What the mets says, trimmed, so that labels written by other tools stay visible as they are. Only {@code uncounted} is mapped. */
+    /** What the mets says, trimmed, so that labels written by other tools stay visible as they are. Empty and uncounted spellings read as {@code –}. */
     private static String raw(String value) {
         String trimmed = value == null ? "" : value.trim();
-        return "uncounted".equals(trimmed) ? UNCOUNTED : trimmed;
+        return trimmed.isEmpty() || "uncounted".equals(trimmed) || "-".equals(trimmed) ? UNCOUNTED : trimmed;
     }
 
     /** Trims, unifies the uncounted spellings and removes the blanks inside square brackets. */

@@ -2,13 +2,11 @@ package de.intranda.goobi.plugins.newspaperRecognizer.config;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -17,7 +15,6 @@ import org.junit.Test;
 import de.intranda.goobi.plugins.newspaperRecognizer.TestDocuments;
 
 public class PaginationConfigurationTest {
-    private static final String VOLUME = "NewspaperVolume";
 
     private static XMLConfiguration load(String body) throws ConfigurationException {
         XMLConfiguration config = new XMLConfiguration();
@@ -129,20 +126,5 @@ public class PaginationConfigurationTest {
         List<String> errors = config.validate(TestDocuments.ruleset());
         assertEquals(1, errors.size());
         assertTrue(errors.get(0), errors.get(0).contains("Unknown structure type \"Nope\" in <rule>"));
-    }
-
-    @Test
-    public void resolvedRules_levelZeroOnlyTypesBeginWithOne_childTypesHaveNone() throws Exception {
-        Map<String, PaginationRule> rules = parse("").resolvedRules(TestDocuments.ruleset(), VOLUME);
-        assertEquals(List.of("1"), rules.get("MorningIssue").beginsWith());
-        assertEquals(List.of("1"), rules.get("EveningIssue").beginsWith());
-        assertNull(rules.get("NewspaperSupplement"));
-        assertNull(rules.get("TableOfContents"));
-
-        Map<String, PaginationRule> configured = parse(
-                "<pagination><rule docstruct=\"NewspaperSupplement\" beginsWith=\"i\" /></pagination>")
-                        .resolvedRules(TestDocuments.ruleset(), VOLUME);
-        assertEquals(List.of("i"), configured.get("NewspaperSupplement").beginsWith());
-        assertEquals(List.of("1"), configured.get("MorningIssue").beginsWith());
     }
 }
