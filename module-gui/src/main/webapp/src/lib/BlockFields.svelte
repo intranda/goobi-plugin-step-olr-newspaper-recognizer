@@ -5,7 +5,7 @@
 	import MetadataField from './MetadataField.svelte';
 	import { DebouncedEdits } from './debounce';
 	import { ruleText } from './ruleText';
-	import type { BlockNode, TypeOption } from '../types';
+	import type { BlockNode, StrategyOption, TypeOption } from '../types';
 
 	interface Props {
 		node: BlockNode;
@@ -15,7 +15,7 @@
 	}
 
 	/**
-	 * The fields of a block: type, date, number, (for a block of level 0) the pagination rule and the visible metadata fields (page range and additional data: see BlockFooter).
+	 * The fields of a block: type, date, number, (for a block of level 0) the pagination strategy and the visible metadata fields (page range and additional data: see BlockFooter).
 	 * `main` is set for a block of level 0: only it may become "without block", be repeated by a pattern or be continued; the others
 	 * show a colour dot (`color`) instead of an icon.
 	 */
@@ -31,7 +31,48 @@
 	const fields = $derived(app.fieldsOf(node));
 	const canContinue = $derived(main && app.isGeneratable(node));
 	const continueText = $derived(t('plugin_newspaperRecognizer_continue_button_' + (info?.dated && info.numbered ? 'both' : info?.dated ? 'date' : 'number')));
-	const rule = $derived(ruleText(app.settings.rules[start.type ?? '']?.beginsWith, t));
+	const strategy = $derived(app.strategyOf(node));
+	const strategyOptions = $derived(app.strategyOptionsFor(node));
+	const P = 'plugin_newspaperRecognizer_pagination_strategy_';
+
+	/** the text of an entry of the pagination dropdown */
+	function optionText(option: StrategyOption) {
+		switch (option.kind) {
+			case 'rule':
+				return ruleText(option.beginsWith, t);
+			case 'hand':
+				return t(P + 'hand');
+			case 'rules':
+				return t(P + 'rules');
+			default:
+				if (option.id === 'continue:parent') {
+					return t(P + 'continueParent');
+				}
+				// an untyped nested block has no type to name: it reads like the top-level entry
+				if (option.id === 'continue:sibling' && option.type) {
+					return app.fmt(P + 'continueSibling', app.catalog[option.type]?.label ?? option.type);
+				}
+				return t(P + 'continuePrevious');
+		}
+	}
+
+	/**
+	 * A pick commits at once, except on a block with labels edited by hand: it asks first, as the labels are replaced. The select always
+	 * shows the strategy the block has, so a cancelled pick (and the rules entry, which only opens the dialog) leaves it as it was.
+	 */
+	function pick(select: HTMLSelectElement) {
+		const id = select.value;
+		select.value = strategy;
+		const option = strategyOptions.find(entry => entry.id === id);
+		if (!option || id === strategy) {
+			return;
+		}
+		if (strategy === 'hand' && option.kind !== 'rules') {
+			app.askConfirmation(P + 'confirmTitle', P + 'confirmText', P + 'confirmButton', () => app.setStrategy(node, id), undefined, [optionText(option)]);
+			return;
+		}
+		app.setStrategy(node, id);
+	}
 
 	// date and number are applied when the typing pauses (or the field is left); the page counts as changed at once, so that saving is
 	// possible while the typing is still pending (leaving the field for the button applies it first)
@@ -103,14 +144,15 @@
 		</div>
 	{/if}
 
-	{#if main && app.settings.enabled}
+	{#if app.settings.enabled}
 		<FormRow id="{uid}-pagination" label={t('plugin_newspaperRecognizer_pagination_rules_title')} icon="list-numbers">
 			{#snippet children()}
-				<!-- shows the rule only: no tab stop per block, the button next to it is the way to change it -->
-				<input type="text" class="form-control" id="{uid}-pagination" value={rule} title={rule} readonly tabindex="-1" />
-				<Button class="text-nowrap" data-block-pagination={node.first} onclick={() => app.openRulesDialog(node.first)}>
-					{t('plugin_newspaperRecognizer_pagination_rules_open')}
-				</Button>
+				<select class="form-select" id="{uid}-pagination" data-strategy={node.first} value={strategy} onchange={e => pick(e.currentTarget)}>
+					{#each strategyOptions as option, i (option.id)}
+						{#if (option.kind === 'continue' && strategyOptions[i - 1]?.kind !== 'continue') || option.kind === 'rules'}<hr />{/if}
+						<option value={option.id} disabled={option.disabled}>{optionText(option)}</option>
+					{/each}
+				</select>
 			{/snippet}
 		</FormRow>
 	{/if}
