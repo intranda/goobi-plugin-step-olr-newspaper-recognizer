@@ -12,12 +12,15 @@
 	let { index, child = 0 }: Props = $props();
 
 	const app = getApp();
-	const half = $derived(app.thumbHeight / 2);
+	// as large as the column of the grid (--thumb-size of the block row)
+	const size = $derived(app.thumbHeight / 2.5);
 </script>
 
 <div class="newspaper-thumbnail">
-	<div class="newspaper-thumbnail__image position-relative" style="min-height: {half}px;">
-		<PageThumb {index} size={half} text={child ? String(child) : null} bg={child ? app.childColor(child) : null} />
+	<div class="page-fit">
+		<div class="newspaper-thumbnail__image position-relative" style="min-height: {size}px;">
+			<PageThumb {index} {size} text={child ? String(child) : null} bg={child ? app.childColor(child) : null} />
+		</div>
+		{#if app.settings.enabled}<LabelInput {index} />{/if}
 	</div>
-	{#if app.settings.enabled}<LabelInput {index} />{/if}
 </div>

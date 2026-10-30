@@ -122,6 +122,19 @@
 	max-width: 200px;
 }
 
+/* image and label in one box that is as wide as the drawn image and centred in its cell: the label takes the width of the image */
+.page-fit {
+	width: fit-content;
+	max-width: 100%;
+	margin-inline: auto;
+}
+
+/* the field's own width must not widen the box: it takes the width the image gives */
+.page-fit > .label-input {
+	width: 0;
+	min-width: 100%;
+}
+
 .newspaper-thumbnail__image {
 	overflow: hidden;
 }
@@ -518,7 +531,8 @@ progress {
 /* the label of a page under its thumbnail: unobtrusive until hovered or focused */
 .label-input {
 	margin-top: 0.25rem;
-	border-left: 3px solid transparent;
+	/* the marker at the left is balanced by a transparent one at the right, the text stays centred */
+	border-inline: 3px solid transparent;
 }
 
 .label-input input {
@@ -575,9 +589,6 @@ goobi-plugin-step-newspaper-recognizer {
 	display: block;
 }
 
-.newspaper-thumbnail .label-input {
-	max-width: var(--thumb-size, 80px);
-}
 
 /* the label fields of the pages a jump leads to light up briefly (no focus); so do a pagination rule that was added or restored */
 @keyframes newspaper-flash {

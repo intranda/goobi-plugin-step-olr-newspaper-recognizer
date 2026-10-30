@@ -23,6 +23,8 @@
 
 	let canvas: HTMLCanvasElement | null = null;
 	let drawn = $state(false);
+	// the box shrinks to the width of the drawn image, so that what sits below it (the label) can be as wide as the image
+	let drawnWidth = $state<number | null>(null);
 	let smallImage: HTMLImageElement | null = null;
 	let largeImage: HTMLImageElement | null = null;
 	let currentUrl = '';
@@ -51,6 +53,7 @@
 		canvas.height = image.height * scale;
 		ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 		drawn = true;
+		drawnWidth = canvas.width;
 		if (text) {
 			const centerX = canvas.width - size / 1.5 - 2;
 			const centerY = canvas.height - size / 1.5 - 2;
@@ -139,7 +142,7 @@
 
 <!-- the zoom is a mouse feature (the key is Shift or Caps Lock), there is nothing to do on focus -->
 <!-- svelte-ignore a11y_mouse_events_have_key_events -->
-<div class="observable thumb-box" {title} style="width: {width}px; height: {height}px;">
+<div class="observable thumb-box" {title} style="width: {drawn && drawnWidth ? drawnWidth : width}px; height: {height}px;">
 	{#if !drawn}<img src="newspaper_placeholder2.png" alt="" />{/if}
 	<canvas class="thumb-canvas" {@attach draw} {@attach preload} {onmousemove} {onmouseout}></canvas>
 </div>

@@ -26,14 +26,16 @@
 </script>
 
 <div class="thumbnail-image px-3 pb-3" id={app.blockElementId(node)}>
-	<div class="goobi-thumbnail font-light">
-		<div class="goobi-thumbnail-image">
-			<div class="thumb position-relative" style="min-height: {app.thumbHeight}px;">
-				<PageThumb index={node.first} size={app.thumbHeight} preloadLarge />
+	<div class="page-fit">
+		<div class="goobi-thumbnail font-light">
+			<div class="goobi-thumbnail-image">
+				<div class="thumb position-relative" style="min-height: {app.thumbHeight}px;">
+					<PageThumb index={node.first} size={app.thumbHeight} preloadLarge />
+				</div>
 			</div>
 		</div>
+		{#if app.settings.enabled}<LabelInput index={node.first} />{/if}
 	</div>
-	{#if app.settings.enabled}<LabelInput index={node.first} />{/if}
 </div>
 
 <div class="issue-controls d-flex flex-column gap-3 px-3 pb-3" style="min-height: {app.thumbHeight}px;" role="group"
