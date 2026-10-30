@@ -92,7 +92,8 @@
 	grid-column: 2;
 	grid-row: 1 / span var(--rows, 1);
 	align-self: stretch;
-	white-space: normal;
+	/* the line break of the label (two rows) is kept, longer rows wrap */
+	white-space: pre-line;
 	max-width: 11rem;
 }
 

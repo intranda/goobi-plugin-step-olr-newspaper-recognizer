@@ -98,7 +98,7 @@ export function groupByDay(preview, start) {
   const groups = [{ date: start.date, dayNumber: start.number, rows: [] }];
   for (const row of preview) {
     if (row.newDay) {
-      groups.push({ date: row.after.date, dayNumber: startNumber === null ? null : String(startNumber + groups.length), rows: [] });
+      groups.push({ date: start.date ? row.after.date : null, dayNumber: startNumber === null ? null : String(startNumber + groups.length), rows: [] });
     }
     groups[groups.length - 1].rows.push(row);
   }
@@ -173,4 +173,12 @@ export function numberModeMatters(options, catalog) {
     return true;
   }
   return options.include.some(type => catalog[type]?.numbered && !catalog[type]?.dated);
+}
+
+/** Whether the included types (null: untyped) have a date and a number between them. */
+export function includedFields(include, catalog) {
+  return {
+    dated: include.some(type => !!catalog[type]?.dated),
+    numbered: include.some(type => !!catalog[type]?.numbered),
+  };
 }

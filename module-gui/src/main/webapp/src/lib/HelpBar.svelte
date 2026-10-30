@@ -10,6 +10,6 @@
 	<!-- out of the flow, so that neither its appearing nor its going shifts the blocks below -->
 	{#if app.thumbnails.busy}
 		<progress class="newspaper-help__progress" max={app.thumbnails.requested} value={app.thumbnails.settled}
-			title="{t('plugin_newspaperRecognizer_loadingImages')}..." aria-label={t('plugin_newspaperRecognizer_loadingImages')}></progress>
+			title={t('plugin_newspaperRecognizer_loadingImages')} aria-label={t('plugin_newspaperRecognizer_loadingImages')}></progress>
 	{/if}
 </div>

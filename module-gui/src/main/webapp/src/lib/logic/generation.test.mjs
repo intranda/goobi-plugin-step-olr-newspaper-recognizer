@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { catalog, start, pages } from './fixtures.mjs';
-import { applyTypePattern, continueFrom, followingTypeCounts, groupByDay, movePatternEntry, numberModeMatters, previewDays } from './generation.mjs';
+import { applyTypePattern, continueFrom, followingTypeCounts, groupByDay, includedFields, movePatternEntry, numberModeMatters, previewDays } from './generation.mjs';
 
 const ALL_DAYS = [true, true, true, true, true, true, true];
 const options = (overrides = {}) => ({ include: ['MorningIssue', 'EveningIssue'], mode: 'perDay', weekdays: ALL_DAYS, biweekly: false, ...overrides });
@@ -129,6 +129,22 @@ test('groupByDay with a number-only start puts all blocks in one group without d
   assert.equal(groups.length, 1);
   assert.equal(groups[0].date, null);
   assert.deepEqual(groups[0].rows.map(r => r.after.number), ['2', '3']);
+});
+
+test('groupByDay: a start without date gives day headers without date', () => {
+  const list = sequence('XMMM');
+  list[2].starts[0].date = '1890-04-01';
+  list[3].starts[0].date = '1890-04-02';
+  const result = continueFrom(list, { page: 0, level: 0 }, options({ include: ['ExtraEdition', 'MorningIssue'], mode: 'perIssue' }), catalog);
+  const groups = groupByDay(result.preview, result.start);
+  assert.ok(groups.length > 1);
+  assert.deepEqual(groups.map(g => g.date), groups.map(() => null));
+});
+
+test('includedFields: dated and numbered over the included types', () => {
+  assert.deepEqual(includedFields(['ExtraEdition'], catalog), { dated: false, numbered: true });
+  assert.deepEqual(includedFields(['MorningIssue', 'ExtraEdition'], catalog), { dated: true, numbered: true });
+  assert.deepEqual(includedFields([null], catalog), { dated: false, numbered: false });
 });
 
 test('applyTypePattern loops over this and the following siblings and clears fields', () => {

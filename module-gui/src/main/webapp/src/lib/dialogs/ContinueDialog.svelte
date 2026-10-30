@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getApp } from '../recognizer.svelte';
 	import { buildTree, siblingsFrom } from '../logic/blocks.mjs';
-	import { continueFrom, followingTypeCounts, numberModeMatters } from '../logic/generation.mjs';
+	import { continueFrom, followingTypeCounts, includedFields, numberModeMatters } from '../logic/generation.mjs';
 	import { WEEKDAY_PRESETS } from '../logic/dates.mjs';
 	import { DAYS } from '../continueText';
 	import Modal from '../ui/Modal.svelte';
@@ -51,6 +51,7 @@
 	let weekdays = $state([true, true, true, true, true, true, true]);
 	let biweekly = $state(false);
 
+	const fields = $derived(includedFields(include, catalog));
 	const matters = $derived(numberModeMatters({ dateMode, include }, catalog));
 	// the setting shown; the user's choice is kept while it has no effect
 	const numberMode = $derived(matters ? mode : 'perIssue');
@@ -79,33 +80,40 @@
 					{/each}
 				</div>
 			</fieldset>
-			<fieldset>
-				<legend class="fs-6 fw-bold">{t(P + 'continue_date')}</legend>
+			<!-- date and number are never hidden: without a type that has them they are locked, with the reason -->
+			<fieldset disabled={!fields.dated}>
+				<legend class={['fs-6 fw-bold', !fields.dated && 'text-muted']}>{t(P + 'continue_date')}</legend>
 				<Check type="radio" name="{id}-dateMode" id="{id}-dateRepeat" checked={dateMode === 'perDay'} onchange={() => (dateMode = 'perDay')}>
 					{t(P + 'continue_dateRepeat')}
 				</Check>
 				<Check type="radio" name="{id}-dateMode" id="{id}-datePerIssue" checked={dateMode === 'perIssue'} onchange={() => (dateMode = 'perIssue')}>
 					{t(P + 'continue_datePerIssue')}
 				</Check>
+				{#if !fields.dated}
+					<div class="form-text d-flex gap-1 mt-1">
+						<Icon name="info-circle" />
+						<span>{t(P + 'continue_dateNone')}</span>
+					</div>
+				{/if}
 			</fieldset>
 			<!-- with a new date for every issue both settings count alike (unless a type has a number but no date): locked, with the reason -->
-			<fieldset disabled={!matters}>
-				<legend class={['fs-6 fw-bold', !matters && 'text-muted']}>{t(P + 'continue_number')}</legend>
+			<fieldset disabled={!fields.numbered || !matters}>
+				<legend class={['fs-6 fw-bold', (!fields.numbered || !matters) && 'text-muted']}>{t(P + 'continue_number')}</legend>
 				<Check type="radio" name="{id}-mode" id="{id}-perDay" checked={numberMode === 'perDay'} onchange={() => (mode = 'perDay')}>
 					{t(P + 'continue_perDay')}
 				</Check>
 				<Check type="radio" name="{id}-mode" id="{id}-perIssue" checked={numberMode === 'perIssue'} onchange={() => (mode = 'perIssue')}>
 					{t(P + 'continue_perIssue')}
 				</Check>
-				{#if !matters}
+				{#if !fields.numbered || !matters}
 					<div class="form-text d-flex gap-1 mt-1">
 						<Icon name="info-circle" />
-						<span>{t(P + 'continue_numberPerIssueHint')}</span>
+						<span>{t(P + (!fields.numbered ? 'continue_numberNone' : 'continue_numberPerIssueHint'))}</span>
 					</div>
 				{/if}
 			</fieldset>
-			<fieldset>
-				<legend class="fs-6 fw-bold">{t(P + 'continue_weekdays')}</legend>
+			<fieldset disabled={!fields.dated}>
+				<legend class={['fs-6 fw-bold', !fields.dated && 'text-muted']}>{t(P + 'continue_weekdays')}</legend>
 				<!-- seven equal segments, one per weekday -->
 				<div class="weekday-picker" role="group" aria-label={t(P + 'continue_weekdays')}>
 					{#each DAYS as day (day.index)}
