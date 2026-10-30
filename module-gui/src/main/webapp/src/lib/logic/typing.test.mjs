@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { previewLabel, ownNumbering, followValue } from './typing.mjs';
-import { pages, start, settings, labels } from './fixtures.mjs';
+import { pages, start, settings, labels, C } from './fixtures.mjs';
 
 const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });
 const p = (label = '', depth = 1) => ({ label, depth });
@@ -101,4 +101,14 @@ test('volume mode: typing in block 2 changes nothing in block 3', () => {
     assert.equal(result.stop, null); // derived
     assert.equal(result.end, 3); // derived
   }
+});
+
+test('typing on a parent page runs through a child that continues its parent', () => {
+  const list = pages(I('MorningIssue', '1'), p('2'), C('TableOfContents', '3'), p('4', 2), p('5'), p('6'));
+  const follow = previewLabel(list, settings(), 1, '10', 'follow');
+  assert.equal(labels(follow.pages), '1 10 11 12 13 14');
+  assert.deepEqual([follow.run, follow.stop, follow.end], [[2, 3, 4, 5], null, 5]);
+  const toEnd = previewLabel(list, settings(), 1, '10', 'toEnd');
+  assert.equal(labels(toEnd.pages), '1 10 11 12 13 14');
+  assert.deepEqual([toEnd.run, toEnd.end], [[2, 3, 4, 5], 5]);
 });

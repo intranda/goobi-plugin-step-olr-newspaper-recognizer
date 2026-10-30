@@ -51,7 +51,8 @@ export function ownNumberingAll(pages, settings) {
 /** @returns {import('../../types').LabelPreviewResult} */
 export function previewLabel(pages, settings, index, text, mode) {
   const stream = streamOf(streams(pages, settings), index);
-  const inBlock = partOf(stream, index).pages;
+  const block = partOf(stream, index).block;
+  const inBlock = stream.pages.filter(i => partOf(stream, i).block === block); // with the children that continue it
   const kind = parseLabel(text).kind;
   const value = kind === 'empty' ? followIn(pages, stream, index) : normalizeLabel(text);
   const out = clonePages(pages);

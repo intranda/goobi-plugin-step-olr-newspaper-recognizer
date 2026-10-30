@@ -109,6 +109,7 @@ export function streams(pages, settings, strategyOf) {
   return { byPage, list };
 }
 
+/** The part of page index in stream; stream must come from streams(), which indexes its pages. */
 export const partOf = (stream, index) => {
   const { streamAt, partAt } = positions.get(stream);
   return streamAt[index] === stream ? partAt[index] : undefined;
@@ -117,7 +118,7 @@ export const partOf = (stream, index) => {
 /**
  * The value for page index by the rule of its part: the n-th beginsWith value (n counted in the stream for the first part of the stream,
  * else in the part, where only uncounted values apply), else the next value after the last counting label before it in the stream, else
- * the first counting rule value, else –.
+ * the first counting rule value, else –. stream must come from streams(), which indexes its pages.
  */
 export function valueIn(pages, stream, index) {
   const part = partOf(stream, index);
@@ -223,13 +224,20 @@ export function structureChanged(before, after, settings) {
   const flags = movedPages(before, after, settings);
   const result = streams(out, settings);
   for (const stream of result.list) {
-    const partAt = new Map(stream.parts.flatMap(part => part.pages.map(i => [i, part])));
-    const touched = new Set(stream.parts.filter(part => part.rule && part.pages.some(i => flags[i].moved)));
+    // by top-level block, as before parts per node: a child that continues its parent counts with it
+    const touched = new Set(stream.parts.filter(part => part.rule && part.pages.some(i => flags[i].moved)).map(part => part.block));
+    const inBlock = new Map();
+    const seen = new Map();
+    stream.pages.forEach(i => {
+      const block = partOf(stream, i).block;
+      inBlock.set(i, seen.get(block) ?? 0);
+      seen.set(block, inBlock.get(i) + 1);
+    });
     let flowing = false;
     let previousOld = null;
     stream.pages.forEach((i, k) => {
-      const part = partAt.get(i);
-      if (!touched.has(part)) {
+      const part = partOf(stream, i);
+      if (!part.rule || !touched.has(part.block)) {
         flowing = false;
         return;
       }
@@ -243,7 +251,7 @@ export function structureChanged(before, after, settings) {
       };
       if (moved ? !previousMoved : previousStrong) {
         set();
-      } else if (moved && (part.pages.indexOf(i) < part.rule.length || !isCounting(valueIn(out, stream, i)))) {
+      } else if (moved && (inBlock.get(i) < part.rule.length || !isCounting(valueIn(out, stream, i)))) {
         set();
       } else if (flowing && follows(previousOld, old[i])) {
         out[i].label = valueIn(out, stream, i);

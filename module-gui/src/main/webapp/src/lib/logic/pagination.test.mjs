@@ -257,6 +257,13 @@ test('structureChanged: supplement inserted continues the parent after it', () =
   assert.deepEqual(result.changed, [4, 5, 6]); // derived
 });
 
+test('structureChanged: a page inserted before a child that continues its parent counts on through the child', () => {
+  const before = lab([I(M), p(), C('TableOfContents'), p('', 2), p(), p()], '1 2 3 4 5 6');
+  const result = structureChanged(before, insertPage(before, 2), settings());
+  assert.equal(labels(result.pages), '1 2 3 4 5 6 7');
+  assert.deepEqual(result.offers, []);
+});
+
 test('structureChanged: supplement extended, the page leaves the issue and the issue continues after it', () => {
   const before = lab([I(M), p(), p(), C('NewspaperSupplement'), p('', 2), p(), p()], '1 2 3 i ii 4 5');
   const after = lab([I(M), p(), p(), C('NewspaperSupplement'), p('', 2), p('', 2), p()], '1 2 3 i ii 4 5');
@@ -427,10 +434,13 @@ test('volume mode: a counting start value applies only in the first block', () =
   assert.deepEqual(each(paginateAll(pages(I('MorningIssue'), p(), I('MorningIssue'), p()), s)), ['1', '2', '3', '4']);
 });
 
-test('volume mode: pages without block and rule-less blocks are skipped, the count continues after them', () => {
+test('volume mode: pages without block and rule-less blocks without counting labels are skipped, the count continues after them', () => {
   const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true, withoutBlock: ['–'] };
   const list = pages(I('MorningIssue'), p(), { label: 'x', depth: 0 }, I(null, 'Titel'), p('Karte'), I('MorningIssue'), p());
   assert.deepEqual(each(paginateAll(list, s)), ['1', '2', '–', 'Titel', 'Karte', '3', '4']);
+  // a rule-less block with a counting label (u2) counts, the next block continues after it
+  const counting = pages(I('MorningIssue'), p(), { label: 'x', depth: 0 }, I(null, 'u'), p('u2'), I('MorningIssue'), p());
+  assert.deepEqual(each(paginateAll(counting, s)), ['1', '2', '–', 'u', 'u2', 'u3', 'u4']);
 });
 
 test('block mode is unchanged: every block starts again', () => {
