@@ -126,7 +126,7 @@ export interface Operation { blockId: string; kind: string; action: string }
 
 export interface Conflict { kind: 'DELETED' | 'TYPE' | 'BOUNDARY' | 'EXPLICIT'; blockId: string; type: string | null; page: number; structures: HiddenStructure[]; metadata: HiddenMetadata[]; options: string[] }
 /** removed: index of a page removed by the change, so that offers can follow it; offers: without paginating, the fresh offers of the change */
-export interface ChangeOptions { bulk?: boolean; total?: number; paginate?: boolean; removed?: number; offers?: FreshOffer[]; afterCommit?: () => void }
+export interface ChangeOptions { bulk?: boolean; total?: number; paginate?: boolean; removed?: number; offers?: FreshOffer[]; afterCommit?: (fresh: FreshOffer[]) => void }
 export interface PendingChange { pages: Page[]; conflicts: Conflict[]; options: ChangeOptions }
 
 export type DialogState =

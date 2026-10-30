@@ -64,6 +64,8 @@ export class Recognizer {
 	volumeHidden: Hidden = $state.raw({ structures: [], metadata: [] })
 	offers: Offer[] = $state.raw([]) // {first, pages, signature}: blocks that offer "Neu nach Regeln"
 	dismissedOffers: Map<number, string | null> = $state.raw(new Map()) // first page of a dismissed block → its signature at dismissal
+	// the offers a deleted image created, by file name of the first page of their block: restored after the save that follows the deletion
+	offersAcrossSave: { file: string, offer: Offer }[] = []
 	preview: LabelPreview | null = $state.raw(null) // {index, text, mode, result}: the label being typed
 	settings: PaginationSettings = $state.raw(({} as PaginationSettings))
 	// the entries picked in the session, by file name of the first page and level of the node; kept across the reload after saving
@@ -338,9 +340,9 @@ export class Recognizer {
 		}
 		const conflicts = findConflicts(this.pages, newPages, this.catalog, this.volumeType)
 		if (conflicts.length === 0) {
-			this.commit(newPages, options)
+			const fresh = this.commit(newPages, options)
 			if (options.afterCommit) {
-				options.afterCommit()
+				options.afterCommit(fresh)
 			}
 			return
 		}
@@ -352,8 +354,11 @@ export class Recognizer {
 		return before.length === after.length && plain(before) === plain(after)
 	}
 
-	/** a structure change relabels its blocks by their strategies (unless options.paginate is false, then options.offers are its offers) */
-	commit(newPages: Page[], options: ChangeOptions = {}) {
+	/**
+	 * a structure change relabels its blocks by their strategies (unless options.paginate is false, then options.offers are its offers);
+	 * returns the offers of this change
+	 */
+	commit(newPages: Page[], options: ChangeOptions = {}): FreshOffer[] {
 		let pages = newPages
 		let offers: FreshOffer[] = options.offers ?? []
 		if (this.settings.enabled && options.paginate !== false) {
@@ -371,6 +376,7 @@ export class Recognizer {
 		this.strategies = this.detect()
 		this.refresh()
 		this.updateOffers(offers)
+		return offers
 	}
 
 	resolveConflicts(choices: Record<string, string>) {
@@ -384,9 +390,9 @@ export class Recognizer {
 			this.operations = upsertOperation(this.operations, conflict.blockId, conflict.kind, action)
 		}
 		this.volumeHidden = { ...this.volumeHidden, structures: [...this.volumeHidden.structures, ...additions] }
-		this.commit(pages, options)
+		const fresh = this.commit(pages, options)
 		if (options.afterCommit) {
-			options.afterCommit()
+			options.afterCommit(fresh)
 		}
 	}
 
@@ -419,6 +425,19 @@ export class Recognizer {
 		}
 		return JSON.stringify([node.last - node.first, node.start.type,
 			this.pages.slice(node.first, node.last + 1).map(page => [page.label, page.depth, page.starts.map(start => start.type)])])
+	}
+
+	/** offers kept across a reload (offersAcrossSave): each one whose block still starts on its file and is as it was */
+	restoreOffers(kept: { file: string, offer: Offer }[]) {
+		const offers = kept.flatMap(({ file, offer }) => {
+			const first = this.pages.findIndex(page => page.filename === file)
+			const shift = first - offer.first
+			return first >= 0 && this.offerSignature(first) === offer.signature
+				? [{ ...offer, first, pages: offer.pages.map(i => i + shift) }] : []
+		})
+		if (offers.length) {
+			this.offers = [...this.offers, ...offers]
+		}
 	}
 
 	keepOffers(fresh: FreshOffer[]) {
@@ -872,12 +891,17 @@ export class Recognizer {
 		this.applyChange(removePage(this.pages, index), {
 			bulk: false,
 			removed: index,
-			afterCommit: () => {
+			afterCommit: fresh => {
 				const structures = [...this.volumeHidden.structures]
 				shiftStructures(structures, index)
 				this.volumeHidden = { ...this.volumeHidden, structures }
 				this.bridge.deleteFile(page.filename, index)
+				this.offersAcrossSave = this.offers.filter(offer => fresh.some(other => other.first === offer.first))
+					.map(offer => ({ file: this.pages[offer.first].filename, offer }))
 				this.save(false)
+				if (!this.saveInFlight) {
+					this.offersAcrossSave = []
+				}
 			},
 		})
 	}
@@ -893,6 +917,7 @@ export class Recognizer {
 			succeeded: () => this.applySaveResult(),
 			// a save request that never reached the backend must leave the data dirty, so it can be sent again
 			failed: () => {
+				this.offersAcrossSave = []
 				this.saveInFlight = false
 				this.pendingExit = false
 			},
@@ -901,11 +926,14 @@ export class Recognizer {
 
 	/* only a confirmed write means the data is persisted; then take over the freshly read state (new ids, hidden data) */
 	applySaveResult() {
+		const kept = this.offersAcrossSave
+		this.offersAcrossSave = []
 		if (!this.bridge.saveSucceeded()) {
 			this.pendingExit = false
 			return
 		}
 		this.loadData(this.bridge.readData())
+		this.restoreOffers(kept)
 		if (this.pendingExit) {
 			this.pendingExit = false
 			this.bridge.finish()
