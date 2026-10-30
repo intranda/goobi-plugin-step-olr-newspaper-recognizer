@@ -15,13 +15,14 @@
 	interface Props {
 		pages: Page[];
 		settings: PaginationSettings;
-		/** the pagination of the plugin configuration as loaded, including the default rules the backend adds */
+		/** the pagination of the plugin configuration as loaded */
 		configured: Partial<PaginationSettings> | null;
 		types: string[];
 		first: number | null | undefined;
 		/** the open offers; while there are any, the scope can be "only the offered pages" */
 		offers: FreshOffer[];
-		offerFrom: number | null;
+		/** the pagination strategy of every node by node key; the nodes outside the scope keep theirs */
+		strategies: Map<string, string>;
 		initialScope?: 'offers';
 		oncancel: () => void;
 		onapply: (settings: PaginationSettings, scope: RulesScope) => void;
@@ -34,7 +35,7 @@
 	 * can be added from the menu. The preview shows the labels before and after for the pages of that scope, one row per block that opens to
 	 * its pages; blocks without change can be folded into one row.
 	 */
-	let { pages, settings, configured, types, first, offers, offerFrom, initialScope, oncancel, onapply }: Props = $props();
+	let { pages, settings, configured, types, first, offers, strategies, initialScope, oncancel, onapply }: Props = $props();
 	const id = $props.id();
 
 	const { t, fmt, typeLabel, catalog } = getApp();
@@ -225,7 +226,7 @@
 		}
 		return { ...settings, automatic, countThroughVolume, rules, withoutBlock: values(LOOSE) };
 	});
-	const scope: RulesScope = $derived(scopeKind === 'offers' ? { kind: 'offers', offers, from: offerFrom, first: null } : { kind: scopeKind, first });
+	const scope: RulesScope = $derived(scopeKind === 'offers' ? { kind: 'offers', offers, first: null } : { kind: scopeKind, first });
 	const scopeText = (kind: RulesScope['kind']) => (kind !== 'offers' ? t(R + 'scope_' + kind)
 		: offers.length === 1 ? t(R + 'scope_offersOne') : fmt(R + 'scope_offers', offers.length));
 
@@ -234,7 +235,7 @@
 		const covered = inScope(scope);
 		const indexes = streams(pages, draft).list
 			.flatMap(stream => stream.parts.filter((part: StreamPart) => covered(stream, part)).flatMap((part: StreamPart) => part.pages)).sort((a, b) => a - b);
-		const groups = previewGroups(pages, simulateRules(pages, draft, scope).pages, indexes);
+		const groups = previewGroups(pages, simulateRules(pages, draft, scope, strategies).pages, indexes);
 		return { groups, changed: groups.reduce((sum, group) => sum + group.changed, 0) };
 	});
 

@@ -1,7 +1,7 @@
 // Volume-wide pagination tools, pure functions on the page list; behaviour as in the pagination v2 design (Changed since opening, Rules dialog).
 import { buildTree, clonePages, flatten } from './blocks.mjs';
 import { follows } from './labels.mjs';
-import { paginateParts, applyOffers } from './pagination.mjs';
+import { paginateParts, applyOffers, offeredStrategies } from './pagination.mjs';
 import { defaultsIn, detectStrategies, relabelChain } from './strategies.mjs';
 
 /** Indices of the pages whose label differs from the METS as last loaded. */
@@ -15,7 +15,7 @@ export function restoreFromMets(pages) {
 
 /**
  * Whether a part of a stream is covered by the scope: none, block (the block starting on page scope.first), fromBlock (that block and all
- * after it), volume, offers (the blocks of scope.offers). simulateRules applies scope offers with applyOffers; offers here is for the
+ * after it), volume, offers (the blocks of scope.offers). simulateRules applies scope offers with acceptOffers; offers here is for the
  * callers that list the pages a scope covers, such as the preview of the rules dialog.
  */
 export function inScope(scope) {
@@ -30,10 +30,10 @@ export function inScope(scope) {
 
 /**
  * The rules applied in the scope: none, block (the block starting on page first), fromBlock (that block and all after it), volume
- * (everything including pages without block), offers (only the offered pages, as applyOffers). The nodes of the top-level blocks in scope
- * get their default strategy under settings, where counting through the volume continues every block in scope after the first; every other
- * node keeps its strategy in strategies (by node key; default: detected from the labels). The blocks after the scope that continue it
- * follow it (relabelChain). Returns the new page list and the strategies applied, by node key.
+ * (everything including pages without block), offers (the offered pages and the chains after them, as acceptOffers). The nodes of the
+ * top-level blocks in scope get their default strategy under settings, where counting through the volume continues every block in scope
+ * after the first; every other node keeps its strategy in strategies (by node key; default: detected from the labels). The blocks after the
+ * scope that continue it follow it (relabelChain). Returns the new page list and the strategies applied, by node key.
  */
 export function simulateRules(pages, settings, scope, strategies) {
   if (scope.kind === 'none') {
@@ -41,14 +41,29 @@ export function simulateRules(pages, settings, scope, strategies) {
   }
   const current = strategies ?? detectStrategies(pages, settings, new Map());
   if (scope.kind === 'offers') {
-    // scope.from: offers counted through the volume (structureChanged), until the app passes strategies
-    return { pages: applyOffers(pages, settings, scope.offers, typeof scope.from === 'number' ? scope.from : current), strategies: new Map() };
+    return { pages: acceptOffers(pages, settings, scope.offers, current).pages, strategies: new Map() };
   }
   const roots = buildTree(pages).roots.filter(root => scope.kind === 'volume' || (scope.kind === 'block' ? root.first === scope.first : root.first >= scope.first));
   const applied = defaultsIn(roots, settings);
   const next = new Map([...current, ...applied]);
   const out = paginateParts(pages, settings, inScope(scope), key => next.get(key) ?? 'hand');
   return { pages: roots.length ? relabelChain(out, settings, next, roots.at(-1).first).pages : out, strategies: applied };
+}
+
+/**
+ * New page list with the offers accepted (applyOffers), then the blocks after the offered ones that continue them relabelled (relabelChain)
+ * with offeredStrategies; offers are the offers of these chains.
+ */
+export function acceptOffers(pages, settings, offers, strategies) {
+  const next = offeredStrategies(pages, settings, offers, strategies);
+  let out = applyOffers(pages, settings, offers, strategies);
+  const fresh = new Map();
+  for (const first of [...new Set(offers.map(offer => offer.first))].sort((a, b) => a - b)) {
+    const result = relabelChain(out, settings, next, first);
+    out = result.pages;
+    result.offers.forEach(offer => fresh.set(offer.first, offer));
+  }
+  return { pages: out, offers: [...fresh.values()].sort((a, b) => a.first - b.first) };
 }
 
 /**

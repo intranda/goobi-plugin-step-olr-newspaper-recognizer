@@ -23,7 +23,7 @@
 	<ContinueDialog pages={app.pages} startRef={dialog.ref} typeOptions={dialog.typeOptions} oncancel={cancel} onapply={(pages: Page[]) => app.applyGenerated(pages)} />
 {:else if dialog?.kind === 'rules'}
 	<PaginationDialog pages={app.pages} settings={app.settings} configured={app.props.pagination} types={dialog.types} first={dialog.first}
-		offers={app.offers} offerFrom={app.offerFrom} initialScope={dialog.scope} oncancel={cancel}
+		offers={app.offers} strategies={app.strategies} initialScope={dialog.scope} oncancel={cancel}
 		onapply={(settings: PaginationSettings, scope: RulesScope) => app.applyRules(settings, scope)} />
 {/if}
 

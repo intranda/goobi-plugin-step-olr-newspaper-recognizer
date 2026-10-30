@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { changedSinceOpening, restoreFromMets, simulateRules, sameSettings, labelRange, previewGroups } from './pagination-tools.mjs';
+import { changedSinceOpening, restoreFromMets, simulateRules, sameSettings, labelRange, previewGroups, acceptOffers } from './pagination-tools.mjs';
 import { pages, start, settings, labels, DEFAULT_RULES } from './fixtures.mjs';
 import { detectStrategies } from './strategies.mjs';
 
@@ -47,6 +47,31 @@ test('simulateRules: count through the volume in scope fromBlock sets continue:p
     detectStrategies(through, settings(), new Map()));
   assert.equal(labels(roman.pages), 'i ii iii iv v vi');
   assert.deepEqual([...roman.strategies], [['0:0', 'rule:i']]);
+});
+
+test('acceptOffers: the blocks continuing an accepted block follow it', () => {
+  const M = 'MorningIssue';
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  const list = pages(I(M, '1'), p('2'), I(M, '9'), p('9'), I(M, '11'), p('12'), I(M, '20'), p('x'));
+  const strategies = new Map([['0:0', 'rule:1'], ['2:0', 'hand'], ['4:0', 'continue:previous'], ['6:0', 'hand']]);
+  const result = acceptOffers(list, s, [{ first: 2, pages: [2, 3] }], strategies);
+  assert.equal(labels(result.pages), '1 2 3 4 5 6 20 x');
+  // the hand block the chain stops at would continue it (its default is continue:previous): offered
+  assert.deepEqual(result.offers, [{ first: 6, pages: [6, 7] }]);
+  assert.equal(labels(list), '1 2 9 9 11 12 20 x', 'input unchanged'); // derived
+  // the dialog's scope offers does the same
+  assert.equal(labels(simulateRules(list, s, { kind: 'offers', first: null, offers: [{ first: 2, pages: [2, 3] }] }, strategies).pages), labels(result.pages));
+});
+
+test('acceptOffers: a block split off a volume counted through, accepted, the hand block after it fits', () => {
+  const M = 'MorningIssue';
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  const list = pages(I(M, '1'), p('2'), I(M, '3'), p('4'), p('9'), p('10'), I(M, '7'), p('8'));
+  const strategies = detectStrategies(list, s, new Map());
+  assert.deepEqual([...strategies.values()], ['rule:1', 'hand', 'hand']); // derived
+  const result = acceptOffers(list, s, [{ first: 2, pages: [4, 5] }], strategies);
+  assert.equal(labels(result.pages), '1 2 3 4 5 6 7 8');
+  assert.deepEqual(result.offers, []);
 });
 
 test('sameSettings compares the rules by meaning, not by the order of their keys', () => {

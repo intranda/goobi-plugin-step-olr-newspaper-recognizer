@@ -103,6 +103,7 @@ const continueEntries = (node, earlier) => (node.level === 0
  * is the current strategy, the continue entries
  * (top-level continue:previous, disabled on the first top-level block; nested continue:parent and continue:sibling, disabled without an
  * earlier sibling of its type), and the pagination rules.
+ * @returns {import('../../types').StrategyOption[]}
  */
 export function strategyOptions(tree, node, settings, current) {
   const siblings = siblingsOf(tree, node);

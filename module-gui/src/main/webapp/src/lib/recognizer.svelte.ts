@@ -4,8 +4,9 @@ import {
 	removeAllBlocks, resetToAnalysis, removePage, shiftStructures, toSaveRequest, clonePages, siblingsFrom, syncDateInputs,
 	canMerge, makeLoose, shiftIndex,
 } from './logic/blocks.mjs'
-import { initLabels, structureChanged, streams, volumeOffers, applyOffers } from './logic/pagination.mjs'
-import { restoreFromMets, simulateRules, sameSettings } from './logic/pagination-tools.mjs'
+import { initLabels } from './logic/pagination.mjs'
+import { restoreFromMets, simulateRules, sameSettings, acceptOffers } from './logic/pagination-tools.mjs'
+import { detectStrategies, restructure, relabelChain, applyStrategy, strategyOptions, nodeKey } from './logic/strategies.mjs'
 import { previewLabel, ownNumberingAll } from './logic/typing.mjs'
 import { parseLabel, isCounting } from './logic/labels.mjs'
 import { applyTypePattern } from './logic/generation.mjs'
@@ -16,7 +17,7 @@ import { flash } from './flash'
 import { FacesBridge } from './faces-bridge.js'
 import { ThumbnailLoader } from './thumbnails.svelte'
 import { findConflicts, applyResolution, upsertOperation, hasHidden, explicitConflict } from './logic/hidden.mjs'
-import type { Baseline, Unsaved, BlockFlags, Catalog, BlockNode, BlockRef, ChangeOptions, Confirmation, DialogState, FieldState, FreshOffer, Hidden, LabelMode, LabelPreview, Notice, Offer, Operation, Page, PaginationSettings, PendingChange, PluginProps, Problem, Row, RulesScope, Tree, TypeOption, Validation, VolumeStream } from '../types';
+import type { Baseline, Unsaved, BlockFlags, Catalog, BlockNode, BlockRef, ChangeOptions, Confirmation, DialogState, FieldState, FreshOffer, Hidden, LabelMode, LabelPreview, Notice, Offer, Operation, Page, PaginationSettings, PendingChange, PluginProps, Problem, Row, RulesScope, StrategyOf, StrategyOption, Tree, TypeOption, Validation } from '../types';
 
 /** the problems that validation reports, with the key of their summary text */
 const PROBLEMS: [Problem, string][] = [
@@ -62,10 +63,13 @@ export class Recognizer {
 	notices: Notice[] = $state.raw([])
 	volumeHidden: Hidden = $state.raw({ structures: [], metadata: [] })
 	offers: Offer[] = $state.raw([]) // {first, pages, signature}: blocks that offer "Neu nach Regeln"
-	offerFrom: number | null = $state(null) // counting through the volume: first page of the first block whose offers follow the volume count
 	dismissedOffers: Map<number, string | null> = $state.raw(new Map()) // first page of a dismissed block → its signature at dismissal
 	preview: LabelPreview | null = $state.raw(null) // {index, text, mode, result}: the label being typed
 	settings: PaginationSettings = $state.raw(({} as PaginationSettings))
+	// the entries picked in the session, by file name of the first page and level of the node; kept across the reload after saving
+	chosen: Map<string, string> = $state.raw(new Map())
+	// the pagination strategy of every node by node key, read from the labels in commit and loadData (a touch changes no label or structure)
+	strategies: Map<string, string> = $state.raw(new Map())
 
 	// derived from the pages by refresh()
 	tree: Tree = $state.raw({ roots: [], loose: [] })
@@ -188,6 +192,7 @@ export class Recognizer {
 		this.baseline = savedState(pages, this.catalog, this.volumeHidden)
 		this.typingPending = false
 		this.pages = pages
+		this.strategies = detectStrategies(pages, this.settings, this.chosen)
 		this.clearOffers()
 		this.preview = null
 		this.refresh()
@@ -198,7 +203,7 @@ export class Recognizer {
 		this.validation = validateBlocks(this.pages, this.catalog, this.volumeType, this.preventDuplicates)
 		this.flags = this.indexFlags(this.validation)
 		this.rows = this.buildRows(this.tree)
-		this.ownFlags = this.settings.enabled ? ownNumberingAll(this.pages, this.settings) : []
+		this.ownFlags = this.settings.enabled ? ownNumberingAll(this.pages, this.settings, this.strategyOfKey) : []
 	}
 
 	/* after an in-place change of a page: a copy of the page list makes everything that reads from it update */
@@ -347,27 +352,25 @@ export class Recognizer {
 		return before.length === after.length && plain(before) === plain(after)
 	}
 
-	/** a structure change paginates what it needs (unless options.paginate is false) */
+	/** a structure change relabels its blocks by their strategies (unless options.paginate is false, then options.offers are its offers) */
 	commit(newPages: Page[], options: ChangeOptions = {}) {
 		let pages = newPages
-		let offers: FreshOffer[] = []
-		let offerFrom: number | null = null
+		let offers: FreshOffer[] = options.offers ?? []
 		if (this.settings.enabled && options.paginate !== false) {
-			const result = structureChanged(this.pages, newPages, this.settings)
+			const result = restructure(this.pages, newPages, this.settings, this.chosen, this.strategies)
 			pages = result.pages
 			offers = result.offers
-			offerFrom = result.offerFrom
-		} else if (options.offerFrom !== undefined) {
-			offerFrom = options.offerFrom
 		}
 		if (options.removed !== undefined) {
 			const removed = options.removed
-			this.offerFrom = this.offerFrom === null ? null : shiftIndex(this.offerFrom, removed)
+			this.offers = this.offers.map(offer => ({ ...offer, first: shiftIndex(offer.first, removed),
+				pages: offer.pages.filter(i => i !== removed).map(i => shiftIndex(i, removed)) }))
 			this.dismissedOffers = new Map([...this.dismissedOffers].map(([first, signature]) => [shiftIndex(first, removed), signature]))
 		}
 		this.pages = pages
+		this.strategies = detectStrategies(pages, this.settings, this.chosen)
 		this.refresh()
-		this.updateOffers(offers, offerFrom)
+		this.updateOffers(offers)
 	}
 
 	resolveConflicts(choices: Record<string, string>) {
@@ -395,33 +398,17 @@ export class Recognizer {
 
 	clearOffers() {
 		this.offers = []
-		this.offerFrom = null
 		this.dismissedOffers = new Map()
 	}
 
 	/**
-	 * The open offers after a change. Per block: fresh ones of a structure change and the earlier ones whose block is as it was (keepOffers).
-	 * When counting through the volume: every block from offerFrom on (the earlier one of the old and the fresh offerFrom) that differs from the
-	 * volume count, except the dismissed ones whose block is as it was at dismissal; offerFrom ends when no block from there differs.
+	 * The open offers after a change, per block: the fresh ones of the change and the earlier ones whose block is as it was (keepOffers). A
+	 * dismissed offer stays hidden, also as a fresh one, until its block changes.
 	 */
-	updateOffers(fresh: FreshOffer[], freshFrom: number | null) {
-		if (!this.settings.countThroughVolume) {
-			this.offerFrom = null
-			this.dismissedOffers = new Map()
-			this.offers = this.keepOffers(fresh)
-			return
-		}
-		const old = this.offerFrom
-		const from = freshFrom === null ? old : old === null ? freshFrom : Math.min(old, freshFrom)
-		const volume = from === null ? [] : volumeOffers(this.pages, this.settings, from)
-		if (volume.length === 0) {
-			this.clearOffers()
-			return
-		}
+	updateOffers(fresh: FreshOffer[]) {
 		const dismissed = new Map([...this.dismissedOffers].filter(([first, signature]) => signature === this.offerSignature(first)))
-		this.offerFrom = from
 		this.dismissedOffers = dismissed
-		this.offers = volume.filter(offer => !dismissed.has(offer.first)).map(offer => ({ ...offer, signature: this.offerSignature(offer.first) }))
+		this.offers = this.keepOffers(fresh.filter(offer => !dismissed.has(offer.first)))
 	}
 
 	/** an offer belongs to its block as it is: another structure change, child type or label in the block makes it disappear; a page removed before it does not */
@@ -458,21 +445,23 @@ export class Recognizer {
 		return this.fmt(count === 1 ? PREFIX + 'pagination_offerAcceptOne' : PREFIX + 'pagination_offerAccept', count)
 	}
 
-	/** the offered labels of that block; when counting through the volume the cumulative ones, also with earlier offers still open */
+	/** the offered labels of that block; the blocks after it that continue it follow */
 	acceptOffer(first: number) {
 		const offer = this.offers.find(o => o.first === first)
 		if (!offer) {
 			return
 		}
-		this.commit(applyOffers(this.pages, this.settings, [offer], this.offerFrom), { paginate: false })
+		const result = acceptOffers(this.pages, this.settings, [offer], this.strategies)
+		this.commit(result.pages, { paginate: false, offers: result.offers })
 	}
 
-	/** every open offer in one change, the same labels as accepting them one by one in page order */
+	/** every open offer in one change; the blocks after them that continue them follow */
 	acceptAllOffers() {
 		if (this.offers.length === 0) {
 			return
 		}
-		this.commit(applyOffers(this.pages, this.settings, this.offers, this.offerFrom), { paginate: false })
+		const result = acceptOffers(this.pages, this.settings, this.offers, this.strategies)
+		this.commit(result.pages, { paginate: false, offers: result.offers })
 	}
 
 	/** the offer stays hidden until its block changes */
@@ -593,7 +582,7 @@ export class Recognizer {
 	// ---- the label being typed
 
 	previewLabelAt(index: number, text: string, mode: LabelMode) {
-		this.preview = { index, text, mode, result: previewLabel(this.pages, this.settings, index, text, mode) }
+		this.preview = { index, text, mode, result: previewLabel(this.pages, this.settings, index, text, mode, this.strategyOfKey) }
 	}
 
 	cancelLabel() {
@@ -603,16 +592,15 @@ export class Recognizer {
 	}
 
 	commitLabel(index: number, text: string, mode: LabelMode) {
-		const result = previewLabel(this.pages, this.settings, index, text, mode)
+		const result = previewLabel(this.pages, this.settings, index, text, mode, this.strategyOfKey)
 		this.preview = null
 		const changes = result.pages.map((page, i) => i).filter(i => result.pages[i].label !== this.pages[i].label)
 		if (changes.length === 0) {
 			return
 		}
-		// counting through the volume the typing stops at the block end; the later blocks that no longer fit become offers
-		const volume = this.settings.countThroughVolume ? this.volumeStream(this.settings) : undefined
-		const offerFrom = volume?.pages.includes(index) ? this.volumeBlockAfter(volume, index) : null
-		this.commit(result.pages, { paginate: false, offerFrom })
+		// the typing stops at the block end; the blocks after it that continue it follow, by the strategies before the edit
+		const chained = relabelChain(result.pages, this.settings, this.strategies, index)
+		this.commit(chained.pages, { paginate: false, offers: chained.offers })
 	}
 
 	/* the edit of a label field that lost its focus to a pointer press; runs before the handler of the click */
@@ -742,8 +730,8 @@ export class Recognizer {
 
 	/**
 	 * The rules of the dialog replace the settings of this session; the scope decides which labels they overwrite. Scope offers relabels only
-	 * the offered pages, keeps the settings when the rules were not edited and the other offers open. Any other scope voids the open offers;
-	 * when counting through the volume, scope block turns the following blocks that no longer fit into offers.
+	 * the offered pages (and the blocks continuing them), keeps the settings when the rules were not edited and the other offers open. Any
+	 * other scope voids the open offers; its blocks get the default strategies of the new rules, which the session keeps as picked entries.
 	 */
 	applyRules(settings: PaginationSettings, scope: RulesScope) {
 		this.dialog = null
@@ -756,27 +744,53 @@ export class Recognizer {
 		} else {
 			this.settings = settings
 			this.clearOffers()
-			if (scope.kind === 'block' && settings.countThroughVolume) {
-				this.offerFrom = this.volumeBlockAfter(this.volumeStream(settings), scope.first as number)
-			}
 		}
-		const pages = scope.kind === 'none' ? this.pages : simulateRules(this.pages, settings, scope).pages
+		let pages = this.pages
+		if (scope.kind !== 'none') {
+			const result = simulateRules(this.pages, settings, scope, this.strategies)
+			pages = result.pages
+			const chosen = new Map(this.chosen)
+			for (const [key, id] of result.strategies) {
+				const [first, level] = key.split(':').map(Number)
+				chosen.set(`${this.pages[first].filename}:${level}`, id)
+			}
+			this.chosen = chosen
+		}
 		if (this.sameState(this.pages, pages)) {
+			this.strategies = detectStrategies(this.pages, this.settings, this.chosen)
 			this.refresh()
-			this.updateOffers([], null)
+			this.updateOffers([])
 			return
 		}
 		this.applyChange(pages, { paginate: false })
 	}
 
-	/** the stream of the blocks counted through the volume with these settings: the one that runs over more than one top-level block */
-	volumeStream(settings: PaginationSettings): VolumeStream | undefined {
-		return streams(this.pages, settings).list.find((stream: VolumeStream) => stream.parts.some(part => part.block !== stream.parts[0].block))
+	// ---- the pagination strategy of a block
+
+	/** the strategy of the node by node key, for streams and the typing */
+	strategyOfKey: StrategyOf = key => this.strategies.get(key) ?? 'hand'
+
+	strategyOf(node: BlockNode) {
+		return this.strategyOfKey(nodeKey(node))
 	}
 
-	/** first page of the first block of the volume stream after page index, null if none follows */
-	volumeBlockAfter(volume: VolumeStream | undefined, index: number) {
-		return volume?.parts.find(part => part.block > index)?.block ?? null
+	strategyOptionsFor(node: BlockNode): StrategyOption[] {
+		return strategyOptions(this.tree, node, this.settings, this.strategyOf(node))
+	}
+
+	/** 'rules' opens the rules dialog for the top-level block of the node; any other entry relabels the node by it and is kept as picked */
+	setStrategy(node: BlockNode, id: string) {
+		if (id === 'rules') {
+			let root = node
+			while (root.parent) {
+				root = root.parent
+			}
+			this.openRulesDialog(root.first)
+			return
+		}
+		this.chosen = new Map(this.chosen).set(`${this.pages[node.first].filename}:${node.level}`, id)
+		const result = applyStrategy(this.pages, this.settings, this.strategies, node, id)
+		this.commit(result.pages, { paginate: false, offers: result.offers })
 	}
 
 	applyPattern(pattern: string[]) {
@@ -849,7 +863,6 @@ export class Recognizer {
 		const page = this.pages[index]
 		this.applyChange(removePage(this.pages, index), {
 			bulk: false,
-			paginate: false, // deleting an image changes no other label
 			removed: index,
 			afterCommit: () => {
 				const structures = [...this.volumeHidden.structures]

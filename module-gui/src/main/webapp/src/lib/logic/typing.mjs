@@ -19,8 +19,9 @@ function followIn(pages, stream, index) {
   return '–';
 }
 
-export function followValue(pages, settings, index) {
-  return followIn(pages, streamOf(streams(pages, settings), index), index);
+/** strategyOf: the strategy of every node by node key, as streams takes it (default: the default strategies). */
+export function followValue(pages, settings, index, strategyOf) {
+  return followIn(pages, streamOf(streams(pages, settings, strategyOf), index), index);
 }
 
 const ownIn = (pages, stream, index) => isCounting(pages[index].label)
@@ -28,13 +29,13 @@ const ownIn = (pages, stream, index) => isCounting(pages[index].label)
   && normalizeLabel(pages[index].label) !== followIn(pages, stream, index);
 
 /** A counting label that does not follow the page before it: an earlier page of the stream counts and the label differs from the follow value. */
-export function ownNumbering(pages, settings, index) {
-  return ownIn(pages, streamOf(streams(pages, settings), index), index);
+export function ownNumbering(pages, settings, index, strategyOf) {
+  return ownIn(pages, streamOf(streams(pages, settings, strategyOf), index), index);
 }
 
 /** ownNumbering of every page with the streams built once: per page the value it would get by following (truthy) or null. */
-export function ownNumberingAll(pages, settings) {
-  const result = streams(pages, settings);
+export function ownNumberingAll(pages, settings, strategyOf) {
+  const result = streams(pages, settings, strategyOf);
   const byKey = new Map(result.list.map(s => [s.key, s]));
   return pages.map((page, index) => {
     const stream = byKey.get(result.byPage[index]);
@@ -46,11 +47,11 @@ export function ownNumberingAll(pages, settings) {
  * The page list as it would look if text was typed on page index. mode: 'follow' counts on until a page with own numbering,
  * 'toEnd' to the end of the stream regardless, 'single' changes only this page. run = following pages that change, stop = the
  * page with own numbering that ended the run, end = last page of the stream, value = what the page itself gets. When counting
- * through the volume the stream ends with the block typed in, like automatic pagination.
+ * through the volume the stream ends with the block typed in; the blocks continuing it follow by relabelChain. strategyOf as in followValue.
  */
 /** @returns {import('../../types').LabelPreviewResult} */
-export function previewLabel(pages, settings, index, text, mode) {
-  const stream = streamOf(streams(pages, settings), index);
+export function previewLabel(pages, settings, index, text, mode, strategyOf) {
+  const stream = streamOf(streams(pages, settings, strategyOf), index);
   const block = partOf(stream, index).block;
   const inBlock = stream.pages.filter(i => partOf(stream, i).block === block); // with the children that continue it
   const kind = parseLabel(text).kind;

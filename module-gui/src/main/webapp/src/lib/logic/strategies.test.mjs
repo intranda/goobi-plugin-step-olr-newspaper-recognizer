@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTree, flatten, clonePages, toggleBlock, toggleChild, setType, removePage, makeLoose } from './blocks.mjs';
 import { ruleOf, ruleId, nodeKey, defaultStrategy, defaultResolver, detectStrategies, strategyOptions, restructure, relabelChain, applyStrategy } from './strategies.mjs';
-import { pages, settings, DEFAULT_RULES, I, p, C, labels, catalog } from './fixtures.mjs';
+import { pages, settings, DEFAULT_RULES, I, p, C, labels, catalog, insertPage } from './fixtures.mjs';
 import { paginateParts } from './pagination.mjs';
 
 const M = 'MorningIssue';
@@ -306,7 +306,8 @@ test('restructure: moving a boundary relabels strategy blocks and offers instead
   // the last page of the first block moves into the second: both have a strategy and are relabelled
   const back = changed(before, pages(...block(M, '1', '2', '3'), ...block(M, '4', '1', '2', '3'), ...block(M, 'x', 'y')));
   assert.equal(labels(back.pages), '1 2 3 1 2 3 4 x y');
-  // the hand block after them has no counting label: no part of the chain, not offered
+  // the hand block after them stops the chain ('x' counts, roman 10), but is not offered: without counting through the volume its default
+  // is rule:1, not continue:previous
   assert.deepEqual(back.offers, []);
   // the first page of the hand block moves into the second: it keeps its labels and is offered, so is the hand block
   const fromHand = changed(before, pages(...block(M, '1', '2', '3', '4'), ...block(M, '1', '2', '3', 'x'), ...block(M, 'y')));
@@ -388,6 +389,124 @@ test('restructure: automatic false changes nothing', () => {
   const result = changed(before, after, s);
   assert.equal(labels(result.pages), labels(after));
   assert.deepEqual(result.offers, []);
+});
+
+// Ported from structureChanged, which the strategies replaced: the scenarios that still describe intended behaviour, with the outcome of the strategy
+// model (per-block pagination design, decisions 7, 9 and 11).
+
+/** Page list from page specs without labels and a label line ('·' = empty). */
+const lab = (specs, text) => {
+  const words = text.split(' ');
+  return pages(...specs.map((spec, i) => ({ ...spec, label: words[i] === '·' ? '' : words[i] })));
+};
+const loose = () => p('', 0);
+const EXTRA_RULES = { ...DEFAULT_RULES, ExtraEdition: { beginsWith: ['[1]'] } };
+
+test('restructure: a page inserted before a child that continues its parent counts on through the child', () => {
+  const before = lab([I(M), p(), C('TableOfContents'), p('', 2), p(), p()], '1 2 3 4 5 6');
+  const result = changed(before, insertPage(before, 2));
+  assert.equal(labels(result.pages), '1 2 3 4 5 6 7');
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: a supplement extended into its parent continues its own count, the parent continues after it', () => {
+  const before = lab([I(M), p(), p(), C(S), p('', 2), p(), p()], '1 2 3 i ii 4 5');
+  const after = lab([I(M), p(), p(), C(S), p('', 2), p('', 2), p()], '1 2 3 i ii 4 5');
+  const result = changed(before, after);
+  assert.equal(labels(result.pages), '1 2 3 i ii iii 4');
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: a supplement split keeps the labels of the new part and offers it', () => {
+  const before = lab([I(M), p(), p(), C(S), p('', 2), p('', 2), p('', 2), p()], '1 2 3 i ii iii iv 4');
+  const after = lab([I(M), p(), p(), C(S), p('', 2), C(S), p('', 2), p()], '1 2 3 i ii iii iv 4');
+  const result = changed(before, after);
+  assert.equal(labels(result.pages), '1 2 3 i ii iii iv 4');
+  assert.deepEqual(offered(result), [[0, '5,6']]);
+});
+
+test('restructure: a type change with the same rule changes nothing', () => {
+  const before = lab([I(M), p(), p()], '1 2 3');
+  const result = changed(before, lab([I('EveningIssue'), p(), p()], '1 2 3'));
+  assert.equal(labels(result.pages), '1 2 3');
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: untyped blocks keep their labels', () => {
+  const result = changed(lab([I(null), p(), p()], '5 6 7'), lab([I(null), I(null), p()], '5 6 7'));
+  assert.equal(labels(result.pages), '5 6 7');
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: bulk, removing all blocks gives every page the rule for pages without block', () => {
+  const result = changed(lab([I(M), p(), I(M), p(), I(M), p()], '1 2 1 2 1 2'), lab([loose(), loose(), loose(), loose(), loose(), loose()], '1 2 1 2 1 2'));
+  assert.equal(labels(result.pages), '– – – – – –');
+});
+
+test('restructure: bulk, a type pattern is one type change per block', () => {
+  const before = lab([I(M), p(), I(M), p()], '1 2 1 2');
+  const result = changed(before, lab([I('ExtraEdition'), p(), I('ExtraEdition'), p()], '1 2 1 2'), settings(EXTRA_RULES));
+  assert.equal(labels(result.pages), '[1] [2] [1] [2]');
+});
+
+test('restructure: a new block over an uncounted page and a counting label keeps them and is offered', () => {
+  const result = changed(lab([I(M), p(), p(), p()], '1 2 · 9'), lab([I(M), I(M), p(), p()], '1 2 · 9'));
+  assert.equal(labels(result.pages), '1 2 · 9');
+  assert.deepEqual(offered(result), [[1, '1,2,3']]);
+  const initialised = changed(lab([I(M), p(), p(), p()], '1 2 – 9'), lab([I(M), I(M), p(), p()], '1 2 – 9'));
+  assert.deepEqual(offered(initialised), [[1, '1,2,3']]); // state after initLabels
+});
+
+test('restructure: degenerate volumes', () => {
+  assert.equal(labels(changed(lab([I(M)], '1'), lab([loose()], '1')).pages), '–');
+  assert.equal(labels(changed(lab([loose(), loose(), loose()], '– – –'), lab([loose(), loose(), I(M)], '– – –')).pages), '– – 1');
+  const onePage = changed(lab([I(M), p()], '1 2'), lab([I(M), I(M)], '1 2'));
+  assert.equal(labels(onePage.pages), '1 2');
+  assert.deepEqual(offered(onePage), [[1, '1']]);
+  const looseStart = changed(lab([loose(), loose(), I(M), p()], '– – 1 2'), lab([loose(), I(M), I(M), p()], '– – 1 2'));
+  assert.equal(labels(looseStart.pages), '– 1 1 2');
+  assert.deepEqual(looseStart.offers, []);
+});
+
+test('restructure: a type change makes no offer for the block before', () => {
+  const before = lab([I(M), p(), I(M), p(), p()], '1 5 1 2 3');
+  const result = changed(before, lab([I(M), p(), I('ExtraEdition'), p(), p()], '1 5 1 2 3'), settings(EXTRA_RULES));
+  assert.equal(labels(result.pages), '1 5 [1] [2] [3]');
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: a new block after a hand block offers both, the labels stay', () => {
+  const result = changed(lab([I(M), p(), p(), p()], '1 2 7 8'), lab([I(M), p(), p(), I(M)], '1 2 7 8'));
+  assert.equal(labels(result.pages), '1 2 7 8');
+  assert.deepEqual(offered(result), [[0, '2'], [3, '3']]);
+});
+
+test('restructure: a supplement inserted into a hand block keeps the labels and offers the supplement', () => {
+  const before = lab([I(M), p(), p(), p(), p(), p(), p()], '1 2 3 4 5 6 9');
+  const result = changed(before, lab([I(M), p(), p(), C(S), p('', 2), p(), p()], '1 2 3 4 5 6 9'));
+  assert.equal(labels(result.pages), '1 2 3 4 5 6 9');
+  assert.deepEqual(offered(result), [[0, '3,4']]);
+});
+
+test('restructure: a supplement extended into a hand block keeps the page it gets and offers it', () => {
+  const before = lab([I(M), p(), p(), C(S), p('', 2), p(), p(), p()], '1 2 3 i ii 4 5 9');
+  const result = changed(before, lab([I(M), p(), p(), C(S), p('', 2), p('', 2), p(), p()], '1 2 3 i ii 4 5 9'));
+  assert.equal(labels(result.pages), '1 2 3 i ii 4 5 9');
+  assert.deepEqual(offered(result), [[0, '5']]);
+});
+
+test('restructure: counting through the volume, a page inserted into block 2 renumbers the blocks continuing it', () => {
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  const before = counted(4);
+  assert.equal(labels(changed(before, insertPage(before, 3), s).pages), '1 2 3 4 5 6 7 8 9');
+  assert.equal(labels(changed(before, insertPage(before, 7), s).pages), '1 2 3 4 5 6 7 8 9');
+});
+
+test('restructure: counting through the volume, a new block keeps its labels and is offered with the leading – of its rule', () => {
+  const s = settings({ [M]: { beginsWith: ['–', '1'] } }, { countThroughVolume: true });
+  const result = changed(lab([I(M), p(), p(), p(), p()], '– 1 2 3 4'), lab([I(M), p(), p(), I(M), p()], '– 1 2 3 4'), s);
+  assert.equal(labels(result.pages), '– 1 2 3 4');
+  assert.deepEqual(offered(result), [[3, '3,4']]);
 });
 
 test('applyStrategy: picking i on a supplement renumbers the rest of its parent', () => {
