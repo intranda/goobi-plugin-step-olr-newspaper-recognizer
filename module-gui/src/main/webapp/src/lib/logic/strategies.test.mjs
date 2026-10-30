@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTree, flatten } from './blocks.mjs';
-import { ruleOf, ruleId, nodeKey, defaultStrategy, defaultResolver } from './strategies.mjs';
-import { pages, settings, DEFAULT_RULES, I, p, C } from './fixtures.mjs';
+import { ruleOf, ruleId, nodeKey, defaultStrategy, defaultResolver, detectStrategies, strategyOptions } from './strategies.mjs';
+import { pages, settings, DEFAULT_RULES, I, p, C, labels } from './fixtures.mjs';
+import { paginateParts } from './pagination.mjs';
 
 const M = 'MorningIssue';
 const S = 'NewspaperSupplement';
@@ -70,4 +71,149 @@ test('ruleOf is null for strategies that are no rule', () => {
   for (const id of ['hand', 'continue:previous', 'continue:parent', 'continue:sibling']) {
     assert.equal(ruleOf(id), null);
   }
+});
+
+/** The detected strategy of every node of the page list, in page order. */
+const detected = (list, s = settings(), chosen = new Map()) => {
+  const result = detectStrategies(list, s, chosen);
+  return flatten(buildTree(list).roots).map(node => result.get(nodeKey(node)));
+};
+
+/** A top-level block of type over labels, one page per label. */
+const block = (type, ...labels) => [I(type, labels[0]), ...labels.slice(1).map(label => p(label))];
+
+test('detect: each preset is recognised', () => {
+  const cases = [['1 2 3', 'rule:1'], ['i ii iii', 'rule:i'], ['I II III', 'rule:I'], ['[1] [2] [3]', 'rule:[1]'], ['– 1 2', 'rule:– 1'], ['– – –', 'rule:–']];
+  for (const [text, id] of cases) {
+    assert.deepEqual(detected(pages(...block(M, ...text.split(' ')))), [id], text);
+    assert.deepEqual(detected(pages(...block('TableOfContents', ...text.split(' ')))), [id], `${text} without rule`);
+  }
+});
+
+test('detect: continue:previous after a counting block, rule:1 when the count restarts', () => {
+  assert.deepEqual(detected(pages(...block(M, '1', '2', '3'), ...block(M, '4', '5'))), ['rule:1', 'continue:previous']);
+  assert.deepEqual(detected(pages(...block(M, '1', '2', '3'), ...block(M, '1', '2'))), ['rule:1', 'rule:1']);
+  // the previous block that counts, past a loose page and an unnumbered block
+  const skipping = pages(...block(M, '1', '2'), p('–', 0), ...block('TableOfContents', '–'), ...block(M, '3', '4'));
+  assert.deepEqual(detected(skipping), ['rule:1', 'rule:–', 'continue:previous']);
+  // a continuing block keeps the leading uncounted value of its type's rule
+  const evening = settings({ ...DEFAULT_RULES, EveningIssue: { beginsWith: ['–', '1'] } });
+  assert.deepEqual(detected(pages(...block(M, '1', '2'), ...block('EveningIssue', '–', '3')), evening), ['rule:1', 'continue:previous']);
+});
+
+test('detect: nested own count and continuing the parent, with a child type without rule', () => {
+  const own = pages(I(M, '1'), p('2'), p('3'), C('TableOfContents', 'i'), p('ii', 2), p('4'));
+  assert.deepEqual(detected(own), ['rule:1', 'rule:i']);
+  const continuing = pages(I(M, '1'), p('2'), p('3'), C('TableOfContents', '4'), p('5', 2), p('6'));
+  assert.deepEqual(detected(continuing), ['rule:1', 'continue:parent']);
+});
+
+test('detect: a later sibling of the same type continuing the first', () => {
+  const list = pages(I(M, '1'), C(S, 'i'), p('ii', 2), C('TableOfContents', 'I'), C(S, 'iii'), p('iv', 2));
+  assert.deepEqual(detected(list), ['rule:1', 'rule:i', 'rule:I', 'continue:sibling']);
+});
+
+test('detect: free text makes a block hand', () => {
+  assert.deepEqual(detected(pages(...block(M, '1', 'Titelblatt', '3'))), ['hand']);
+  // a gap is hand as well, and a following block continues its count
+  assert.deepEqual(detected(pages(...block(M, '1', '2', '4'), ...block(M, '5'))), ['hand', 'continue:previous']);
+});
+
+test('detect: an untyped block labelled 1 2 3 is rule:1, not hand', () => {
+  assert.deepEqual(detected(pages(...block(null, '1', '2', '3'))), ['rule:1']);
+  assert.deepEqual(detected(pages(...block(null, '1', 'x'))), ['hand']);
+});
+
+test('detect: chosen breaks a tie', () => {
+  const list = pages(...block(M, '–', '–'), ...block(M, '1'));
+  assert.deepEqual(detected(list), ['rule:–', 'rule:1']);
+  assert.deepEqual(detected(list, settings(), new Map([['0003.tif:0', 'continue:previous']])), ['rule:–', 'continue:previous']);
+  // a chosen entry that does not match is passed over
+  assert.deepEqual(detected(list, settings(), new Map([['0003.tif:0', 'rule:i']])), ['rule:–', 'rule:1']);
+});
+
+test('detect: the type default wins over earlier entries of the list', () => {
+  // one page – matches rule:– 1 and rule:–: an untyped block takes the earlier entry, a type without rule its default rule:–
+  assert.deepEqual(detected(pages(...block(null, '–'))), ['rule:– 1']);
+  assert.deepEqual(detected(pages(...block('TableOfContents', '–'))), ['rule:–']);
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  assert.deepEqual(detected(pages(...block(M, '–', '–'), ...block(M, '1')), s), ['rule:–', 'continue:previous']);
+});
+
+test('detect: configured non-preset rule', () => {
+  // beginsWith="p. 1" is split at blanks like every rule: the first page p., then 1, 2, …
+  const s = settings({ ...DEFAULT_RULES, [M]: { beginsWith: ['p.', '1'] } });
+  assert.deepEqual(detected(pages(...block(M, 'p.', '1', '2')), s), ['rule:p. 1']);
+  assert.deepEqual(detected(pages(...block('TableOfContents', 'p.', '1', '2')), s), ['rule:p. 1']);
+  assert.deepEqual(detected(pages(...block('TableOfContents', 'p.', '1', '2'))), ['hand']);
+});
+
+test("detect: '' and – are the same", () => {
+  assert.deepEqual(detected(pages(...block(M, '', '1', '2'))), ['rule:– 1']);
+  assert.deepEqual(detected(pages(...block(M, '', '-', 'uncounted', '–'))), ['rule:–']);
+  assert.deepEqual(detected(pages(...block(M, '1', '2'), ...block(M, '', '3')), settings({ ...DEFAULT_RULES, [M]: { beginsWith: ['–', '1'] } })),
+    ['rule:1', 'continue:previous']);
+});
+
+test('strategyOptions: top-level vs nested entries, hand only when current, disabled continue entries', () => {
+  const s = settings({ ...DEFAULT_RULES, X: { beginsWith: ['p.', '1'] }, Y: { beginsWith: ['-', '1'] }, Z: { beginsWith: ['p.', '1'] } });
+  const tree = buildTree(pages(I(M), C(S), C('TableOfContents'), C(S), I(M)));
+  const [first, supplement, toc, second, last] = flatten(tree.roots);
+  const ids = (node, current) => strategyOptions(tree, node, s, current).map(option => option.id + (option.disabled ? '!' : ''));
+  const rules = ['rule:1', 'rule:i', 'rule:I', 'rule:[1]', 'rule:– 1', 'rule:–', 'rule:p. 1'];
+  assert.deepEqual(ids(first, 'rule:1'), [...rules, 'continue:previous!', 'rules']);
+  assert.deepEqual(ids(last, 'hand'), [...rules, 'hand', 'continue:previous', 'rules']);
+  assert.deepEqual(ids(supplement, 'rule:i'), [...rules, 'continue:parent', 'continue:sibling!', 'rules']);
+  assert.deepEqual(ids(toc, 'hand'), [...rules, 'hand', 'continue:parent', 'continue:sibling!', 'rules']);
+  assert.deepEqual(ids(second, 'continue:sibling'), [...rules, 'continue:parent', 'continue:sibling', 'rules']);
+  const options = strategyOptions(tree, second, s, 'rule:i');
+  assert.deepEqual(options[0], { id: 'rule:1', kind: 'rule', beginsWith: ['1'] });
+  assert.deepEqual(options[6], { id: 'rule:p. 1', kind: 'rule', beginsWith: ['p.', '1'] });
+  assert.deepEqual(options.find(option => option.id === 'continue:sibling'), { id: 'continue:sibling', kind: 'continue', type: S, disabled: false });
+  assert.deepEqual(options.at(-1), { id: 'rules', kind: 'rules' });
+});
+
+test('detect: relabelling the whole volume by the detected strategies changes no label', () => {
+  const list = pages(...block(M, '1', '2'), p('–', 0), ...block(M, '3', '4'), C(S, 'i'), p('ii', 2), C('TableOfContents', '5'), p('6', 2), p('7'),
+    C(S, 'iii'), ...block(M, 'x', '8'), ...block(null, '9'), ...block('TableOfContents', '–'), ...block(M, '1'));
+  const result = detectStrategies(list, settings(), new Map());
+  assert.equal(labels(paginateParts(list, settings(), () => true, key => result.get(key))), labels(list));
+  assert.deepEqual(detected(list), ['rule:1', 'continue:previous', 'rule:i', 'continue:parent', 'continue:sibling', 'hand', 'continue:previous',
+    'rule:–', 'rule:1']);
+});
+
+/** count top-level blocks of size pages each, labels by label(page index, index in block). */
+const volume = (count, size, label, child = null) => pages(...Array.from({ length: count }, (_, b) => Array.from({ length: size }, (_, k) => {
+  const i = b * size + k;
+  if (k === 0) {
+    return I(M, label(i, k));
+  }
+  return child && k >= size - child.length ? (k === size - child.length ? C(S, child[0]) : p(child[k - size + child.length], 2)) : p(label(i, k));
+})).flat());
+
+const timed = run => {
+  const start = performance.now();
+  const result = run();
+  return { result, ms: performance.now() - start };
+};
+
+test('detect: Goobi default 1…3000 over 300 blocks stays fast', () => {
+  const list = volume(300, 10, i => String(i + 1));
+  const { result, ms } = timed(() => detected(list));
+  assert.deepEqual(result, ['rule:1', ...Array(299).fill('continue:previous')]);
+  assert.ok(ms < 300, `${ms} ms`);
+});
+
+test('detect: 3000 pages of free text stay fast', () => {
+  const list = volume(300, 10, i => `Text ${i % 3 ? 'a' : 'b'}`);
+  const { result, ms } = timed(() => detected(list));
+  assert.deepEqual(result, Array(300).fill('hand'));
+  assert.ok(ms < 300, `${ms} ms`);
+});
+
+test('detect: 300 blocks with a supplement each', () => {
+  const list = volume(300, 10, (i, k) => String(k + 1), ['i', 'ii']);
+  const { result, ms } = timed(() => detected(list));
+  assert.deepEqual(result, Array(300).fill(['rule:1', 'rule:i']).flat());
+  assert.ok(ms < 300, `${ms} ms`);
 });

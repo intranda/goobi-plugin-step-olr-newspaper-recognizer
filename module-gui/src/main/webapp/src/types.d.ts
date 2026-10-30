@@ -94,6 +94,9 @@ export interface PaginationSettings {
 export interface StreamPart { block: number; node: string | null; rule: string[] | null; pages: number[] }
 /** the pagination strategy of a node by its node key `first:level`: `rule:<values>`, `continue:previous|parent|sibling` or `hand` (lib/logic/strategies.mjs) */
 export type StrategyOf = (key: string) => string
+/** an entry of the pagination dropdown (lib/logic/strategies.mjs strategyOptions): a rule with its values, hand, a continue entry (type: the
+ * node's type for continue:sibling) or the pagination rules */
+export interface StrategyOption { id: string; kind: 'rule' | 'hand' | 'continue' | 'rules'; beginsWith?: string[]; type?: string | null; disabled?: boolean }
 export interface RulesScope { kind: 'none' | 'block' | 'fromBlock' | 'volume' | 'offers'; first: number | null | undefined; offers?: FreshOffer[]; from?: number | null }
 
 export interface Validation {
