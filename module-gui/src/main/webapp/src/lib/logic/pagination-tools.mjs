@@ -2,6 +2,7 @@
 import { buildTree, clonePages, flatten } from './blocks.mjs';
 import { follows } from './labels.mjs';
 import { paginateParts, applyOffers } from './pagination.mjs';
+import { defaultsIn, detectStrategies, relabelChain } from './strategies.mjs';
 
 /** Indices of the pages whose label differs from the METS as last loaded. */
 export function changedSinceOpening(pages) {
@@ -28,15 +29,26 @@ export function inScope(scope) {
 }
 
 /**
- * New page list with the rules applied in the scope: none, block (the block starting on page first), fromBlock (that block and all after it),
- * volume (everything including pages without block), offers (only the offered pages, as applyOffers). Streams without a rule (untyped blocks)
- * keep their labels.
+ * The rules applied in the scope: none, block (the block starting on page first), fromBlock (that block and all after it), volume
+ * (everything including pages without block), offers (only the offered pages, as applyOffers). The nodes of the top-level blocks in scope
+ * get their default strategy under settings, where counting through the volume continues every block in scope after the first; every other
+ * node keeps its strategy in strategies (by node key; default: detected from the labels). The blocks after the scope that continue it
+ * follow it (relabelChain). Returns the new page list and the strategies applied, by node key.
  */
-export function simulateRules(pages, settings, scope) {
-  if (scope.kind === 'offers') {
-    return applyOffers(pages, settings, scope.offers, scope.from ?? null);
+export function simulateRules(pages, settings, scope, strategies) {
+  if (scope.kind === 'none') {
+    return { pages: clonePages(pages), strategies: new Map() };
   }
-  return paginateParts(pages, settings, inScope(scope));
+  const current = strategies ?? detectStrategies(pages, settings, new Map());
+  if (scope.kind === 'offers') {
+    // scope.from: offers counted through the volume (structureChanged), until the app passes strategies
+    return { pages: applyOffers(pages, settings, scope.offers, typeof scope.from === 'number' ? scope.from : current), strategies: new Map() };
+  }
+  const roots = buildTree(pages).roots.filter(root => scope.kind === 'volume' || (scope.kind === 'block' ? root.first === scope.first : root.first >= scope.first));
+  const applied = defaultsIn(roots, settings);
+  const next = new Map([...current, ...applied]);
+  const out = paginateParts(pages, settings, inScope(scope), key => next.get(key) ?? 'hand');
+  return { pages: roots.length ? relabelChain(out, settings, next, roots.at(-1).first).pages : out, strategies: applied };
 }
 
 /**

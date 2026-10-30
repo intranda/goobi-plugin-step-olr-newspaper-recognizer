@@ -2,7 +2,7 @@
 // and the per-block pagination design (a strategy per node decides its stream and rule).
 import { buildTree, clonePages } from './blocks.mjs';
 import { normalizeLabel, isCounting, nextLabel, follows } from './labels.mjs';
-import { defaultResolver, nodeKey, ruleOf, typeRule } from './strategies.mjs';
+import { defaultResolver, detectStrategies, nodeKey, ownersOf, ruleOf, typeRule } from './strategies.mjs';
 
 /** Per streams result: the stream, the part and the positions in part and stream of every page, so valueIn does not scan. */
 const positions = new WeakMap();
@@ -310,26 +310,39 @@ function offersAgainst(pages, settings, from, target) {
 }
 
 /**
- * New page list with the offered pages relabelled. In block mode (from null) offer by offer in page order, each as its block paginated;
- * when counting through the volume with the volume count from page from and the pages its block offers now. So one offer can be
- * accepted before earlier ones, and all at once equals one by one with the offers recomputed in between.
+ * New page list with the offered pages relabelled: the nodes of the offered pages get their default strategy, every other node keeps its
+ * strategy in strategies (by node key; default: detected from the labels), and the offered top-level blocks are relabelled; only the
+ * offered pages take the new labels. A number instead of strategies is the page an offer counted through the volume starts from
+ * (structureChanged, until the app passes strategies).
  */
-export function applyOffers(pages, settings, offers, from) {
-  if (from !== null) {
-    // the volume count repaints every block from page from on and reads only labels before it, which no offer touches, so it is the
-    // same before and after each offer, and so are the pages every later offer would change
-    const out = clonePages(pages);
-    const target = countFrom(out, settings, from);
-    const blocks = new Set(offers.map(offer => offer.first));
-    offersAgainst(out, settings, from, target).filter(offer => blocks.has(offer.first))
-      .forEach(offer => offer.pages.forEach(i => { out[i].label = target[i].label; }));
-    return out;
+export function applyOffers(pages, settings, offers, strategies) {
+  if (typeof strategies === 'number') {
+    return applyVolumeOffers(pages, settings, offers, strategies);
   }
-  return [...offers].sort((a, b) => a.first - b.first).reduce((out, offer) => {
-    const fresh = paginateBlock(out, settings, offer.first);
-    offer.pages.forEach(i => { out[i].label = fresh[i].label; });
-    return out;
-  }, clonePages(pages));
+  const tree = buildTree(pages);
+  const defaults = defaultResolver(tree, settings);
+  const owner = ownersOf(tree, pages.length);
+  const next = new Map(strategies ?? detectStrategies(pages, settings, new Map()));
+  offers.forEach(offer => offer.pages.forEach(i => owner[i] && next.set(nodeKey(owner[i]), defaults(nodeKey(owner[i])))));
+  const blocks = new Set(offers.map(offer => offer.first));
+  const fresh = paginateParts(pages, settings, (stream, part) => blocks.has(part.block), key => next.get(key) ?? 'hand');
+  const out = clonePages(pages);
+  offers.forEach(offer => offer.pages.forEach(i => { out[i].label = fresh[i].label; }));
+  return out;
+}
+
+/**
+ * New page list with offers counted through the volume accepted: the volume count from page from repaints every block from there on and
+ * reads only labels before it, which no offer touches, so it is the same before and after each offer, and so are the pages every later
+ * offer would change. So one offer can be accepted before earlier ones, and all at once equals one by one.
+ */
+function applyVolumeOffers(pages, settings, offers, from) {
+  const out = clonePages(pages);
+  const target = countFrom(out, settings, from);
+  const blocks = new Set(offers.map(offer => offer.first));
+  offersAgainst(out, settings, from, target).filter(offer => blocks.has(offer.first))
+    .forEach(offer => offer.pages.forEach(i => { out[i].label = target[i].label; }));
+  return out;
 }
 
 export function initLabels(pages) {

@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { changedSinceOpening, restoreFromMets, simulateRules, sameSettings, labelRange, previewGroups } from './pagination-tools.mjs';
-import { pages, start, settings, labels } from './fixtures.mjs';
+import { pages, start, settings, labels, DEFAULT_RULES } from './fixtures.mjs';
+import { detectStrategies } from './strategies.mjs';
 
 const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });
 const p = (label = '', depth = 1) => ({ label, depth });
@@ -19,7 +20,7 @@ test('changedSinceOpening and restoreFromMets', () => {
 
 test('simulateRules scopes', () => {
   const list = pages(I('MorningIssue', '9'), p('9'), I(null, '5'), p('6'), { label: 'x', depth: 0 }, I('MorningIssue', '9'), p('9'));
-  const run = scope => labels(simulateRules(list, settings(), scope));
+  const run = scope => labels(simulateRules(list, settings(), scope).pages);
   assert.equal(run({ kind: 'block', first: 0 }), '1 2 5 6 x 9 9');
   assert.equal(run({ kind: 'fromBlock', first: 0 }), '1 2 5 6 x 1 2');
   assert.equal(run({ kind: 'volume' }), '1 2 5 6 – 1 2');
@@ -29,8 +30,23 @@ test('simulateRules scopes', () => {
 
 test('simulateRules block scope only paginates the block at first', () => { // derived
   const list = pages(I('MorningIssue', '9'), p('9'), I('MorningIssue', '9'), p('9'));
-  assert.equal(labels(simulateRules(list, settings(), { kind: 'block', first: 2 })), '9 9 1 2');
-  assert.equal(labels(simulateRules(list, settings(), { kind: 'fromBlock', first: 2 })), '9 9 1 2');
+  assert.equal(labels(simulateRules(list, settings(), { kind: 'block', first: 2 }).pages), '9 9 1 2');
+  assert.equal(labels(simulateRules(list, settings(), { kind: 'fromBlock', first: 2 }).pages), '9 9 1 2');
+});
+
+test('simulateRules: count through the volume in scope fromBlock sets continue:previous after the first block', () => {
+  const M = 'MorningIssue';
+  const list = pages(I(M, '1'), p('2'), I(M, '1'), p('2'), I(M, '1'), p('2'), I(M, '1'), p('2'));
+  const strategies = detectStrategies(list, settings(), new Map());
+  const result = simulateRules(list, settings(DEFAULT_RULES, { countThroughVolume: true }), { kind: 'fromBlock', first: 2 }, strategies);
+  assert.equal(labels(result.pages), '1 2 1 2 3 4 5 6');
+  assert.deepEqual([...result.strategies], [['2:0', 'rule:1'], ['4:0', 'continue:previous'], ['6:0', 'continue:previous']]);
+  // the blocks after the scope that continue it follow it
+  const through = pages(I(M, '1'), p('2'), I(M, '3'), p('4'), I(M, '5'), p('6'));
+  const roman = simulateRules(through, settings({ ...DEFAULT_RULES, [M]: { beginsWith: ['i'] } }), { kind: 'block', first: 0 },
+    detectStrategies(through, settings(), new Map()));
+  assert.equal(labels(roman.pages), 'i ii iii iv v vi');
+  assert.deepEqual([...roman.strategies], [['0:0', 'rule:i']]);
 });
 
 test('sameSettings compares the rules by meaning, not by the order of their keys', () => {

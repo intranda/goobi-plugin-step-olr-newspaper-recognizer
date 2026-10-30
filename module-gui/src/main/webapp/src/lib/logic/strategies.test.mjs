@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildTree, flatten } from './blocks.mjs';
-import { ruleOf, ruleId, nodeKey, defaultStrategy, defaultResolver, detectStrategies, strategyOptions } from './strategies.mjs';
-import { pages, settings, DEFAULT_RULES, I, p, C, labels } from './fixtures.mjs';
+import { buildTree, flatten, clonePages, toggleBlock, toggleChild, setType, removePage, makeLoose } from './blocks.mjs';
+import { ruleOf, ruleId, nodeKey, defaultStrategy, defaultResolver, detectStrategies, strategyOptions, restructure, relabelChain, applyStrategy } from './strategies.mjs';
+import { pages, settings, DEFAULT_RULES, I, p, C, labels, catalog } from './fixtures.mjs';
 import { paginateParts } from './pagination.mjs';
 
 const M = 'MorningIssue';
@@ -244,5 +244,176 @@ test('detect: 300 blocks with a supplement each', () => {
   const list = volume(300, 10, (i, k) => String(k + 1), ['i', 'ii']);
   const { result, ms } = timed(() => detected(list));
   assert.deepEqual(result, Array(300).fill(['rule:1', 'rule:i']).flat());
+  assert.ok(ms < 300, `${ms} ms`);
+});
+
+// Relabelling after changes (per-block pagination design, decisions 7, 9 and 11).
+
+/** restructure with the strategies the app would hold before the change: detected from the labels. */
+const changed = (before, after, s = settings()) => restructure(before, after, s, new Map(), detectStrategies(before, s, new Map()));
+/** Offers as [first page of the top-level block, offered pages]. */
+const offered = result => result.offers.map(offer => [offer.first, offer.pages.join()]);
+/** count blocks of MorningIssue with two pages each, labelled 1, 2, … through the volume. */
+const counted = count => pages(...Array.from({ length: count }, (_, b) => block(M, String(2 * b + 1), String(2 * b + 2))).flat());
+
+test('restructure: no structure change leaves every label alone', () => {
+  const before = pages(...block(M, '1', '2', '3'), ...block(M, '4', '5'), ...block(M, '–', '–'), ...block(M, 'Titel', 'x'),
+    I(M, '1'), C(S, 'i'), p('ii', 2), p('2'), p('–', 0), ...block('TableOfContents', '–'), ...block(null, '7', '9'));
+  const result = changed(before, clonePages(before));
+  assert.equal(labels(result.pages), labels(before));
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: an untyped block over uncounted pages gets the rule once it is typed', () => {
+  const loose = pages(p('–', 0), p('–', 0), p('–', 0));
+  const untyped = changed(loose, toggleBlock(loose, 0));
+  assert.equal(labels(untyped.pages), '– – –');
+  assert.deepEqual(untyped.offers, []);
+  const typed = changed(untyped.pages, setType(untyped.pages, { page: 0, level: 0 }, M, catalog));
+  assert.equal(labels(typed.pages), '1 2 3');
+  assert.deepEqual(typed.offers, []);
+});
+
+test('restructure: a new block over counting labels keeps them and is offered', () => {
+  const goobi = pages(...Array.from({ length: 12 }, (_, i) => p(String(i + 1), 0)));
+  const typed = setType(toggleBlock(goobi, 4), { page: 4, level: 0 }, M, catalog);
+  const result = changed(goobi, typed);
+  assert.equal(labels(result.pages), labels(goobi));
+  assert.deepEqual(offered(result), [[4, '4,5,6,7,8,9,10,11']]);
+  // the same in two steps: a click makes an untyped block, then the type
+  const untyped = changed(goobi, toggleBlock(goobi, 4));
+  const later = changed(untyped.pages, setType(untyped.pages, { page: 4, level: 0 }, M, catalog));
+  assert.equal(labels(later.pages), labels(goobi));
+  assert.deepEqual(offered(later), [[4, '4,5,6,7,8,9,10,11']]);
+});
+
+test('restructure: splitting keeps the labels of the new part and offers it', () => {
+  const before = pages(...block(M, '1', '2', '3', '4', '5', '6'));
+  const result = changed(before, toggleBlock(before, 3));
+  assert.equal(labels(result.pages), '1 2 3 4 5 6');
+  assert.deepEqual(offered(result), [[3, '3,4,5']]);
+});
+
+test('restructure: a new untyped block keeps counting labels', () => {
+  const goobi = pages(...Array.from({ length: 12 }, (_, i) => p(String(i + 1), 0)));
+  const result = changed(goobi, toggleBlock(goobi, 4));
+  assert.equal(labels(result.pages), labels(goobi));
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: moving a boundary relabels strategy blocks and offers instead of relabelling hand pages', () => {
+  const before = pages(...block(M, '1', '2', '3', '4'), ...block(M, '1', '2', '3'), ...block(M, 'x', 'y'));
+  // the last page of the first block moves into the second: both have a strategy and are relabelled
+  const back = changed(before, pages(...block(M, '1', '2', '3'), ...block(M, '4', '1', '2', '3'), ...block(M, 'x', 'y')));
+  assert.equal(labels(back.pages), '1 2 3 1 2 3 4 x y');
+  // the hand block after them ends their chain and is offered
+  assert.deepEqual(offered(back), [[7, '7,8']]);
+  // the first page of the hand block moves into the second: it keeps its labels and is offered, so is the hand block
+  const fromHand = changed(before, pages(...block(M, '1', '2', '3', '4'), ...block(M, '1', '2', '3', 'x'), ...block(M, 'y')));
+  assert.equal(labels(fromHand.pages), '1 2 3 4 1 2 3 x y');
+  assert.deepEqual(offered(fromHand), [[4, '7'], [8, '8']]);
+  // the last page of the second block moves into the hand block: it is offered, not relabelled
+  const intoHand = changed(before, pages(...block(M, '1', '2', '3', '4'), ...block(M, '1', '2'), ...block(M, '3', 'x', 'y')));
+  assert.equal(labels(intoHand.pages), '1 2 3 4 1 2 3 x y');
+  assert.deepEqual(offered(intoHand), [[6, '6,7,8']]);
+});
+
+test('restructure: merging a hand block keeps its labels and offers', () => {
+  const before = pages(...block(M, '1', '2', '3'), ...block(M, 'x', '5', 'y'));
+  const result = changed(before, toggleBlock(before, 3));
+  assert.equal(labels(result.pages), '1 2 3 x 5 y');
+  assert.deepEqual(offered(result), [[0, '3,5']]);
+});
+
+test('restructure: merging a strategy block relabels the merged block', () => {
+  const before = pages(...block(M, '1', '2', '3'), ...block(M, '1', '2'));
+  const result = changed(before, toggleBlock(before, 3));
+  assert.equal(labels(result.pages), '1 2 3 4 5');
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: a new child over counting labels does not duplicate numbers in the parent', () => {
+  const before = pages(...block(M, '1', '2', '3', '4', '5', '6'));
+  const after = setType(toggleChild(before, 4, catalog), { page: 4, level: 1 }, S, catalog);
+  const result = changed(before, after);
+  assert.equal(labels(result.pages), '1 2 3 4 5 6');
+  assert.deepEqual(offered(result), [[0, '4,5']]);
+});
+
+test('restructure: a type change keeps continue:previous', () => {
+  const before = counted(5);
+  const result = changed(before, setType(before, { page: 4, level: 0 }, 'EveningIssue', catalog));
+  assert.equal(labels(result.pages), labels(before));
+  assert.deepEqual(result.offers, []);
+});
+
+test("restructure: a type change moves the default strategy to the new type's default", () => {
+  const s = settings({ ...DEFAULT_RULES, ExtraEdition: { beginsWith: ['i'] } });
+  const before = pages(...block(M, '1', '2'));
+  const result = changed(before, setType(before, { page: 0, level: 0 }, 'ExtraEdition', catalog), s);
+  assert.equal(labels(result.pages), 'i ii');
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: deleting a page renumbers the continuing blocks', () => {
+  const before = pages(...block(M, '1', '2', '3'), ...block(M, '4', '5'), ...block(M, '6', '7'));
+  assert.equal(labels(changed(before, removePage(before, 1)).pages), '1 2 3 4 5 6');
+  // the first page of a continuing block: the block keeps its strategy
+  assert.equal(labels(changed(before, removePage(before, 3)).pages), '1 2 3 4 5 6');
+});
+
+test('restructure: a block that becomes loose leaves the stream, the blocks continuing it follow', () => {
+  const before = pages(...block(M, '1', '2'), ...block(M, '3', '4'), ...block(M, '5', '6'));
+  const result = changed(before, makeLoose(before, 2));
+  assert.equal(labels(result.pages), '1 2 – – 3 4');
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: automatic false changes nothing', () => {
+  const s = settings(DEFAULT_RULES, { automatic: false });
+  const before = pages(...block(M, '1', '2', '3'), ...block(M, '4', '5'), ...block(M, '6', '7'));
+  const after = removePage(before, 1);
+  const result = changed(before, after, s);
+  assert.equal(labels(result.pages), labels(after));
+  assert.deepEqual(result.offers, []);
+});
+
+test('applyStrategy: picking i on a supplement renumbers the rest of its parent', () => {
+  const list = pages(I(M, '1'), p('2'), C('TableOfContents', '3'), p('4', 2), p('5'));
+  const strategies = detectStrategies(list, settings(), new Map());
+  assert.deepEqual([strategies.get('0:0'), strategies.get('2:1')], ['rule:1', 'continue:parent']); // derived
+  const result = applyStrategy(list, settings(), strategies, { first: 2, level: 1 }, 'rule:i');
+  assert.equal(labels(result.pages), '1 2 i ii 3');
+  assert.deepEqual(result.offers, []);
+  assert.equal(labels(list), '1 2 3 4 5', 'input unchanged'); // derived
+});
+
+test('relabelChain: stops at the first block that does not continue and offers it when hand', () => {
+  const list = pages(...block(M, 'i', 'ii'), ...block(M, '3', '4'), ...block(M, '20', '21'), ...block(M, '22', '23'));
+  const strategies = new Map([['0:0', 'rule:i'], ['2:0', 'continue:previous'], ['4:0', 'hand'], ['6:0', 'continue:previous']]);
+  const result = relabelChain(list, settings(), strategies, 0);
+  assert.equal(labels(result.pages), 'i ii iii iv 20 21 22 23');
+  assert.deepEqual(offered(result), [[4, '4,5']]);
+  const manual = relabelChain(list, settings(DEFAULT_RULES, { automatic: false }), strategies, 0);
+  assert.equal(labels(manual.pages), labels(list));
+  assert.deepEqual(manual.offers, []);
+});
+
+test('relabelChain: a block that joins another stream after a change is relabelled', () => {
+  const list = pages(...block(M, '1', '2', '3'), ...block(M, '1', '2'), ...block(M, '3', '4'));
+  const strategies = detectStrategies(list, settings(), new Map());
+  assert.deepEqual([...strategies.values()], ['rule:1', 'rule:1', 'continue:previous']); // derived
+  assert.equal(labels(applyStrategy(list, settings(), strategies, { first: 3, level: 0 }, 'rule:–').pages), '1 2 3 – – 4 5');
+  const relabelled = pages(...block(M, '1', '2', '3'), ...block(M, '–', '–'), ...block(M, '3', '4'));
+  const result = relabelChain(relabelled, settings(), new Map(strategies).set('3:0', 'rule:–'), 3);
+  assert.equal(labels(result.pages), '1 2 3 – – 4 5');
+  assert.deepEqual(result.offers, []);
+});
+
+test('relabelChain: 3000 pages in one chain stay fast', () => {
+  const list = volume(300, 10, i => String(i < 10 ? i + 1 : i + 1001));
+  const strategies = new Map(Array.from({ length: 300 }, (_, b) => [`${b * 10}:0`, b ? 'continue:previous' : 'rule:1']));
+  const { result, ms } = timed(() => relabelChain(list, settings(), strategies, 0));
+  assert.equal(labels(result.pages), Array.from({ length: 3000 }, (_, i) => String(i + 1)).join(' '));
   assert.ok(ms < 300, `${ms} ms`);
 });

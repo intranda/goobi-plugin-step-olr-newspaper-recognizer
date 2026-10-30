@@ -1,8 +1,8 @@
 // Pagination strategies of the blocks (per-block pagination design, decisions 6–9): an id per node says how its pages are numbered.
 // Ids: rule:<beginsWith values joined by one blank> (rule:1, rule:– 1), continue:previous, continue:parent, continue:sibling, hand.
-import { buildTree } from './blocks.mjs';
+import { buildTree, flatten, clonePages } from './blocks.mjs';
 import { normalizeLabel, isCounting } from './labels.mjs';
-import { streams, valueIn } from './pagination.mjs';
+import { streams, valueIn, paginateParts } from './pagination.mjs';
 
 const RULE = 'rule:';
 
@@ -53,8 +53,11 @@ export function defaultStrategy(tree, node, settings) {
   return strategyFor(node, settings, node.level === 0 ? before.length > 0 : before.some(other => other.start.type === node.start.type));
 }
 
-/** defaultStrategy of every node of the tree by node key; an unknown key is hand. */
-export function defaultResolver(tree, settings) {
+/**
+ * The default strategies of the given top-level nodes and their subtrees by node key, as defaultStrategy gives them, except that a
+ * top-level node counts only the nodes before it in roots as earlier.
+ */
+export function defaultsIn(roots, settings) {
   const byKey = new Map();
   const walk = siblings => {
     const types = new Set();
@@ -64,7 +67,13 @@ export function defaultResolver(tree, settings) {
       walk(node.children);
     });
   };
-  walk(tree.roots);
+  walk(roots);
+  return byKey;
+}
+
+/** defaultStrategy of every node of the tree by node key; an unknown key is hand. */
+export function defaultResolver(tree, settings) {
+  const byKey = defaultsIn(tree.roots, settings);
   return key => byKey.get(key) ?? 'hand';
 }
 
@@ -214,4 +223,207 @@ export function detectStrategies(pages, settings, chosen) {
     }
   });
   return result;
+}
+
+const resolverOf = strategies => key => strategies.get(key) ?? 'hand';
+
+/** The deepest node of every page, null for a page without block. */
+export function ownersOf(tree, length) {
+  const owner = new Array(length).fill(null);
+  for (const node of flatten(tree.roots)) { // parents before children: the deepest node wins
+    for (let i = node.first; i <= node.last; i++) {
+      owner[i] = node;
+    }
+  }
+  return owner;
+}
+
+/** New page list: the top-level blocks starting on the pages in blocks and the loose runs starting on the pages in runs relabelled by the strategies; hand nodes keep their labels. */
+const relabel = (pages, settings, strategies, blocks, runs = new Set()) => paginateParts(pages, settings,
+  (stream, part) => (part.node === null ? runs.has(part.pages[0]) : blocks.has(part.block)), resolverOf(strategies));
+
+/**
+ * The chains after the top-level blocks starting on the pages in from and after the loose pages in loose: every later top-level block that
+ * continues the previous one, up to the first that does not; a block with a rule that does not count is passed over (it is no part of the
+ * stream continue:previous joins). stops are the hand blocks a chain ended at.
+ */
+function chainAfter(tree, strategies, from, loose = []) {
+  const chain = [];
+  const stops = [];
+  let open = false;
+  let end = -1;
+  for (const root of tree.roots) {
+    const id = strategies.get(nodeKey(root)) ?? 'hand';
+    open = open || loose.some(i => end < i && i < root.first);
+    end = root.last;
+    if (from.has(root.first)) {
+      open = true;
+    } else if (!open || (ruleOf(id) && !ruleOf(id).some(value => isCounting(normalizeLabel(value))))) {
+      continue;
+    } else if (id === 'continue:previous') {
+      chain.push(root.first);
+    } else {
+      if (id === 'hand') {
+        stops.push(root);
+      }
+      open = false;
+    }
+  }
+  return { chain, stops };
+}
+
+/**
+ * Relabels the top-level blocks in blocks, the loose runs in runs and the chains after the blocks in from and after the runs. Offers, one per top-level block
+ * (first = its first page): offer maps the first page of a top-level block to the nodes in it to offer, the hand blocks a chain stopped
+ * at offer their hand nodes; offered are the pages of these nodes that change when they get their default strategy.
+ */
+function settle(pages, settings, strategies, tree, { blocks = [], from = [], runs = new Set(), offer = new Map() }) {
+  const { chain, stops } = chainAfter(tree, strategies, new Set(from), [...runs]);
+  const out = relabel(pages, settings, strategies, new Set([...blocks, ...chain]), runs);
+  const nodes = new Map([...offer].map(([first, list]) => [first, new Set(list)]));
+  for (const root of stops) {
+    const hand = flatten([root]).filter(node => (strategies.get(nodeKey(node)) ?? 'hand') === 'hand');
+    nodes.set(root.first, new Set([...(nodes.get(root.first) ?? []), ...hand]));
+  }
+  if (!nodes.size) {
+    return { pages: out, offers: [] };
+  }
+  const defaults = defaultResolver(tree, settings);
+  const owner = ownersOf(tree, out.length);
+  const offers = tree.roots.filter(root => nodes.has(root.first)).map(root => {
+    const offered = nodes.get(root.first);
+    const trial = new Map(strategies);
+    offered.forEach(node => trial.set(nodeKey(node), defaults(nodeKey(node))));
+    const fresh = relabel(out, settings, trial, new Set([root.first]));
+    const list = [];
+    for (let i = root.first; i <= root.last; i++) {
+      if (offered.has(owner[i]) && !sameLabel(fresh[i].label, out[i].label)) {
+        list.push(i);
+      }
+    }
+    return { first: root.first, pages: list };
+  });
+  return { pages: out, offers: offers.filter(offer => offer.pages.length) };
+}
+
+/**
+ * New page list after a label of page from changed: the top-level blocks after the one containing it that continue it are relabelled by
+ * the strategies (their nested nodes with them), up to the first top-level block that does not continue; that block is offered when it is
+ * hand and its default would change a page. Without automatic pagination nothing is relabelled.
+ */
+export function relabelChain(pages, settings, strategies, from) {
+  if (settings.automatic === false) {
+    return { pages: clonePages(pages), offers: [] };
+  }
+  const tree = buildTree(pages);
+  const root = tree.roots.find(other => other.first <= from && from <= other.last);
+  return settle(pages, settings, strategies, tree, { from: root ? [root.first] : [] });
+}
+
+/**
+ * New page list with the node ({first, level}) relabelled by strategy id: its whole top-level block is relabelled with every node's
+ * strategy (hand nodes keep their labels), then the chain after it as relabelChain.
+ */
+export function applyStrategy(pages, settings, strategies, node, id) {
+  const tree = buildTree(pages);
+  const root = tree.roots.find(other => other.first <= node.first && node.first <= other.last);
+  const next = new Map(strategies).set(nodeKey(node), id);
+  return settle(pages, settings, next, tree, { blocks: [root.first], from: settings.automatic === false ? [] : [root.first] });
+}
+
+/**
+ * New page list after a structure change from before to after (per-block pagination design, decisions 7, 9 and 11), with offers per
+ * top-level block. Nodes are matched by file name of their first page and level; a node whose first page changed (boundary moved, first
+ * page deleted) is the unmatched node of its level it shares pages with. The pages of a node are the file names of first..last. Per node
+ * after the change: changed (new, other type, other pages) with all pages uncounted → its default, relabelled; new → hand, offered;
+ * other type → hand stays hand and is offered, the old type's default becomes the new type's default and is relabelled, any other
+ * strategy stays and is relabelled when its pages changed; other pages → a hand node, or one that got pages from a hand node, is hand
+ * and offered, any other is relabelled by its strategy; else untouched. Loose runs that got pages get settings.withoutBlock. The chains
+ * after every relabelled top-level block and every such run follow (a block that became loose leaves the stream). beforeStrategies: the strategies of before by node key (detected with chosen without).
+ */
+export function restructure(before, after, settings, chosen, beforeStrategies) {
+  if (settings.automatic === false) {
+    return { pages: after, offers: [] };
+  }
+  const was = beforeStrategies ?? detectStrategies(before, settings, chosen);
+  const oldTree = buildTree(before);
+  const tree = buildTree(after);
+  const oldDefaults = defaultResolver(oldTree, settings);
+  const defaults = defaultResolver(tree, settings);
+  const oldNodes = flatten(oldTree.roots);
+  const nodes = flatten(tree.roots);
+  const fileKey = (list, node) => `${list[node.first].filename}:${node.level}`;
+  const filesOf = (list, node) => new Set(list.slice(node.first, node.last + 1).map(page => page.filename));
+  const byFile = new Map(oldNodes.map(node => [fileKey(before, node), node]));
+  const match = new Map();
+  for (const node of nodes) {
+    if (byFile.has(fileKey(after, node))) {
+      match.set(node, byFile.get(fileKey(after, node)));
+    }
+  }
+  const taken = new Set(match.values());
+  nodes.filter(node => !match.has(node)).forEach(node => {
+    const files = filesOf(after, node);
+    const old = oldNodes.find(other => !taken.has(other) && other.level === node.level
+      && before.slice(other.first, other.last + 1).some(page => files.has(page.filename)));
+    if (old) {
+      match.set(node, old);
+      taken.add(old);
+    }
+  });
+  const oldOwner = new Map(ownersOf(oldTree, before.length).map((node, i) => [before[i].filename, node]));
+  const strategyOfOld = node => was.get(nodeKey(node)) ?? 'hand';
+  const next = new Map();
+  const blocks = new Set();
+  const offer = new Map();
+  for (const node of nodes) {
+    let root = node;
+    while (root.parent) {
+      root = root.parent;
+    }
+    const key = nodeKey(node);
+    const old = match.get(node);
+    const files = filesOf(after, node);
+    const oldFiles = old ? filesOf(before, old) : null;
+    const arriving = old ? [...files].filter(file => !oldFiles.has(file)) : [];
+    const moved = old && (arriving.length > 0 || files.size !== oldFiles.size);
+    const retyped = old && old.start.type !== node.start.type;
+    const oldId = old ? strategyOfOld(old) : null;
+    let id = oldId;
+    let relabelled = false;
+    if ((!old || retyped || moved) && after.slice(node.first, node.last + 1).every(page => sameLabel(page.label, '–'))) {
+      id = defaults(key);
+      relabelled = true;
+    } else if (!old) {
+      id = 'hand';
+    } else if (retyped) {
+      if (oldId === oldDefaults(nodeKey(old)) && oldId !== 'hand') {
+        id = defaults(key);
+        relabelled = true;
+      } else {
+        relabelled = moved && oldId !== 'hand';
+      }
+    } else if (moved) {
+      const fromHand = arriving.some(file => oldOwner.get(file) && strategyOfOld(oldOwner.get(file)) === 'hand');
+      id = fromHand ? 'hand' : oldId;
+      relabelled = id !== 'hand';
+    }
+    next.set(key, id);
+    if (relabelled) {
+      blocks.add(root.first);
+    } else if (id === 'hand' && (!old || retyped || moved)) {
+      offer.set(root.first, [...(offer.get(root.first) ?? []), node]);
+    }
+  }
+  // loose runs with a page that was in a block or is new
+  const wasLoose = new Set(before.filter(page => !oldOwner.get(page.filename)).map(page => page.filename));
+  const runs = new Set();
+  let run = null;
+  tree.loose.forEach(i => {
+    run = run !== null && i > 0 && !after[i - 1].depth ? run : i;
+    if (!wasLoose.has(after[i].filename)) {
+      runs.add(run);
+    }
+  });
+  return settle(after, settings, next, tree, { blocks: [...blocks], from: [...blocks], runs, offer });
 }

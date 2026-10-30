@@ -760,7 +760,7 @@ export class Recognizer {
 				this.offerFrom = this.volumeBlockAfter(this.volumeStream(settings), scope.first as number)
 			}
 		}
-		const pages = scope.kind === 'none' ? this.pages : simulateRules(this.pages, settings, scope)
+		const pages = scope.kind === 'none' ? this.pages : simulateRules(this.pages, settings, scope).pages
 		if (this.sameState(this.pages, pages)) {
 			this.refresh()
 			this.updateOffers([], null)

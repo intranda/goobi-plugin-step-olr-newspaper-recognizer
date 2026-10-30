@@ -234,7 +234,7 @@
 		const covered = inScope(scope);
 		const indexes = streams(pages, draft).list
 			.flatMap(stream => stream.parts.filter((part: StreamPart) => covered(stream, part)).flatMap((part: StreamPart) => part.pages)).sort((a, b) => a - b);
-		const groups = previewGroups(pages, simulateRules(pages, draft, scope), indexes);
+		const groups = previewGroups(pages, simulateRules(pages, draft, scope).pages, indexes);
 		return { groups, changed: groups.reduce((sum, group) => sum + group.changed, 0) };
 	});
 

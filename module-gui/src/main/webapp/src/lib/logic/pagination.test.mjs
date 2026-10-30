@@ -420,7 +420,7 @@ test('structureChanged: supplement extended keeps own numbering after the contin
 
 // Counting through the whole volume.
 
-const paginateAll = (list, s) => simulateRules(list, s, { kind: 'volume' });
+const paginateAll = (list, s) => simulateRules(list, s, { kind: 'volume' }).pages;
 const each = list => labels(list).split(' ');
 
 test('volume mode: title pages keep – per block, the count carries on', () => {
@@ -510,7 +510,7 @@ test('volumeOffers: a block that already fits gets no offer', () => {
 test('switching to volume mode with scope none changes no label', () => {
   const list = pages(I('MorningIssue', '1'), p('2'), I('MorningIssue', '1'), p('2'));
   const s = { ...settings({ MorningIssue: { beginsWith: ['1'] } }), countThroughVolume: true };
-  assert.equal(labels(simulateRules(list, s, { kind: 'none' })), labels(list));
+  assert.equal(labels(simulateRules(list, s, { kind: 'none' }).pages), labels(list));
 });
 
 // extras (not in the brief)
@@ -555,7 +555,7 @@ test('extra: volume mode, every later block that would change gets an offer, als
 test('extra: simulateRules scope offers equals applyOffers', () => {
   const { s, r } = setup();
   const scope = { kind: 'offers', first: null, offers: r.offers, from: r.offerFrom };
-  assert.equal(labels(simulateRules(r.pages, s, scope)), labels(applyOffers(r.pages, s, r.offers, r.offerFrom)));
+  assert.equal(labels(simulateRules(r.pages, s, scope).pages), labels(applyOffers(r.pages, s, r.offers, r.offerFrom)));
 });
 
 // Ruling option 2: in volume mode the changed blocks keep today's offers, the volume offers follow.
