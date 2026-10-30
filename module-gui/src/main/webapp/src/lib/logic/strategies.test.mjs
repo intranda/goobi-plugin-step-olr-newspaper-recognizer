@@ -1,9 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTree, flatten, clonePages, toggleBlock, toggleChild, setType, removePage, makeLoose } from './blocks.mjs';
-import { ruleOf, ruleId, nodeKey, defaultStrategy, defaultResolver, detectStrategies, strategyOptions, restructure, relabelChain, applyStrategy } from './strategies.mjs';
+import { ruleOf, ruleId, nodeKey, defaultStrategy, defaultResolver, detectStrategies, strategyOptions, restructure, relabelChain, applyStrategy, afterTyping } from './strategies.mjs';
 import { pages, settings, DEFAULT_RULES, I, p, C, labels, catalog, insertPage } from './fixtures.mjs';
 import { paginateParts } from './pagination.mjs';
+import { previewLabel } from './typing.mjs';
+import { acceptOffers } from './pagination-tools.mjs';
 
 const M = 'MorningIssue';
 const S = 'NewspaperSupplement';
@@ -586,4 +588,52 @@ test('relabelChain: 3000 pages in one chain stay fast', () => {
   const { result, ms } = timed(() => relabelChain(list, settings(), strategies, 0));
   assert.equal(labels(result.pages), Array.from({ length: 3000 }, (_, i) => String(i + 1)).join(' '));
   assert.ok(ms < 300, `${ms} ms`);
+});
+
+// Typing a label (final review I1): a block typed into "edited by hand" offers the blocks the chain would change instead of renumbering them.
+
+/** The page list after typing text on page index in mode, as commitLabel takes it: the typing, then afterTyping. */
+const typed = (list, s, index, text, mode) => {
+  const strategies = detectStrategies(list, s, new Map());
+  const result = previewLabel(list, s, index, text, mode, key => strategies.get(key) ?? 'hand');
+  return { strategies, ...afterTyping(result.pages, s, strategies, new Map(), index, mode) };
+};
+
+test('afterTyping: a hand-typed label on the last page of a block offers the continuing blocks and changes nothing after it', () => {
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  const list = pages(...block(M, '1', '2', '3'), ...block(M, '4', '5'), ...block(M, '6', '7'));
+  const result = typed(list, s, 2, '13', 'follow');
+  assert.deepEqual([...result.strategies.values()], ['rule:1', 'continue:previous', 'continue:previous']); // derived
+  assert.equal(labels(result.pages), '1 2 13 4 5 6 7');
+  assert.deepEqual(offered(result), [[3, '3,4'], [5, '5,6']]);
+  // accepting both renumbers the blocks by their own strategy relative to the typed label
+  const all = acceptOffers(result.pages, s, result.offers, detectStrategies(result.pages, s, new Map()));
+  assert.equal(labels(all.pages), '1 2 13 14 15 16 17');
+  const first = acceptOffers(result.pages, s, result.offers.slice(0, 1), detectStrategies(result.pages, s, new Map()));
+  assert.equal(labels(first.pages), '1 2 13 14 15 16 17');
+});
+
+test('afterTyping: a block that still matches a strategy after the typing renumbers the blocks continuing it', () => {
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  const list = pages(...block(M, '1', '2', '3'), ...block(M, '4', '5'), ...block(M, '6', '7'));
+  const result = typed(list, s, 0, 'i', 'follow');
+  assert.equal(labels(result.pages), 'i ii iii iv v vi vii');
+  assert.deepEqual(result.offers, []);
+});
+
+test('afterTyping: a single label never renumbers later blocks, also when the block still matches', () => {
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  const list = pages(...block(M, '1'), ...block(M, '2', '3'), ...block(M, '4', '5'));
+  assert.equal(labels(typed(list, s, 0, 'i', 'follow').pages), 'i ii iii iv v'); // derived: the chain runs in follow mode
+  const result = typed(list, s, 0, 'i', 'single');
+  assert.equal(labels(result.pages), 'i 2 3 4 5');
+  assert.deepEqual(offered(result), [[1, '1,2'], [3, '3,4']]);
+});
+
+test('afterTyping: without automatic pagination nothing is relabelled or offered', () => {
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true, automatic: false });
+  const list = pages(...block(M, '1', '2', '3'), ...block(M, '4', '5'));
+  const result = typed(list, s, 2, '13', 'follow');
+  assert.equal(labels(result.pages), '1 2 13 4 5');
+  assert.deepEqual(result.offers, []);
 });

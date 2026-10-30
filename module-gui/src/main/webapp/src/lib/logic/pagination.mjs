@@ -165,14 +165,17 @@ export const paginateBlock = (pages, settings, first, strategyOf) => paginatePar
 
 /**
  * The strategies under which offers are accepted, by node key: the nodes of the offered pages get their default strategy, every other node
- * keeps its strategy in strategies (default: detected from the labels).
+ * keeps its strategy in strategies (default: detected from the labels). An offer with a strategy (afterTyping) gives it to its top-level
+ * block instead and leaves its nested nodes at theirs.
  */
 export function offeredStrategies(pages, settings, offers, strategies) {
   const tree = buildTree(pages);
   const defaults = defaultResolver(tree, settings);
   const owner = ownersOf(tree, pages.length);
   const next = new Map(strategies ?? detectStrategies(pages, settings, new Map()));
-  offers.forEach(offer => offer.pages.forEach(i => owner[i] && next.set(nodeKey(owner[i]), defaults(nodeKey(owner[i])))));
+  offers.forEach(offer => (offer.strategy
+    ? next.set(`${offer.first}:0`, offer.strategy)
+    : offer.pages.forEach(i => owner[i] && next.set(nodeKey(owner[i]), defaults(nodeKey(owner[i]))))));
   return next;
 }
 

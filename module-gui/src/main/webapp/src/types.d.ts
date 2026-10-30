@@ -117,7 +117,8 @@ export interface LabelPreviewResult { pages: Page[]; run: number[]; stop: number
 /** The label being typed */
 export interface LabelPreview { index: number; text: string; mode: LabelMode; result: LabelPreviewResult }
 
-export interface Offer { first: number; pages: number[]; signature: string | null }
+/** strategy: the strategy its top-level block is relabelled by on accepting (an offer after typing), else each offered node's default */
+export interface Offer { first: number; pages: number[]; signature: string | null; strategy?: string }
 /** an offer as the pagination logic reports it, before it is tied to its block */
 export type FreshOffer = Omit<Offer, 'signature'>
 export interface Notice { key: string; params?: string[] }

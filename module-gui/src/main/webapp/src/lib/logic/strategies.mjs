@@ -330,6 +330,30 @@ export function relabelChain(pages, settings, strategies, from) {
 }
 
 /**
+ * New page list after text was typed on page index in mode (pages: with the typing applied, as previewLabel gives it). When the top-level
+ * block of the page still matches a strategy (detected with chosen, as detectStrategies) and mode is not single, the chain after it follows
+ * as relabelChain. Else nothing after the block changes (a hand-typed label renumbers no other block): every later top-level block the
+ * chain would change is offered with the pages it would change, by its strategy before the typing (offer.strategy).
+ */
+export function afterTyping(pages, settings, strategies, chosen, index, mode) {
+  const chained = relabelChain(pages, settings, strategies, index);
+  const root = buildTree(pages).roots.find(other => other.first <= index && index <= other.last);
+  if (!root || (mode !== 'single' && detectStrategies(pages, settings, chosen).get(nodeKey(root)) !== 'hand')) {
+    return chained;
+  }
+  const offers = buildTree(pages).roots.filter(other => other.first > root.last).map(other => {
+    const list = [];
+    for (let i = other.first; i <= other.last; i++) {
+      if (!sameLabel(chained.pages[i].label, pages[i].label)) {
+        list.push(i);
+      }
+    }
+    return { first: other.first, pages: list, strategy: strategies.get(nodeKey(other)) ?? 'hand' };
+  });
+  return { pages: clonePages(pages), offers: offers.filter(offer => offer.pages.length) };
+}
+
+/**
  * New page list with the node ({first, level}) relabelled by strategy id: its whole top-level block is relabelled with every node's
  * strategy (hand nodes keep their labels), then the chain after it as relabelChain.
  */

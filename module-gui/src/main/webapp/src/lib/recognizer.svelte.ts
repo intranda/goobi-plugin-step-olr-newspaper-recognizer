@@ -6,7 +6,7 @@ import {
 } from './logic/blocks.mjs'
 import { initLabels } from './logic/pagination.mjs'
 import { restoreFromMets, simulateRules, sameSettings, acceptOffers } from './logic/pagination-tools.mjs'
-import { detectStrategies, restructure, relabelChain, applyStrategy, strategyOptions, nodeKey } from './logic/strategies.mjs'
+import { detectStrategies, restructure, afterTyping, applyStrategy, strategyOptions, nodeKey } from './logic/strategies.mjs'
 import { previewLabel, ownNumberingAll } from './logic/typing.mjs'
 import { parseLabel, isCounting } from './logic/labels.mjs'
 import { applyTypePattern } from './logic/generation.mjs'
@@ -598,8 +598,9 @@ export class Recognizer {
 		if (changes.length === 0) {
 			return
 		}
-		// the typing stops at the block end; the blocks after it that continue it follow, by the strategies before the edit
-		const chained = relabelChain(result.pages, this.settings, this.strategies, index)
+		// the typing stops at the block end; the blocks after it that continue it follow (by the strategies before the edit) only while the
+		// block still matches a strategy, else they are offered
+		const chained = afterTyping(result.pages, this.settings, this.strategies, this.chosen, index, mode)
 		this.commit(chained.pages, { paginate: false, offers: chained.offers })
 	}
 
