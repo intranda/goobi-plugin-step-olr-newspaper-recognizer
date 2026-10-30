@@ -1,7 +1,7 @@
 // Volume-wide pagination tools, pure functions on the page list; behaviour as in the pagination v2 design (Changed since opening, Rules dialog).
 import { buildTree, clonePages, flatten } from './blocks.mjs';
 import { follows } from './labels.mjs';
-import { paginateParts, applyOffers, offeredStrategies } from './pagination.mjs';
+import { paginateParts, relabelOffers, offeredStrategies } from './pagination.mjs';
 import { defaultsIn, detectStrategies, relabelChain } from './strategies.mjs';
 
 /** Indices of the pages whose label differs from the METS as last loaded. */
@@ -33,21 +33,23 @@ export function inScope(scope) {
  * (everything including pages without block), offers (the offered pages and the chains after them, as acceptOffers). The nodes of the
  * top-level blocks in scope get their default strategy under settings, where counting through the volume continues every block in scope
  * after the first; every other node keeps its strategy in strategies (by node key; default: detected from the labels). The blocks after the
- * scope that continue it follow it (relabelChain). Returns the new page list and the strategies applied, by node key.
+ * scope that continue it follow it (relabelChain). Returns the new page list, the strategies applied, by node key, and the offers of the
+ * chains (the hand blocks they stop at).
  */
 export function simulateRules(pages, settings, scope, strategies) {
   if (scope.kind === 'none') {
-    return { pages: clonePages(pages), strategies: new Map() };
+    return { pages: clonePages(pages), strategies: new Map(), offers: [] };
   }
   const current = strategies ?? detectStrategies(pages, settings, new Map());
   if (scope.kind === 'offers') {
-    return { pages: acceptOffers(pages, settings, scope.offers, current).pages, strategies: new Map() };
+    return { ...acceptOffers(pages, settings, scope.offers, current), strategies: new Map() };
   }
   const roots = buildTree(pages).roots.filter(root => scope.kind === 'volume' || (scope.kind === 'block' ? root.first === scope.first : root.first >= scope.first));
   const applied = defaultsIn(roots, settings);
   const next = new Map([...current, ...applied]);
   const out = paginateParts(pages, settings, inScope(scope), key => next.get(key) ?? 'hand');
-  return { pages: roots.length ? relabelChain(out, settings, next, roots.at(-1).first).pages : out, strategies: applied };
+  const chained = roots.length ? relabelChain(out, settings, next, roots.at(-1).first) : { pages: out, offers: [] };
+  return { ...chained, strategies: applied };
 }
 
 /**
@@ -56,7 +58,7 @@ export function simulateRules(pages, settings, scope, strategies) {
  */
 export function acceptOffers(pages, settings, offers, strategies) {
   const next = offeredStrategies(pages, settings, offers, strategies);
-  let out = applyOffers(pages, settings, offers, strategies);
+  let out = relabelOffers(pages, settings, offers, next);
   const fresh = new Map();
   for (const first of [...new Set(offers.map(offer => offer.first))].sort((a, b) => a - b)) {
     const result = relabelChain(out, settings, next, first);

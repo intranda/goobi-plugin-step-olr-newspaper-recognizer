@@ -163,12 +163,6 @@ export function paginateParts(pages, settings, covered, strategyOf) {
 /** New page list, every page of the top-level block starting on page first gets the rule value of its stream; parts without a rule keep their labels. */
 export const paginateBlock = (pages, settings, first, strategyOf) => paginateParts(pages, settings, (stream, part) => part.block === first, strategyOf);
 
-/** Indices of the pages that paginateBlock would change in the block starting on page first. */
-export function blockOffer(pages, settings, first) {
-  const paginated = paginateBlock(pages, settings, first);
-  return pages.map((page, i) => i).filter(i => paginated[i].label !== pages[i].label);
-}
-
 /**
  * The strategies under which offers are accepted, by node key: the nodes of the offered pages get their default strategy, every other node
  * keeps its strategy in strategies (default: detected from the labels).
@@ -186,8 +180,10 @@ export function offeredStrategies(pages, settings, offers, strategies) {
  * New page list with the offered pages relabelled: the offered top-level blocks are relabelled by offeredStrategies; only the offered pages
  * take the new labels.
  */
-export function applyOffers(pages, settings, offers, strategies) {
-  const next = offeredStrategies(pages, settings, offers, strategies);
+export const applyOffers = (pages, settings, offers, strategies) => relabelOffers(pages, settings, offers, offeredStrategies(pages, settings, offers, strategies));
+
+/** applyOffers with the strategies offeredStrategies gave (next, by node key). */
+export function relabelOffers(pages, settings, offers, next) {
   const blocks = new Set(offers.map(offer => offer.first));
   const fresh = paginateParts(pages, settings, (stream, part) => blocks.has(part.block), key => next.get(key) ?? 'hand');
   const out = clonePages(pages);

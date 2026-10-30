@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { streams, ruleValue, paginateBlock, paginateParts, initLabels, blockOffer, applyOffers } from './pagination.mjs';
+import { streams, ruleValue, paginateBlock, paginateParts, initLabels, applyOffers } from './pagination.mjs';
 import { defaultResolver } from './strategies.mjs';
 import { buildTree } from './blocks.mjs';
 import { simulateRules } from './pagination-tools.mjs';
@@ -225,18 +225,6 @@ const lab = (specs, text) => {
   return pages(...specs.map((spec, i) => ({ ...spec, label: words[i] === '·' ? '' : words[i] })));
 };
 const M = 'MorningIssue';
-
-test('blockOffer: an uncounted page is offered like any other', () => {
-  assert.deepEqual(blockOffer(pages(I('MorningIssue', '–'), p('–'), p('7')), settings(), 0), [0, 1, 2]);
-  assert.deepEqual(blockOffer(pages(I('MorningIssue', ''), p(''), p('7')), settings(), 0), [0, 1, 2]); // the filter on '' is gone too
-});
-
-test('blockOffer lists the pages the rules would change', () => {
-  assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 5 6'), settings(), 0), [1, 2]);
-  assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 5 ·'), settings(), 0), [1, 2]);
-  assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 2 3'), settings(), 0), []);
-  assert.deepEqual(blockOffer(lab([I(null), p()], '5 7'), settings(), 0), []);
-});
 
 // Counting through the whole volume.
 

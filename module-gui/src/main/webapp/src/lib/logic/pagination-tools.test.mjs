@@ -63,6 +63,22 @@ test('acceptOffers: the blocks continuing an accepted block follow it', () => {
   assert.equal(labels(simulateRules(list, s, { kind: 'offers', first: null, offers: [{ first: 2, pages: [2, 3] }] }, strategies).pages), labels(result.pages));
 });
 
+test('simulateRules: the hand block the chain after the scope stops at is offered', () => {
+  const M = 'MorningIssue';
+  const list = pages(I(M, '1'), p('2'), I(M, '3'), p('4'), I(M, '20'), p('x'));
+  const strategies = new Map([['0:0', 'rule:1'], ['2:0', 'continue:previous'], ['4:0', 'hand']]);
+  const roman = settings({ ...DEFAULT_RULES, [M]: { beginsWith: ['i'] } }, { countThroughVolume: true });
+  const result = simulateRules(list, roman, { kind: 'block', first: 0 }, strategies);
+  assert.equal(labels(result.pages), 'i ii iii iv 20 x');
+  assert.deepEqual(result.offers, [{ first: 4, pages: [4, 5] }]);
+  // scope offers: the offers of the chains after the offered blocks
+  const offered = simulateRules(pages(I(M, '1'), p('2'), I(M, '9'), p('9'), I(M, '11'), p('12'), I(M, '20'), p('x')),
+    settings(DEFAULT_RULES, { countThroughVolume: true }), { kind: 'offers', first: null, offers: [{ first: 2, pages: [2, 3] }] },
+    new Map([['0:0', 'rule:1'], ['2:0', 'hand'], ['4:0', 'continue:previous'], ['6:0', 'hand']]));
+  assert.deepEqual(offered.offers, [{ first: 6, pages: [6, 7] }]);
+  assert.deepEqual(simulateRules(list, roman, { kind: 'none', first: null }, strategies).offers, []);
+});
+
 test('acceptOffers: a block split off a volume counted through, accepted, the hand block after it fits', () => {
   const M = 'MorningIssue';
   const s = settings(DEFAULT_RULES, { countThroughVolume: true });

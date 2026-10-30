@@ -192,7 +192,7 @@ export class Recognizer {
 		this.baseline = savedState(pages, this.catalog, this.volumeHidden)
 		this.typingPending = false
 		this.pages = pages
-		this.strategies = detectStrategies(pages, this.settings, this.chosen)
+		this.strategies = this.detect()
 		this.clearOffers()
 		this.preview = null
 		this.refresh()
@@ -368,7 +368,7 @@ export class Recognizer {
 			this.dismissedOffers = new Map([...this.dismissedOffers].map(([first, signature]) => [shiftIndex(first, removed), signature]))
 		}
 		this.pages = pages
-		this.strategies = detectStrategies(pages, this.settings, this.chosen)
+		this.strategies = this.detect()
 		this.refresh()
 		this.updateOffers(offers)
 	}
@@ -746,9 +746,11 @@ export class Recognizer {
 			this.clearOffers()
 		}
 		let pages = this.pages
+		let offers: FreshOffer[] = []
 		if (scope.kind !== 'none') {
 			const result = simulateRules(this.pages, settings, scope, this.strategies)
 			pages = result.pages
+			offers = result.offers
 			const chosen = new Map(this.chosen)
 			for (const [key, id] of result.strategies) {
 				const [first, level] = key.split(':').map(Number)
@@ -757,15 +759,20 @@ export class Recognizer {
 			this.chosen = chosen
 		}
 		if (this.sameState(this.pages, pages)) {
-			this.strategies = detectStrategies(this.pages, this.settings, this.chosen)
+			this.strategies = this.detect()
 			this.refresh()
-			this.updateOffers([])
+			this.updateOffers(offers)
 			return
 		}
-		this.applyChange(pages, { paginate: false })
+		this.applyChange(pages, { paginate: false, offers })
 	}
 
 	// ---- the pagination strategy of a block
+
+	/** the strategies of the pages as they are, read from their labels; none without pagination */
+	detect() {
+		return this.settings.enabled ? detectStrategies(this.pages, this.settings, this.chosen) : new Map<string, string>()
+	}
 
 	/** the strategy of the node by node key, for streams and the typing */
 	strategyOfKey: StrategyOf = key => this.strategies.get(key) ?? 'hand'

@@ -495,6 +495,24 @@ test('restructure: a supplement extended into a hand block keeps the page it get
   assert.deepEqual(offered(result), [[0, '5']]);
 });
 
+test('restructure: a page inserted into a block paginates that block only', () => {
+  const before = lab([I(M), p(), p(), I(M), p()], '1 2 3 1 2');
+  const result = changed(before, insertPage(before, 2));
+  assert.equal(labels(result.pages), '1 2 3 4 1 2');
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: counting through the volume, splitting a block of a volume counted per block keeps every label', () => {
+  // each block restarts at 1, so each reads rule:1; the part split off (3 4) continues the part before it and is no offer
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  const four = () => [I(M), p(), p(), p()];
+  const before = lab([...four(), ...four(), ...four()], '1 2 3 4 1 2 3 4 1 2 3 4');
+  const result = changed(before, lab([...four(), I(M), p(), I(M), p(), ...four()], '1 2 3 4 1 2 3 4 1 2 3 4'), s);
+  assert.equal(labels(result.pages), '1 2 3 4 1 2 3 4 1 2 3 4');
+  assert.deepEqual(result.offers, []);
+  assert.deepEqual([...detectStrategies(result.pages, s, new Map())], [['0:0', 'rule:1'], ['4:0', 'rule:1'], ['6:0', 'continue:previous'], ['8:0', 'rule:1']]);
+});
+
 test('restructure: counting through the volume, a page inserted into block 2 renumbers the blocks continuing it', () => {
   const s = settings(DEFAULT_RULES, { countThroughVolume: true });
   const before = counted(4);
