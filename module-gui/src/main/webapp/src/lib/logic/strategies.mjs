@@ -119,7 +119,7 @@ const sameLabel = (a, b) => (normalizeLabel(a) || '–') === (normalizeLabel(b) 
  * are. Candidates in this order: the chosen entry (chosen is keyed by file name of the first page and level), the default, the dropdown
  * entries; hand and disabled entries are none. Nothing matches: hand. Children are read first without continue:parent (a child whose first
  * candidate is continue:parent stays open right away), then their parent with the children still open continuing it, then those children
- * with all their candidates; one of them not continuing its parent: the parent once more.
+ * with all their candidates (continue:parent last when that parent matched nothing); one of them not continuing its parent: the parent once more.
  * Every top-level block is evaluated on its own pages, behind one page that stands for the stream continue:previous would join.
  */
 export function detectStrategies(pages, settings, chosen) {
@@ -157,8 +157,11 @@ export function detectStrategies(pages, settings, chosen) {
       return [...new Set([own, defaults(nodeKey(node)), ...rules, ...continues])]
         .filter(id => (ruleOf(id) || continues.includes(id)) && (withParent || id !== 'continue:parent'));
     };
-    const find = (node, siblings, index, withParent) => {
-      for (const id of candidates(node, siblings, index, withParent)) {
+    // parentLast: continue:parent only after every other candidate
+    const find = (node, siblings, index, withParent, parentLast = false) => {
+      const ids = candidates(node, siblings, index, withParent);
+      const ordered = parentLast ? [...ids.filter(id => id !== 'continue:parent'), ...ids.filter(id => id === 'continue:parent')] : ids;
+      for (const id of ordered) {
         if (matches(node, id)) {
           return id;
         }
@@ -182,8 +185,10 @@ export function detectStrategies(pages, settings, chosen) {
       }
       let id = waits ? null : find(node, siblings, index, withParent);
       let again = false;
+      // a parent that cannot be read with them continuing it: their own rules first, it would only start a fresh count
+      const parentLast = id === null && !waits;
       open.forEach(([child, k]) => {
-        if (find(child, node.children, k, true) !== 'continue:parent') {
+        if (find(child, node.children, k, true, parentLast) !== 'continue:parent') {
           again = true; // the parent was read with it continuing
         }
       });

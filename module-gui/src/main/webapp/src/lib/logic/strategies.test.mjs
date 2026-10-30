@@ -116,6 +116,13 @@ test('detect: a child whose default continues its parent is read after its paren
   assert.deepEqual(detected(pages(I(M, '1'), C('TableOfContents', 'i'), p('ii', 2), p('2'))), ['rule:1', 'rule:i']);
 });
 
+test('detect: a child reads its own rule when its parent cannot be read with it continuing', () => {
+  const s = settings({ ...DEFAULT_RULES, EveningIssue: { beginsWith: ['–', '1'] } });
+  const list = pages(I('EveningIssue', '–'), C('TableOfContents', '1'), p('2', 2), p('1'));
+  assert.deepEqual(detected(list, s), ['rule:– 1', 'rule:1']);
+  assert.deepEqual(detected(pages(I(M, '1'), p('2'), C('TableOfContents', '1'), p('2', 2), p('3'))), ['rule:1', 'rule:1']);
+});
+
 test('detect: a child that ends up hand makes its parent read once more', () => {
   assert.deepEqual(detected(pages(I(M, '1'), p('2'), C('TableOfContents', '7'), p('8'))), ['hand', 'hand']);
 });
