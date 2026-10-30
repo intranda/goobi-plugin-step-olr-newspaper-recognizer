@@ -84,7 +84,14 @@ test('paginateBlock keeps untyped blocks', () => {
 test('initLabels normalises and remembers the METS label', () => {
   const list = pages({ label: ' 5 ' }, {});
   initLabels(list);
-  assert.deepEqual(list.map(page => [page.label, page.metsLabel]), [['5', '5'], ['', '']]);
+  assert.deepEqual(list.map(page => [page.label, page.metsLabel]), [['5', '5'], ['–', '–']]);
+});
+
+test('initLabels: empty and dash spellings become –', () => {
+  const list = pages({ label: '' }, { label: '-' }, { label: 'uncounted' }, { label: '–' }, { label: '3' });
+  initLabels(list);
+  assert.equal(labels(list), '– – – – 3');
+  assert.ok(list.every(page => page.metsLabel === page.label));
 });
 
 // Extra tests for spec behaviour not covered by the brief.
@@ -238,13 +245,14 @@ test('structureChanged: bulk, a type pattern counts as one type change per block
   assert.equal(labels(result.pages), '[1] [2] [1] [2]');
 });
 
-test('structureChanged: offers exclude pages without label', () => {
+test('structureChanged: uncounted pages are offered', () => {
   const before = lab([I(M), p(), p(), p()], '1 2 · 9');
   const after = lab([I(M), I(M), p(), p()], '1 2 · 9');
   const result = structureChanged(before, after, settings());
   assert.equal(result.offers.length, 1);
-  assert.ok(!result.offers[0].pages.includes(2));
-  assert.deepEqual(result.offers[0].pages, [3]); // derived
+  assert.deepEqual(result.offers[0].pages, [2, 3]); // derived: page 2 is uncounted, rule gives it 2, page 3 has 9 instead of 3
+  const initialised = structureChanged(lab([I(M), p(), p(), p()], '1 2 – 9'), lab([I(M), I(M), p(), p()], '1 2 – 9'), settings());
+  assert.deepEqual(initialised.offers[0].pages, [2, 3]); // state after initLabels
 });
 
 test('structureChanged handles degenerate volumes', () => {
@@ -279,9 +287,14 @@ test('structureChanged: a new block offers the block before when its own numberi
   assert.deepEqual(offerShape(result.offers), [{ first: 0, pages: [2] }]);
 });
 
-test('blockOffer lists the labelled pages the rules would change', () => {
+test('blockOffer: an uncounted page is offered like any other', () => {
+  assert.deepEqual(blockOffer(pages(I('MorningIssue', '–'), p('–'), p('7')), settings(), 0), [0, 1, 2]);
+  assert.deepEqual(blockOffer(pages(I('MorningIssue', ''), p(''), p('7')), settings(), 0), [0, 1, 2]); // the filter on '' is gone too
+});
+
+test('blockOffer lists the pages the rules would change', () => {
   assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 5 6'), settings(), 0), [1, 2]);
-  assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 5 ·'), settings(), 0), [1]);
+  assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 5 ·'), settings(), 0), [1, 2]);
   assert.deepEqual(blockOffer(lab([I(M), p(), p()], '1 2 3'), settings(), 0), []);
   assert.deepEqual(blockOffer(lab([I(null), p()], '5 7'), settings(), 0), []);
 });

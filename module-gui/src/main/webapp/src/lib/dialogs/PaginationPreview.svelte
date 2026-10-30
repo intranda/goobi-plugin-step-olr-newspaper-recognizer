@@ -75,9 +75,7 @@
 
 	const groupName = (group: Group) => (group.level < 0 ? t(P + 'pagination_withoutBlock')
 		: group.child > 0 ? `${typeLabel(group.type)} ${group.child}` : typeLabel(group.type));
-	// a page without label reads as in the label fields of the grid
-	const shown = (label: string) => label || t(P + 'pagination_label_placeholder');
-	const rangeText = (labels: string[]) => (labels.every(label => label === '') ? shown('') : labelRange(labels.map(shown)));
+	const rangeText = (labels: string[]) => labelRange(labels);
 	const changedText = (n: number) => (n === 1 ? t(R + 'changedOne') : fmt(R + 'changed', n));
 	const foldText = (groups: Group[]) => (groups.length === 1 ? t(P + 'preview_unchangedOne') : fmt(P + 'preview_unchanged', groups.length));
 
@@ -115,8 +113,8 @@
 							<div class="thumb-box preview-cell__image">
 								<img src={pages[page].image?.thumbnailUrl || 'newspaper_placeholder2.png'} alt="{t(P + 'preview_block')} {page + 1}" loading="lazy" />
 							</div>
-							<s class="preview-cell__old small text-muted" data-preview-old>{changed ? shown(group.before[k]) : ''}</s>
-							<div class={['preview-cell__label', changed ? 'preview-changed' : 'text-muted']} data-preview-label>{shown(group.after[k])}</div>
+							<s class="preview-cell__old small text-muted" data-preview-old>{changed ? group.before[k] : ''}</s>
+							<div class={['preview-cell__label', changed ? 'preview-changed' : 'text-muted']} data-preview-label>{group.after[k]}</div>
 						</div>
 					{/each}
 				</div>

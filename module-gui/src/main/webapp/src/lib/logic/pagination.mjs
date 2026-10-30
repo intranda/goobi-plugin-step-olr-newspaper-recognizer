@@ -121,10 +121,10 @@ export function paginateParts(pages, settings, covered) {
 /** New page list, every page of the block starting on page first gets the rule value of its stream; streams without a rule keep their labels. */
 export const paginateBlock = (pages, settings, first) => paginateParts(pages, settings, (stream, part) => part.block === first);
 
-/** Indices of the labelled pages that paginateBlock would change in the block starting on page first. */
+/** Indices of the pages that paginateBlock would change in the block starting on page first. */
 export function blockOffer(pages, settings, first) {
   const paginated = paginateBlock(pages, settings, first);
-  return pages.map((page, i) => i).filter(i => pages[i].label !== '' && paginated[i].label !== pages[i].label);
+  return pages.map((page, i) => i).filter(i => paginated[i].label !== pages[i].label);
 }
 
 const sameRule = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -251,7 +251,7 @@ function offersAgainst(pages, settings, from, target) {
   const byBlock = new Map();
   for (const stream of streams(pages, settings).list) {
     for (const part of stream.parts.filter(p => p.block >= from)) {
-      const differ = part.pages.filter(i => pages[i].label !== '' && target[i].label !== pages[i].label);
+      const differ = part.pages.filter(i => target[i].label !== pages[i].label);
       byBlock.set(part.block, [...(byBlock.get(part.block) ?? []), ...differ]);
     }
   }
@@ -285,7 +285,7 @@ export function applyOffers(pages, settings, offers, from) {
 
 export function initLabels(pages) {
   for (const page of pages) {
-    page.label = normalizeLabel(page.label ?? '');
+    page.label = normalizeLabel(page.label ?? '') || '–'; // an empty label is uncounted, there is no third state
     page.metsLabel = page.label;
   }
 }

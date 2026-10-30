@@ -5,7 +5,7 @@ import {
 	canMerge, makeLoose, shiftIndex,
 } from './logic/blocks.mjs'
 import { initLabels, structureChanged, streams, volumeOffers, applyOffers } from './logic/pagination.mjs'
-import { missingRuns, fillMissing, restoreFromMets, simulateRules, sameSettings } from './logic/pagination-tools.mjs'
+import { restoreFromMets, simulateRules, sameSettings } from './logic/pagination-tools.mjs'
 import { previewLabel, ownNumberingAll } from './logic/typing.mjs'
 import { parseLabel, isCounting } from './logic/labels.mjs'
 import { applyTypePattern } from './logic/generation.mjs'
@@ -78,7 +78,6 @@ export class Recognizer {
 	saveInFlight = $state(false) // true while a save request is on its way; blocks everything that would abort it
 	ajaxBusy = $state(false)
 	actionsOpen = $state(false)
-	missingDeclined = $state(false) // "Nicht erzeugen": the banner stays hidden until the plugin is opened again (not reset by loadData)
 	confirmation: Confirmation | null = $state.raw(null) // {title, text, button, action, icon, params}
 	openHidden: string | null = $state(null) // element id of the block whose hidden data is listed, or 'volume'
 	pendingChange: PendingChange | null = $state.raw(null) // a change waiting for the user's decision about hidden data
@@ -92,14 +91,11 @@ export class Recognizer {
 	offerCursor = -1
 	unsavedCursor = -1
 	noticesOpen = $state(false) // the section "Hinweise" is collapsed at every opening of the plugin
-	lastJumped = -1 // index of the first page of the run the last jump led to
 	problemCursor: Record<string, number> = {}
 	// the element of the app, set by App.svelte before anything uses it
 	root: HTMLElement = (null as any)
 
 	hiddenBlocks = $derived(flatten(this.tree.roots).filter(node => hasHidden(node.start)))
-	missingRunList = $derived(missingRuns(this.pages))
-	showMissingBanner = $derived(this.settings.enabled && !this.missingDeclined && this.missingRunList.length > 0)
 	showOffersBanner = $derived(this.settings.enabled && this.offers.length >= 2)
 	offersPageCount = $derived(this.offers.reduce((sum, offer) => sum + offer.pages.length, 0))
 	// the notice about structures of the volume is part of the additional data notice
@@ -492,21 +488,6 @@ export class Recognizer {
 
 	// ---- banners
 
-	missingText() {
-		const count = this.missingRunList.reduce((sum, [first, last]) => sum + last - first + 1, 0)
-		return count === 1 ? this.t(PREFIX + 'pagination_missing_one') : this.fmt(PREFIX + 'pagination_missing_many', count)
-	}
-
-	/* every page without label gets its rule value */
-	generateMissing() {
-		this.applyChange(fillMissing(this.pages, this.settings), { paginate: false })
-	}
-
-	/* hides the banner until the plugin is opened again */
-	declineMissing() {
-		this.missingDeclined = true
-	}
-
 	/* asks first, naming how many pages lose their changed label */
 	askRestoreLabels() {
 		const count = this.unsaved.labels.length
@@ -520,26 +501,6 @@ export class Recognizer {
 	}
 
 	// ---- scrolling and jumping
-
-	/* scrolls to the first run of pages without label after the last jumped one (else the first run), centres its first page and lets
-	   its label fields flash; no focus */
-	jumpToMissing() {
-		const runs = this.missingRunList
-		const run = runs.find(([first]) => first > this.lastJumped) || runs[0]
-		if (!run) {
-			return
-		}
-		const [first, last] = run
-		const field = (index: number) => (this.root.querySelector(`[data-label="${index + 1}"]`) as HTMLElement | null)
-		const target = field(first)
-		if (!target) {
-			return
-		}
-		this.lastJumped = first;
-		(target.closest('.newspaper-thumbnail, .thumbnail-image') || target).scrollIntoView({ behavior: 'smooth', block: 'center' })
-		this.root.querySelectorAll('.newspaper-flash').forEach(element => element.classList.remove('newspaper-flash')) // the flash of an earlier jump is over
-		flash(Array.from({ length: last - first + 1 }, (_, k) => field(first + k)))
-	}
 
 	/** scrolls to the next block that shows an offer, after the one of the last jump; from the last one back to the first */
 	jumpToNextOffer() {

@@ -1,31 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { missingRuns, fillMissing, changedSinceOpening, restoreFromMets, simulateRules, sameSettings, labelRange, previewGroups } from './pagination-tools.mjs';
+import { changedSinceOpening, restoreFromMets, simulateRules, sameSettings, labelRange, previewGroups } from './pagination-tools.mjs';
 import { pages, start, settings, labels } from './fixtures.mjs';
 
 const I = (type, label = '') => ({ label, depth: 1, starts: [start(type)] });
 const p = (label = '', depth = 1) => ({ label, depth });
-
-test('missingRuns lists the runs of pages without label', () => {
-  const list = pages(...['1', '', '', '4', ''].map(label => ({ label })));
-  assert.deepEqual(missingRuns(list), [[1, 2], [4, 4]]);
-});
-
-test('missingRuns is empty when every page has a label', () => { // derived
-  assert.deepEqual(missingRuns(pages({ label: '1' }, { label: '2' })), []);
-});
-
-test('fillMissing gives missing pages their rule value', () => {
-  const list = pages(I('MorningIssue', '1'), p(), p(), p('4'), I(null, '5'), p(), p(), { label: '', depth: 0 });
-  const out = fillMissing(list, settings());
-  assert.equal(labels(out), '1 2 3 4 5 6 7 –');
-  assert.equal(labels(list), '1 · · 4 5 · · ·', 'input unchanged'); // derived
-});
-
-test('fillMissing leaves labelled pages untouched', () => {
-  const list = pages(I('MorningIssue', '9'), p(''), p('3'));
-  assert.equal(labels(fillMissing(list, settings())), '9 10 3'); // derived
-});
 
 test('changedSinceOpening and restoreFromMets', () => {
   const list = pages(...['1', '2', '3', '4'].map(label => ({ label, metsLabel: label })));

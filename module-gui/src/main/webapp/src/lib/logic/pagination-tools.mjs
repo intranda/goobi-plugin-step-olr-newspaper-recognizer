@@ -1,42 +1,7 @@
-// Volume-wide pagination tools, pure functions on the page list; behaviour as in the pagination v2 design (Missing pagination, Changed since opening, Rules dialog).
+// Volume-wide pagination tools, pure functions on the page list; behaviour as in the pagination v2 design (Changed since opening, Rules dialog).
 import { buildTree, clonePages, flatten } from './blocks.mjs';
-import { follows, isCounting, nextLabel } from './labels.mjs';
-import { streams, valueIn, paginateParts, applyOffers } from './pagination.mjs';
-
-const isMissing = page => (page.label ?? '') === '';
-
-/** Runs of pages without label as [first, last]. */
-export function missingRuns(pages) {
-  const runs = [];
-  pages.forEach((page, i) => {
-    if (!isMissing(page)) {
-      return;
-    }
-    const last = runs[runs.length - 1];
-    if (last && last[1] === i - 1) {
-      last[1] = i;
-    } else {
-      runs.push([i, i]);
-    }
-  });
-  return runs;
-}
-
-/** Every page without label gets its rule value; in streams without a rule the next value after the last counting label before it, else –. */
-export function fillMissing(pages, settings) {
-  const out = clonePages(pages);
-  for (const stream of streams(out, settings).list) {
-    for (const i of stream.pages.filter(j => isMissing(out[j]))) {
-      let value = valueIn(out, stream, i);
-      if (value === null) {
-        const previous = stream.pages.filter(j => j < i).reverse().map(j => out[j].label).find(isCounting);
-        value = previous === undefined ? '–' : nextLabel(previous);
-      }
-      out[i].label = value;
-    }
-  }
-  return out;
-}
+import { follows } from './labels.mjs';
+import { paginateParts, applyOffers } from './pagination.mjs';
 
 /** Indices of the pages whose label differs from the METS as last loaded. */
 export function changedSinceOpening(pages) {

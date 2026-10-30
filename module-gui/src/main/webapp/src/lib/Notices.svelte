@@ -18,7 +18,7 @@
 
 	// one entry for the configuration errors (listed together), one per validation problem, per decision and per piece of information
 	const blocking = $derived((app.configErrors.length > 0 ? 1 : 0) + app.validationProblems.length);
-	const decide = $derived((app.showMissingBanner ? 1 : 0) + (app.showOffersBanner ? 1 : 0));
+	const decide = $derived((app.showOffersBanner ? 1 : 0));
 	const info = $derived((app.unsaved.any ? 1 : 0) + (app.hiddenBlocks.length > 0 ? 1 : 0) + (app.volumeHidden.structures.length > 0 ? 1 : 0)
 		+ app.otherNotices.length);
 	// opened without entries, the section shows nothing below its row
@@ -75,18 +75,6 @@
 			{#if decide > 0}
 				<div class="d-flex flex-column gap-2" data-notices-group="decide">
 					<div class="notices-group text-primary">{t(P + 'notices_groupDecide')}</div>
-					{#if app.showMissingBanner}
-						<NoticeEntry icon="list-numbers" tone="text-primary" data-notice-missing>
-							{app.missingText()}
-							{#snippet actions()}
-								<Button variant="primary" size="sm" class="text-nowrap" data-generate onclick={() => app.generateMissing()}>{t(P + 'pagination_missing_generate')}</Button>
-								<Button size="sm" class="text-nowrap" data-jump onclick={() => app.jumpToMissing()}>
-									{t(app.missingRunList.length > 1 ? P + 'pagination_missing_jumpNext' : P + 'pagination_missing_jump')}
-								</Button>
-								<Button size="sm" class="text-nowrap" data-decline onclick={() => app.declineMissing()}>{t(P + 'pagination_missing_decline')}</Button>
-							{/snippet}
-						</NoticeEntry>
-					{/if}
 					{#if app.showOffersBanner}
 						<NoticeEntry icon="list-numbers" tone="text-primary" data-notice-offers>
 							{fmt(P + 'pagination_offers_text', app.offers.length, app.offersPageCount)}
