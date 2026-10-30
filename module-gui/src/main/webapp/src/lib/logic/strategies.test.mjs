@@ -340,8 +340,9 @@ test('restructure: a new child over counting labels does not duplicate numbers i
   const before = pages(...block(M, '1', '2', '3', '4', '5', '6'));
   const after = setType(toggleChild(before, 4, catalog), { page: 4, level: 1 }, S, catalog);
   const result = changed(before, after);
-  assert.equal(labels(result.pages), '1 2 3 4 5 6');
-  assert.deepEqual(offered(result), [[0, '4,5']]);
+  // its labels only continued the parent's rule: it gets its own (decision 11, first bullet)
+  assert.equal(labels(result.pages), '1 2 3 4 i ii');
+  assert.deepEqual(result.offers, []);
 });
 
 test('restructure: removing a child relabels the pages it gives back to its parent', () => {
@@ -637,4 +638,41 @@ test('afterTyping: without automatic pagination nothing is relabelled or offered
   const result = typed(list, s, 2, '13', 'follow');
   assert.equal(labels(result.pages), '1 2 13 4 5');
   assert.deepEqual(result.offers, []);
+});
+
+// A nested block that only continued its parent gets its type's rule (spec decision 11, first bullet, user 2026-10-30).
+
+test('restructure: a child made untyped and then typed gets its type rule when it only continued its parent', () => {
+  const before = pages(...block(M, '1', '2', '3', '4', '5'));
+  const untyped = changed(before, toggleChild(before, 2));
+  assert.equal(labels(untyped.pages), '1 2 3 4 5');
+  assert.deepEqual(detected(untyped.pages), ['rule:1', 'continue:parent']); // derived
+  const typed = changed(untyped.pages, setType(untyped.pages, { page: 2, level: 1 }, S, catalog));
+  assert.equal(labels(typed.pages), '1 2 i ii iii');
+  assert.deepEqual(typed.offers, []);
+});
+
+test('restructure: a child typed in one step gets its type rule when it only continued its parent', () => {
+  const before = pages(...block(M, '1', '2', '3', '4', '5'));
+  const result = changed(before, setType(toggleChild(before, 2, catalog), { page: 2, level: 1 }, S, catalog));
+  assert.equal(labels(result.pages), '1 2 i ii iii');
+  assert.deepEqual(result.offers, []);
+});
+
+test('restructure: a child whose continue:parent was picked keeps its labels when it gets a type', () => {
+  const before = pages(...block(M, '1', '2', '3', '4', '5'));
+  const untyped = toggleChild(before, 2);
+  const chosen = new Map([['0003.tif:1', 'continue:parent']]);
+  const s = settings();
+  const result = restructure(untyped, setType(untyped, { page: 2, level: 1 }, S, catalog), s, chosen, detectStrategies(untyped, s, chosen));
+  assert.equal(labels(result.pages), '1 2 3 4 5');
+  assert.deepEqual(result.offers, []); // it keeps the picked strategy, which its labels match
+  assert.deepEqual(detected(result.pages, s, chosen), ['rule:1', 'continue:parent']);
+});
+
+test('restructure: a top-level block split off a Goobi default pagination still keeps its labels and is offered', () => {
+  const goobi = pages(...block(M, '1', '2', '3', '4', '5', '6'));
+  const result = changed(goobi, setType(toggleBlock(goobi, 3), { page: 3, level: 0 }, M, catalog));
+  assert.equal(labels(result.pages), '1 2 3 4 5 6');
+  assert.deepEqual(offered(result), [[3, '3,4,5']]);
 });

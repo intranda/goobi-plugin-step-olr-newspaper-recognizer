@@ -397,6 +397,21 @@ export function restructure(before, after, settings, chosen, beforeStrategies) {
     }
   });
   const oldOwner = new Map(ownersOf(oldTree, before.length).map((node, i) => [before[i].filename, node]));
+  // a nested node that only continues the count its parent's strategy generated (continue:parent, not picked, the parent not hand before):
+  // a new one as detected after the change, any other as before
+  let detectedAfter = null;
+  const onlyContinues = (node, old) => {
+    const parent = node.parent && match.get(node.parent);
+    if (!parent || strategyOfOld(parent) === 'hand' || chosen?.get(fileKey(after, node)) === 'continue:parent'
+      || (old && chosen?.get(fileKey(before, old)) === 'continue:parent')) {
+      return false;
+    }
+    if (old) {
+      return strategyOfOld(old) === 'continue:parent';
+    }
+    detectedAfter ??= detectStrategies(after, settings, chosen);
+    return detectedAfter.get(nodeKey(node)) === 'continue:parent';
+  };
   const strategyOfOld = node => was.get(nodeKey(node)) ?? 'hand';
   const owner = ownersOf(tree, after.length);
   const next = new Map();
@@ -425,6 +440,9 @@ export function restructure(before, after, settings, chosen, beforeStrategies) {
     let relabelled = false;
     if ((!old || retyped || moved) && after.slice(node.first, node.last + 1).every(page => sameLabel(page.label, '–'))) {
       id = defaults(key);
+      relabelled = true;
+    } else if ((!old || retyped) && node.start.type && onlyContinues(node, old)) {
+      id = defaults(key); // numbers the parent's strategy generated are not worth keeping (decision 11)
       relabelled = true;
     } else if (!old) {
       id = 'hand';
