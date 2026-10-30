@@ -244,21 +244,26 @@ const relabel = (pages, settings, strategies, blocks, runs = new Set()) => pagin
 
 /**
  * The chains after the top-level blocks starting on the pages in from and after the loose pages in loose: every later top-level block that
- * continues the previous one, up to the first that does not; a block with a rule that does not count is passed over (it is no part of the
- * stream continue:previous joins). stops are the hand blocks a chain ended at.
+ * continues the previous one, up to the first that does not. Blocks that are no part of the stream continue:previous joins are passed over:
+ * a rule that does not count, hand without a counting label in its stream (its own pages and those of children continuing it, as streams
+ * decides). stops are the hand blocks a chain ended at.
  */
-function chainAfter(tree, strategies, from, loose = []) {
+function chainAfter(pages, tree, strategies, from, loose = []) {
+  const strategyOf = node => strategies.get(nodeKey(node)) ?? 'hand';
+  const owner = ownersOf(tree, pages.length);
+  const joins = (node, root) => node === root || (strategyOf(node) === 'continue:parent' && joins(node.parent, root));
+  const counts = root => pages.slice(root.first, root.last + 1).some((page, k) => isCounting(page.label) && joins(owner[root.first + k], root));
   const chain = [];
   const stops = [];
   let open = false;
   let end = -1;
   for (const root of tree.roots) {
-    const id = strategies.get(nodeKey(root)) ?? 'hand';
+    const id = strategyOf(root);
     open = open || loose.some(i => end < i && i < root.first);
     end = root.last;
     if (from.has(root.first)) {
       open = true;
-    } else if (!open || (ruleOf(id) && !ruleOf(id).some(value => isCounting(normalizeLabel(value))))) {
+    } else if (!open || (ruleOf(id) && !ruleOf(id).some(value => isCounting(normalizeLabel(value)))) || (id === 'hand' && !counts(root))) {
       continue;
     } else if (id === 'continue:previous') {
       chain.push(root.first);
@@ -273,22 +278,25 @@ function chainAfter(tree, strategies, from, loose = []) {
 }
 
 /**
- * Relabels the top-level blocks in blocks, the loose runs in runs and the chains after the blocks in from and after the runs. Offers, one per top-level block
- * (first = its first page): offer maps the first page of a top-level block to the nodes in it to offer, the hand blocks a chain stopped
- * at offer their hand nodes; offered are the pages of these nodes that change when they get their default strategy.
+ * Relabels the top-level blocks in blocks, the loose runs in runs and the chains after the blocks in from and after the runs. Offers, one
+ * per top-level block (first = its first page): offer maps the first page of a top-level block to the nodes in it to offer; a hand block a
+ * chain stopped at offers its hand nodes when it would belong to the chain (its default is continue:previous) and the relabelling changed a
+ * label. Offered are the pages of these nodes that change when they get their default strategy.
  */
 function settle(pages, settings, strategies, tree, { blocks = [], from = [], runs = new Set(), offer = new Map() }) {
-  const { chain, stops } = chainAfter(tree, strategies, new Set(from), [...runs]);
+  const { chain, stops } = chainAfter(pages, tree, strategies, new Set(from), [...runs]);
   const out = relabel(pages, settings, strategies, new Set([...blocks, ...chain]), runs);
   const nodes = new Map([...offer].map(([first, list]) => [first, new Set(list)]));
-  for (const root of stops) {
-    const hand = flatten([root]).filter(node => (strategies.get(nodeKey(node)) ?? 'hand') === 'hand');
-    nodes.set(root.first, new Set([...(nodes.get(root.first) ?? []), ...hand]));
+  const defaults = defaultResolver(tree, settings);
+  if (out.some((page, i) => !sameLabel(page.label, pages[i].label))) {
+    for (const root of stops.filter(other => defaults(nodeKey(other)) === 'continue:previous')) {
+      const hand = flatten([root]).filter(node => (strategies.get(nodeKey(node)) ?? 'hand') === 'hand');
+      nodes.set(root.first, new Set([...(nodes.get(root.first) ?? []), ...hand]));
+    }
   }
   if (!nodes.size) {
     return { pages: out, offers: [] };
   }
-  const defaults = defaultResolver(tree, settings);
   const owner = ownersOf(tree, out.length);
   const offers = tree.roots.filter(root => nodes.has(root.first)).map(root => {
     const offered = nodes.get(root.first);
@@ -334,16 +342,17 @@ export function applyStrategy(pages, settings, strategies, node, id) {
 /**
  * New page list after a structure change from before to after (per-block pagination design, decisions 7, 9 and 11), with offers per
  * top-level block. Nodes are matched by file name of their first page and level; a node whose first page changed (boundary moved, first
- * page deleted) is the unmatched node of its level it shares pages with. The pages of a node are the file names of first..last. Per node
+ * page deleted) is the unmatched node of its level it shares pages with. The pages of a node are the file names of first..last; it also
+ * changed when it owns a page itself (as deepest node) that another node owned before, as after a child was removed. Per node
  * after the change: changed (new, other type, other pages) with all pages uncounted → its default, relabelled; new → hand, offered;
  * other type → hand stays hand and is offered, the old type's default becomes the new type's default and is relabelled, any other
- * strategy stays and is relabelled when its pages changed; other pages → a hand node, or one that got pages from a hand node, is hand
+ * strategy stays and is relabelled when its pages changed; other pages → a hand node, or one that now owns pages a hand node owned, is hand
  * and offered, any other is relabelled by its strategy; else untouched. Loose runs that got pages get settings.withoutBlock. The chains
  * after every relabelled top-level block and every such run follow (a block that became loose leaves the stream). beforeStrategies: the strategies of before by node key (detected with chosen without).
  */
 export function restructure(before, after, settings, chosen, beforeStrategies) {
   if (settings.automatic === false) {
-    return { pages: after, offers: [] };
+    return { pages: clonePages(after), offers: [] };
   }
   const was = beforeStrategies ?? detectStrategies(before, settings, chosen);
   const oldTree = buildTree(before);
@@ -373,6 +382,7 @@ export function restructure(before, after, settings, chosen, beforeStrategies) {
   });
   const oldOwner = new Map(ownersOf(oldTree, before.length).map((node, i) => [before[i].filename, node]));
   const strategyOfOld = node => was.get(nodeKey(node)) ?? 'hand';
+  const owner = ownersOf(tree, after.length);
   const next = new Map();
   const blocks = new Set();
   const offer = new Map();
@@ -385,8 +395,14 @@ export function restructure(before, after, settings, chosen, beforeStrategies) {
     const old = match.get(node);
     const files = filesOf(after, node);
     const oldFiles = old ? filesOf(before, old) : null;
-    const arriving = old ? [...files].filter(file => !oldFiles.has(file)) : [];
-    const moved = old && (arriving.length > 0 || files.size !== oldFiles.size);
+    // pages the node owns itself now that another node (or none) owned before, e.g. those of a removed child
+    const arriving = [];
+    for (let i = node.first; old && i <= node.last; i++) {
+      if (owner[i] === node && oldOwner.get(after[i].filename) !== old) {
+        arriving.push(after[i].filename);
+      }
+    }
+    const moved = old && (arriving.length > 0 || files.size !== oldFiles.size || [...files].some(file => !oldFiles.has(file)));
     const retyped = old && old.start.type !== node.start.type;
     const oldId = old ? strategyOfOld(old) : null;
     let id = oldId;

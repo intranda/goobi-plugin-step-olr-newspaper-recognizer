@@ -306,8 +306,8 @@ test('restructure: moving a boundary relabels strategy blocks and offers instead
   // the last page of the first block moves into the second: both have a strategy and are relabelled
   const back = changed(before, pages(...block(M, '1', '2', '3'), ...block(M, '4', '1', '2', '3'), ...block(M, 'x', 'y')));
   assert.equal(labels(back.pages), '1 2 3 1 2 3 4 x y');
-  // the hand block after them ends their chain and is offered
-  assert.deepEqual(offered(back), [[7, '7,8']]);
+  // the hand block after them has no counting label: no part of the chain, not offered
+  assert.deepEqual(back.offers, []);
   // the first page of the hand block moves into the second: it keeps its labels and is offered, so is the hand block
   const fromHand = changed(before, pages(...block(M, '1', '2', '3', '4'), ...block(M, '1', '2', '3', 'x'), ...block(M, 'y')));
   assert.equal(labels(fromHand.pages), '1 2 3 4 1 2 3 x y');
@@ -338,6 +338,18 @@ test('restructure: a new child over counting labels does not duplicate numbers i
   const result = changed(before, after);
   assert.equal(labels(result.pages), '1 2 3 4 5 6');
   assert.deepEqual(offered(result), [[0, '4,5']]);
+});
+
+test('restructure: removing a child relabels the pages it gives back to its parent', () => {
+  const before = pages(I(M, '1'), p('2'), C(S, 'i'), p('ii', 2), p('3'));
+  const result = changed(before, toggleChild(before, 2, catalog));
+  assert.equal(labels(result.pages), '1 2 3 4 5');
+  assert.deepEqual(result.offers, []);
+  // pages of a removed hand child keep their labels and are offered
+  const hand = pages(I(M, '1'), p('2'), C(S, 'x'), p('y', 2), p('3'));
+  const kept = changed(hand, toggleChild(hand, 2, catalog));
+  assert.equal(labels(kept.pages), '1 2 x y 3');
+  assert.deepEqual(offered(kept), [[0, '2,3,4']]);
 });
 
 test('restructure: a type change keeps continue:previous', () => {
@@ -389,14 +401,35 @@ test('applyStrategy: picking i on a supplement renumbers the rest of its parent'
 });
 
 test('relabelChain: stops at the first block that does not continue and offers it when hand', () => {
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
   const list = pages(...block(M, 'i', 'ii'), ...block(M, '3', '4'), ...block(M, '20', '21'), ...block(M, '22', '23'));
   const strategies = new Map([['0:0', 'rule:i'], ['2:0', 'continue:previous'], ['4:0', 'hand'], ['6:0', 'continue:previous']]);
-  const result = relabelChain(list, settings(), strategies, 0);
+  const result = relabelChain(list, s, strategies, 0);
   assert.equal(labels(result.pages), 'i ii iii iv 20 21 22 23');
   assert.deepEqual(offered(result), [[4, '4,5']]);
+  // a hand block that would not belong to the chain (its default is no continue entry) is not offered
+  assert.deepEqual(relabelChain(list, settings(), strategies, 0).offers, []);
   const manual = relabelChain(list, settings(DEFAULT_RULES, { automatic: false }), strategies, 0);
   assert.equal(labels(manual.pages), labels(list));
   assert.deepEqual(manual.offers, []);
+});
+
+test('relabelChain: a chain that changes nothing offers nothing', () => {
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  const list = pages(...block(M, '1', '2'), ...block(M, '3', '4'), ...block(M, '20', '21'), ...block(M, '22', '23'));
+  const strategies = new Map([['0:0', 'rule:1'], ['2:0', 'continue:previous'], ['4:0', 'hand'], ['6:0', 'continue:previous']]);
+  const result = relabelChain(list, s, strategies, 0);
+  assert.equal(labels(result.pages), labels(list));
+  assert.deepEqual(result.offers, []);
+});
+
+test('relabelChain: a hand block without counting labels is passed over like the streams do', () => {
+  const list = pages(...block(M, '1', '2'), ...block(M, 'Titel', '–'), ...block(M, '3', '4'));
+  const strategies = detectStrategies(list, settings(), new Map());
+  assert.deepEqual([...strategies.values()], ['rule:1', 'hand', 'continue:previous']); // derived
+  const result = applyStrategy(list, settings(), strategies, { first: 0, level: 0 }, 'rule:i');
+  assert.equal(labels(result.pages), 'i ii Titel – iii iv');
+  assert.deepEqual(result.offers, []);
 });
 
 test('relabelChain: a block that joins another stream after a change is relabelled', () => {
