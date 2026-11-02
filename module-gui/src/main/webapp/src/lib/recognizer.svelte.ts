@@ -417,23 +417,32 @@ export class Recognizer {
 		this.offers = this.keepOffers(fresh.filter(offer => !dismissed.has(offer.first)))
 	}
 
-	/** an offer belongs to its block as it is: another structure change, child type or label in the block makes it disappear; a page removed before it does not */
-	offerSignature(first: number) {
+	/**
+	 * an offer belongs to its block as it is: another structure change, child type or label in the block makes it disappear; a page removed
+	 * before it does not. An offer over pages up to to (a typed label's offer spans the blocks continuing it) also belongs to the blocks up
+	 * to the one of that page.
+	 */
+	offerSignature(first: number, to = first) {
 		const node = this.tree.roots.find(root => root.first === first)
 		if (!node) {
 			return null
 		}
-		return JSON.stringify([node.last - node.first, node.start.type,
-			this.pages.slice(node.first, node.last + 1).map(page => [page.label, page.depth, page.starts.map(start => start.type)])])
+		const last = Math.max(node.last, this.tree.roots.find(root => root.first <= to && to <= root.last)?.last ?? node.last)
+		return JSON.stringify([last - node.first, node.start.type,
+			this.pages.slice(node.first, last + 1).map(page => [page.label, page.depth, page.starts.map(start => start.type)])])
+	}
+
+	/** offerSignature of an offer, over every block of its pages */
+	signatureOf(offer: FreshOffer) {
+		return this.offerSignature(offer.first, offer.pages.at(-1) ?? offer.first)
 	}
 
 	/** offers kept across a reload (offersAcrossSave): each one whose block still starts on its file and is as it was */
 	restoreOffers(kept: { file: string, offer: Offer }[]) {
 		const offers = kept.flatMap(({ file, offer }) => {
 			const first = this.pages.findIndex(page => page.filename === file)
-			const shift = first - offer.first
-			return first >= 0 && this.offerSignature(first) === offer.signature
-				? [{ ...offer, first, pages: offer.pages.map(i => i + shift) }] : []
+			const moved = { ...offer, first, pages: offer.pages.map(i => i + first - offer.first) }
+			return first >= 0 && this.signatureOf(moved) === offer.signature ? [moved] : []
 		})
 		if (offers.length) {
 			this.offers = [...this.offers, ...offers]
@@ -441,9 +450,9 @@ export class Recognizer {
 	}
 
 	keepOffers(fresh: FreshOffer[]) {
-		const offers = fresh.map(offer => ({ ...offer, signature: this.offerSignature(offer.first) }))
+		const offers = fresh.map(offer => ({ ...offer, signature: this.signatureOf(offer) }))
 		for (const offer of this.offers) {
-			if (!offers.some(o => o.first === offer.first) && offer.signature === this.offerSignature(offer.first)) {
+			if (!offers.some(o => o.first === offer.first) && offer.signature === this.signatureOf(offer)) {
 				offers.push(offer)
 			}
 		}

@@ -323,25 +323,26 @@ export function relabelChain(pages, settings, strategies, from) {
 /**
  * New page list after text was typed on page index in mode (pages: with the typing applied, as previewLabel gives it). When the top-level
  * block of the page still matches a strategy (detected with chosen, as detectStrategies) and mode is not single, the chain after it follows
- * as relabelChain. Else nothing after the block changes (a hand-typed label renumbers no other block): every later top-level block the
- * chain would change is offered with the pages it would change, by its strategy before the typing (offer.strategy).
+ * as relabelChain. Else nothing after the block changes (a hand-typed label renumbers no other block): one offer at the first block of the
+ * chain covers every page the chain would change, in all its blocks; accepting it relabels them by continue:previous (offer.strategy), the
+ * strategy of every block in a chain.
  */
 export function afterTyping(pages, settings, strategies, chosen, index, mode) {
   const chained = relabelChain(pages, settings, strategies, index);
-  const root = buildTree(pages).roots.find(other => other.first <= index && index <= other.last);
+  const tree = buildTree(pages);
+  const root = tree.roots.find(other => other.first <= index && index <= other.last);
   if (!root || (mode !== 'single' && detectStrategies(pages, settings, chosen).get(nodeKey(root)) !== 'hand')) {
     return chained;
   }
-  const offers = buildTree(pages).roots.filter(other => other.first > root.last).map(other => {
-    const list = [];
-    for (let i = other.first; i <= other.last; i++) {
-      if (!sameLabel(chained.pages[i].label, pages[i].label)) {
-        list.push(i);
-      }
+  const { chain } = chainAfter(pages, tree, strategies, new Set([root.first]));
+  const list = [];
+  for (let i = root.last + 1; i < pages.length; i++) {
+    if (!sameLabel(chained.pages[i].label, pages[i].label)) {
+      list.push(i);
     }
-    return { first: other.first, pages: list, strategy: strategies.get(nodeKey(other)) ?? 'hand' };
-  });
-  return { pages: clonePages(pages), offers: offers.filter(offer => offer.pages.length) };
+  }
+  const offers = chain.length && list.length ? [{ first: chain[0], pages: list, strategy: 'continue:previous' }] : [];
+  return { pages: clonePages(pages), offers };
 }
 
 /**

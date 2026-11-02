@@ -160,28 +160,39 @@ export function paginateParts(pages, settings, covered, strategyOf) {
   return out;
 }
 
+/** The first page of the top-level block of every page, null for a page without block. */
+function rootsOf(pages) {
+  const root = new Array(pages.length).fill(null);
+  for (const node of buildTree(pages).roots) {
+    root.fill(node.first, node.first, node.last + 1);
+  }
+  return root;
+}
+
 /**
  * The strategies under which offers are accepted, by node key: the nodes of the offered pages get their default strategy, every other node
- * keeps its strategy in strategies (default: detected from the labels). An offer with a strategy (afterTyping) gives it to its top-level
- * block instead and leaves its nested nodes at theirs.
+ * keeps its strategy in strategies (default: detected from the labels). An offer with a strategy (afterTyping, its pages may span several
+ * top-level blocks) gives it to every top-level block of its pages instead and leaves their nested nodes at theirs.
  */
 export function offeredStrategies(pages, settings, offers, strategies) {
   const tree = buildTree(pages);
   const defaults = defaultResolver(tree, settings);
   const owner = ownersOf(tree, pages.length);
+  const root = rootsOf(pages);
   const next = new Map(strategies ?? detectStrategies(pages, settings, new Map()));
   offers.forEach(offer => (offer.strategy
-    ? next.set(`${offer.first}:0`, offer.strategy)
+    ? offer.pages.forEach(i => root[i] !== null && next.set(`${root[i]}:0`, offer.strategy))
     : offer.pages.forEach(i => owner[i] && next.set(nodeKey(owner[i]), defaults(nodeKey(owner[i]))))));
   return next;
 }
 
 /**
- * New page list with the offered pages relabelled: the offered top-level blocks are relabelled by the strategies offeredStrategies gave
- * (next, by node key); only the offered pages take the new labels.
+ * New page list with the offered pages relabelled: the top-level blocks of the offered pages are relabelled by the strategies
+ * offeredStrategies gave (next, by node key), in page order; only the offered pages take the new labels.
  */
 export function relabelOffers(pages, settings, offers, next) {
-  const blocks = new Set(offers.map(offer => offer.first));
+  const root = rootsOf(pages);
+  const blocks = new Set(offers.flatMap(offer => [offer.first, ...offer.pages.map(i => root[i])]));
   const fresh = paginateParts(pages, settings, (stream, part) => blocks.has(part.block), key => next.get(key) ?? 'hand');
   const out = clonePages(pages);
   offers.forEach(offer => offer.pages.forEach(i => { out[i].label = fresh[i].label; }));

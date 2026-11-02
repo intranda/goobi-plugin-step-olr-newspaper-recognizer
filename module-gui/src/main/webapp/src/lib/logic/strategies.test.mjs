@@ -607,12 +607,46 @@ test('afterTyping: a hand-typed label on the last page of a block offers the con
   const result = typed(list, s, 2, '13', 'follow');
   assert.deepEqual([...result.strategies.values()], ['rule:1', 'continue:previous', 'continue:previous']); // derived
   assert.equal(labels(result.pages), '1 2 13 4 5 6 7');
-  assert.deepEqual(offered(result), [[3, '3,4'], [5, '5,6']]);
-  // accepting both renumbers the blocks by their own strategy relative to the typed label
-  const all = acceptOffers(result.pages, s, result.offers, detectStrategies(result.pages, s, new Map()));
-  assert.equal(labels(all.pages), '1 2 13 14 15 16 17');
-  const first = acceptOffers(result.pages, s, result.offers.slice(0, 1), detectStrategies(result.pages, s, new Map()));
-  assert.equal(labels(first.pages), '1 2 13 14 15 16 17');
+  // one offer at the first continuing block over every page the chain would change
+  assert.deepEqual(offered(result), [[3, '3,4,5,6']]);
+  const accepted = acceptOffers(result.pages, s, result.offers, detectStrategies(result.pages, s, new Map()));
+  assert.equal(labels(accepted.pages), '1 2 13 14 15 16 17');
+  assert.deepEqual(accepted.offers, []);
+  // the same for a single label (Shift+Enter)
+  const single = typed(list, s, 2, '13', 'single');
+  assert.equal(labels(single.pages), '1 2 13 4 5 6 7');
+  assert.deepEqual(offered(single), [[3, '3,4,5,6']]);
+  const strategies = detectStrategies(single.pages, s, new Map());
+  assert.equal(labels(acceptOffers(single.pages, s, single.offers, strategies).pages), '1 2 13 14 15 16 17');
+});
+
+/** Every offer accepted on its own changes exactly its pages: no offer is inert. */
+const acceptsExactly = (list, s, offers) => {
+  const strategies = detectStrategies(list, s, new Map());
+  for (const offer of offers) {
+    const out = acceptOffers(list, s, [offer], strategies).pages;
+    const changedPages = out.map((page, i) => i).filter(i => out[i].label !== list[i].label);
+    assert.deepEqual(changedPages, offer.pages, `offer at ${offer.first}`);
+  }
+};
+
+test('afterTyping: the offer after a hand-typed label is never inert and changes exactly its pages', () => {
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  const list = pages(...block(M, '1', '2', '3'), ...block(M, '4', '5'), ...block(M, '6', '7'), ...block(M, '1', '2'), ...block(M, '3', '4'));
+  const result = typed(list, s, 2, '13', 'follow');
+  assert.deepEqual(offered(result), [[3, '3,4,5,6']]); // the block of its own rule (page 7) ends the chain
+  acceptsExactly(result.pages, s, result.offers);
+});
+
+test('afterTyping: 3000 pages give one offer and stay fast', () => {
+  const s = settings(DEFAULT_RULES, { countThroughVolume: true });
+  const list = volume(300, 10, i => String(i + 1));
+  const strategies = detectStrategies(list, s, new Map());
+  const typing = previewLabel(list, s, 9, '99', 'follow', key => strategies.get(key) ?? 'hand');
+  const { result, ms } = timed(() => afterTyping(typing.pages, s, strategies, new Map(), 9, 'follow'));
+  assert.equal(result.offers.length, 1);
+  assert.equal(result.offers[0].pages.length, 2990);
+  assert.ok(ms < 300, `${ms} ms`);
 });
 
 test('afterTyping: a block that still matches a strategy after the typing renumbers the blocks continuing it', () => {
@@ -629,7 +663,8 @@ test('afterTyping: a single label never renumbers later blocks, also when the bl
   assert.equal(labels(typed(list, s, 0, 'i', 'follow').pages), 'i ii iii iv v'); // derived: the chain runs in follow mode
   const result = typed(list, s, 0, 'i', 'single');
   assert.equal(labels(result.pages), 'i 2 3 4 5');
-  assert.deepEqual(offered(result), [[1, '1,2'], [3, '3,4']]);
+  assert.deepEqual(offered(result), [[1, '1,2,3,4']]);
+  acceptsExactly(result.pages, s, result.offers);
 });
 
 test('afterTyping: without automatic pagination nothing is relabelled or offered', () => {
