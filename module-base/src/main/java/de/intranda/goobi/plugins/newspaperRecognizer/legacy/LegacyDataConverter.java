@@ -79,7 +79,9 @@ public class LegacyDataConverter {
             previousDepth = page.getDepth();
             pages.add(page);
         }
-        List<Notice> notices = unresolved.stream().map(label -> new Notice("plugin_newspaperRecognizer_notice_unknownLegacyLabel", List.of(label))).toList();
+        List<Notice> notices = unresolved.stream()
+                .map(label -> new Notice("plugin_newspaperRecognizer_notice_unknownLegacyLabel", List.of(label)))
+                .toList();
         return new ConversionResult(pages, notices);
     }
 
@@ -97,7 +99,8 @@ public class LegacyDataConverter {
 
     private BlockStart values(JsonObject old) {
         BlockStart start = new BlockStart();
-        JsonObject metadata = old != null && old.has("metadata") && old.get("metadata").isJsonObject() ? old.getAsJsonObject("metadata") : new JsonObject();
+        JsonObject metadata = old != null && old.has("metadata") && old.get("metadata").isJsonObject() ? old.getAsJsonObject("metadata")
+                : new JsonObject();
         String dateStr = string(metadata, "dateStr");
         if (dateStr != null) {
             LocalDate date = parse(dateStr);

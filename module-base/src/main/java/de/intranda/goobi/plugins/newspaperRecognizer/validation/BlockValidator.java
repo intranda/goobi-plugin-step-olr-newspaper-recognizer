@@ -90,7 +90,12 @@ public class BlockValidator {
             }
             validateSiblings(node.getChildren(), type, report);
         }
-        keys.values().stream().filter(group -> group.size() > 1).flatMap(List::stream).map(BlockValidator::describe).forEach(report.getDuplicates()::add);
+        keys.values()
+                .stream()
+                .filter(group -> group.size() > 1)
+                .flatMap(List::stream)
+                .map(BlockValidator::describe)
+                .forEach(report.getDuplicates()::add);
     }
 
     private static String describe(BlockNode node) {

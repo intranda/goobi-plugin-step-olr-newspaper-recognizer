@@ -213,7 +213,8 @@ public class NewspaperRecognizerPlugin extends AbstractStepPlugin implements ISt
             int order = 0;
             for (NewspaperPage page : pages) {
                 Image image = new Image(process, imageDir, page.getFilename(), order++, 500);
-                // Due to GSON serialization issues, we remove the `imagePath` property of the image to avoid its serialization. It's not required for our purposes anyway!
+                // Due to GSON serialization issues, we remove the `imagePath` property of the image to avoid its serialization.
+                // It's not required for our purposes anyway!
                 image.setImagePath(null);
                 page.setImage(image);
             }

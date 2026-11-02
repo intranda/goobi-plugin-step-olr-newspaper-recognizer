@@ -33,7 +33,8 @@ public record PaginationConfiguration(boolean enabled, boolean automatic, boolea
     public static PaginationConfiguration parse(HierarchicalConfiguration config, List<String> errors) {
         for (String removed : REMOVED_ELEMENTS) {
             if (config.containsKey("pagination." + removed)) {
-                errors.add("The element <" + removed + "> in <pagination> is no longer supported, use <rule> and <withoutBlock> (see the update notes)");
+                errors.add("The element <" + removed
+                        + "> in <pagination> is no longer supported, use <rule> and <withoutBlock> (see the update notes)");
             }
         }
         List<String> withoutBlock = DEFAULT_WITHOUT_BLOCK;

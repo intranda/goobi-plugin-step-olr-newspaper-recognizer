@@ -45,7 +45,8 @@ public class HiddenDataResolver {
         }
         Map<String, Map<HiddenConflictKind, HiddenAction>> chosen = new HashMap<>();
         for (HiddenOperation operation : operations == null ? List.<HiddenOperation> of() : operations) {
-            chosen.computeIfAbsent(operation.getBlockId(), k -> new EnumMap<>(HiddenConflictKind.class)).put(operation.getKind(), operation.getAction());
+            chosen.computeIfAbsent(operation.getBlockId(), k -> new EnumMap<>(HiddenConflictKind.class))
+                    .put(operation.getKind(), operation.getAction());
         }
         List<HiddenStep> steps = new ArrayList<>();
         List<String> problems = new ArrayList<>();

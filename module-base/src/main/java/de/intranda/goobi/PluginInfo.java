@@ -5,7 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-public class PluginInfo {
+public final class PluginInfo {
+
+	private PluginInfo() {
+	}
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
@@ -30,8 +33,9 @@ public class PluginInfo {
 
 		try {
 			InputStreamReader reader = new InputStreamReader(is);
-			for (int cnt; (cnt = reader.read(tmp)) > 0;)
+			for (int cnt; (cnt = reader.read(tmp)) > 0;) {
 				sb.append(tmp, 0, cnt);
+			}
 		} finally {
 			is.close();
 		}
