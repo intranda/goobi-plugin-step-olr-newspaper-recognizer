@@ -31,6 +31,8 @@
     <ui:define name="content">
         <h:form id="extra_form">
             <h:commandLink id="delete_and_start_over_button" action="#{AktuelleSchritteForm.myPlugin.deleteManualDataAndStartAutoAnalysis}"/>
+            <!-- outside newspaper_form: leaving must not post the page data, which exceeds Tomcat's maxPostSize on large volumes -->
+            <h:commandLink id="finish_button" action="#{AktuelleSchritteForm.myPlugin.finish}"></h:commandLink>
         </h:form>
         <h:form id="newspaper_form">
 			<h:inputText id="my_plugin_data" value="#{AktuelleSchritteForm.myPlugin.jsonData}" style="display:none"></h:inputText>
@@ -38,7 +40,6 @@
 			<h:commandLink id="save_button" action="#{AktuelleSchritteForm.myPlugin.save}">
 				<f:ajax execute="@form" render="save_result my_plugin_data" />
 			</h:commandLink>
-			<h:commandLink id="finish_button" action="#{AktuelleSchritteForm.myPlugin.finish}"></h:commandLink>
 		</h:form>
 
 		<h:form id="delete_form">
@@ -63,7 +64,7 @@
            		data_el: document.getElementById('newspaper_form:my_plugin_data'),
            		saveButton: document.getElementById('newspaper_form:save_button'),
            		saveResultEl: document.getElementById('newspaper_form:save_result'),
-           		finishButton: document.getElementById('newspaper_form:finish_button'),
+           		finishButton: document.getElementById('extra_form:finish_button'),
            		restartAnalysisButton: document.getElementById('extra_form:delete_and_start_over_button'),
            		deleteFileButton: document.getElementById('delete_form:delete_file_button'),
            		language: '#{SpracheForm.locale.language}',
